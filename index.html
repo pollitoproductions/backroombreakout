@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Backrooms - Endless Office Maze</title>
+    <title>The Backrooms - Breakout</title>
     <style>
         body, html {
             margin: 0;
@@ -13,7 +13,6 @@
             overflow: hidden;
             background-color: #000;
             font-family: monospace;
-            /* Prevent scrolling and pinch-zoom on mobile */
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
@@ -35,30 +34,64 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            pointer-events: none; /* Let clicks pass through to canvas by default */
+            pointer-events: none;
         }
 
-        #start-screen, #pause-screen {
+        #start-screen, #pause-screen, #win-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.85);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: #d4d42b;
             text-align: center;
-            pointer-events: auto; /* Catch clicks for start/resume */
+            pointer-events: auto;
             cursor: pointer;
             z-index: 20;
+        }
+
+        #win-screen {
+            background-color: rgba(0, 10, 0, 0.92);
+            color: #00ff00;
         }
 
         .title { font-size: 2.5em; margin-bottom: 20px; text-shadow: 0 0 10px #d4d42b; }
         .subtitle { font-size: 1.2em; color: white; margin-bottom: 10px; }
         .hint { color: #0f0; margin-top: 20px; text-shadow: 0 0 5px #0f0;}
+
+        .win-title {
+            font-size: 2.2em;
+            margin-bottom: 16px;
+            text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            letter-spacing: 2px;
+        }
+
+        .win-time {
+            font-size: 3em;
+            color: #fff;
+            margin: 10px 0 20px 0;
+            text-shadow: 0 0 10px #fff;
+            letter-spacing: 4px;
+        }
+
+        .win-hint {
+            font-size: 1em;
+            color: #00cc00;
+            margin-top: 30px;
+            opacity: 0.8;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .win-flavor {
+            font-size: 1.1em;
+            color: #aaffaa;
+            margin-bottom: 4px;
+        }
 
         #crosshair {
             position: absolute;
@@ -71,7 +104,6 @@
             border-radius: 50%;
         }
 
-        /* TIMER STYLES */
         #timer {
             position: absolute;
             top: 20px;
@@ -83,10 +115,9 @@
             z-index: 30;
             text-shadow: 2px 2px 4px #000;
             pointer-events: none;
-            display: none; /* hidden until start */
+            display: none;
         }
 
-        /* JOYSTICK STYLES */
         #joystick-base {
             position: absolute;
             width: 100px;
@@ -111,7 +142,6 @@
             pointer-events: none;
         }
 
-        /* MUTE BUTTON */
         #mute-btn {
             position: absolute;
             top: 20px;
@@ -142,6 +172,7 @@
         
         <div id="start-screen">
             <div class="title">THE BACKROOMS</div>
+            <div style="font-size:1.5em; color:#aaa; margin-bottom:18px; letter-spacing:4px;">BREAKOUT</div>
             <div class="subtitle">Mobile: Left side to Move | Right side to Look</div>
             <div class="subtitle">Desktop: WASD to Move | Mouse to Look</div>
             <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
@@ -151,6 +182,13 @@
             <div class="title">PAUSED</div>
             <div class="hint">Tap anywhere to resume.</div>
         </div>
+
+        <div id="win-screen" style="display: none;">
+            <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
+            <div class="win-flavor">Time spent in the Backrooms:</div>
+            <div class="win-time" id="win-time-display">00:00</div>
+            <div class="win-hint">Tap anywhere to try again.</div>
+        </div>
         
         <div id="crosshair"></div>
 
@@ -159,7 +197,6 @@
         </div>
     </div>
 
-    <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
@@ -170,6 +207,12 @@
         const PLAYER_HEIGHT = 8;
         const PLAYER_SIZE = 3;
         const PLAYER_SPEED = 180.0;
+
+        // Player spawns at grid center (500, 500)
+        const SPAWN_GRID_X = 500;
+        const SPAWN_GRID_Z = 500;
+        const SPAWN_CLEAR_RADIUS = 3; // tiles cleared around spawn
+        const EXIT_MIN_DISTANCE = 10; // tiles away from spawn
         
         // --- SCENE SETUP ---
         const canvas = document.getElementById('game-canvas');
@@ -181,7 +224,7 @@
         
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // optimize for mobile
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
         // --- PROCEDURAL TEXTURES ---
         function createTexture(type) {
@@ -191,7 +234,7 @@
             const ctx = ctxCanvas.getContext('2d');
 
             if (type === 'wall') {
-                ctx.fillStyle = '#c9b873'; // Mono-yellow
+                ctx.fillStyle = '#c9b873';
                 ctx.fillRect(0, 0, 256, 256);
                 ctx.fillStyle = '#a89855';
                 for (let i = 0; i < 256; i += 16) ctx.fillRect(i, 0, 2, 256);
@@ -200,14 +243,14 @@
                     ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
                 }
             } else if (type === 'floor') {
-                ctx.fillStyle = '#5c5432'; // Damp carpet
+                ctx.fillStyle = '#5c5432';
                 ctx.fillRect(0, 0, 256, 256);
                 for(let i=0; i<8000; i++) {
                     ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
                     ctx.fillRect(Math.random()*256, Math.random()*256, 3, 3);
                 }
             } else if (type === 'ceiling') {
-                ctx.fillStyle = '#ddddcc'; // Acoustic tiles
+                ctx.fillStyle = '#ddddcc';
                 ctx.fillRect(0, 0, 256, 256);
                 ctx.strokeStyle = '#999';
                 ctx.lineWidth = 2;
@@ -243,15 +286,17 @@
         ceiling.position.y = WALL_HEIGHT;
         scene.add(ceiling);
 
-        // Calculate Random Exit Position
+        // --- EXIT POSITION: random, at least EXIT_MIN_DISTANCE tiles from spawn ---
         let exitGridX, exitGridZ;
         do {
-            // Pick a random spot far away from spawn
             exitGridX = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10; 
             exitGridZ = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10;
-        } while (exitGridX < 10 && exitGridZ < 10); // Ensure it isn't close to the start
+        } while (
+            Math.abs(exitGridX - SPAWN_GRID_X) < EXIT_MIN_DISTANCE &&
+            Math.abs(exitGridZ - SPAWN_GRID_Z) < EXIT_MIN_DISTANCE
+        );
 
-        // Optimized Map Generation using InstancedMesh for 1000x1000 grid
+        // --- MAP GENERATION ---
         const grid = [];
         let wallCount = 0;
         for (let x = 0; x < MAP_SIZE; x++) {
@@ -259,14 +304,19 @@
             for (let z = 0; z < MAP_SIZE; z++) {
                 let isWall = Math.random() > 0.75 ? 1 : 0;
                 
-                // Add solid boundary walls around the edge of the world
+                // Solid boundary walls
                 if (x === 0 || x === MAP_SIZE - 1 || z === 0 || z === MAP_SIZE - 1) {
                     isWall = 1;
                 } else {
-                    // Clear spawn area safely inside the boundary (4x4 space)
-                    if (x >= 1 && x <= 4 && z >= 1 && z <= 4) isWall = 0; 
+                    // Clear spawn area (centered at 500, 500)
+                    if (
+                        Math.abs(x - SPAWN_GRID_X) <= SPAWN_CLEAR_RADIUS &&
+                        Math.abs(z - SPAWN_GRID_Z) <= SPAWN_CLEAR_RADIUS
+                    ) {
+                        isWall = 0;
+                    }
                     
-                    // Clear an area around the random exit
+                    // Clear area around exit
                     if (Math.abs(x - exitGridX) <= 1 && Math.abs(z - exitGridZ) <= 1) isWall = 0; 
                 }
                 
@@ -295,25 +345,57 @@
         }
         scene.add(instancedWalls);
 
-        // Add Exit Door
+        // --- EXIT DOOR ---
         const exitGroup = new THREE.Group();
+
+        // Door frame
         const doorGeo = new THREE.BoxGeometry(8, 12, 1);
         const doorMat = new THREE.MeshLambertMaterial({ color: 0x4a3600 });
         const door = new THREE.Mesh(doorGeo, doorMat);
         door.position.y = 6;
         exitGroup.add(door);
 
+        // Green sign box
         const signGeo = new THREE.BoxGeometry(6, 2, 1.2);
         const signMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         const sign = new THREE.Mesh(signGeo, signMat);
         sign.position.y = 13;
         exitGroup.add(sign);
 
+        // "EXIT" text on sign using a canvas texture
+        const exitCanvas = document.createElement('canvas');
+        exitCanvas.width = 256;
+        exitCanvas.height = 64;
+        const exitCtx = exitCanvas.getContext('2d');
+        exitCtx.fillStyle = '#00ff00';
+        exitCtx.fillRect(0, 0, 256, 64);
+        exitCtx.fillStyle = '#000000';
+        exitCtx.font = 'bold 48px monospace';
+        exitCtx.textAlign = 'center';
+        exitCtx.textBaseline = 'middle';
+        exitCtx.fillText('EXIT', 128, 32);
+        const exitTex = new THREE.CanvasTexture(exitCanvas);
+
+        // Front face of sign with text
+        const signFrontGeo = new THREE.PlaneGeometry(5.8, 1.9);
+        const signFrontMat = new THREE.MeshBasicMaterial({ map: exitTex });
+        const signFront = new THREE.Mesh(signFrontGeo, signFrontMat);
+        signFront.position.set(0, 13, 0.7);
+        exitGroup.add(signFront);
+
+        // Back face of sign with text
+        const signBackGeo = new THREE.PlaneGeometry(5.8, 1.9);
+        const signBackMat = new THREE.MeshBasicMaterial({ map: exitTex });
+        const signBack = new THREE.Mesh(signBackGeo, signBackMat);
+        signBack.position.set(0, 13, -0.7);
+        signBack.rotation.y = Math.PI;
+        exitGroup.add(signBack);
+
         const exitLight = new THREE.PointLight(0x00ff00, 1, 50);
         exitLight.position.y = 13;
         exitGroup.add(exitLight);
 
-        // Position exit at random location generated earlier
+        // Position exit
         exitGroup.position.set(
             (exitGridX - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
             0,
@@ -351,6 +433,13 @@
             timerElement.innerText = `${minutes}:${seconds}`;
         }
 
+        function getFormattedTime() {
+            let totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+            let minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            let seconds = String(totalSeconds % 60).padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        }
+
         // --- AUDIO SYSTEM ---
         let audioCtx;
         let masterGain;
@@ -365,14 +454,12 @@
             masterGain.gain.value = 0.5;
             masterGain.connect(audioCtx.destination);
 
-            // Drone 1 (Low sub frequency hum)
             const osc1 = audioCtx.createOscillator();
             osc1.type = 'sine';
             osc1.frequency.value = 50; 
             osc1.connect(masterGain);
             osc1.start();
 
-            // Drone 2 (Slightly detuned for eerie beating effect)
             const osc2 = audioCtx.createOscillator();
             osc2.type = 'triangle';
             osc2.frequency.value = 52;
@@ -382,7 +469,6 @@
             gain2.connect(masterGain);
             osc2.start();
 
-            // High pitched fluorescent ringing
             const osc3 = audioCtx.createOscillator();
             osc3.type = 'sine';
             osc3.frequency.value = 834;
@@ -392,7 +478,6 @@
             gain3.connect(masterGain);
             osc3.start();
 
-            // LFO to slowly modulate the high ringing (adds unease)
             const lfo = audioCtx.createOscillator();
             lfo.type = 'sine';
             lfo.frequency.value = 0.1;
@@ -405,7 +490,7 @@
 
         const muteBtn = document.getElementById('mute-btn');
         muteBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent camera dragging
+            e.stopPropagation();
             isMuted = !isMuted;
             if (masterGain) {
                 masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.5, audioCtx.currentTime, 0.1);
@@ -413,17 +498,19 @@
             muteBtn.innerText = isMuted ? "🔇" : "🔊";
         });
 
-        // Spawn position: perfectly centered inside the 4x4 cleared area at grid (2, 2)
+        // Spawn at center of map (500, 500)
         camera.position.set(
-            (2 - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
+            (SPAWN_GRID_X - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
             PLAYER_HEIGHT,
-            (2 - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
+            (SPAWN_GRID_Z - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
         );
         camera.rotation.order = 'YXZ';
         camera.rotation.y = yaw;
 
         const startScreen = document.getElementById('start-screen');
         const pauseScreen = document.getElementById('pause-screen');
+        const winScreen = document.getElementById('win-screen');
+        const winTimeDisplay = document.getElementById('win-time-display');
 
         startScreen.addEventListener('click', () => {
             startScreen.style.display = 'none';
@@ -444,9 +531,23 @@
             
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             
-            lastTimeFrame = performance.now(); // Reset timer reference
-            prevTime = performance.now(); // Reset delta reference for physics
+            lastTimeFrame = performance.now();
+            prevTime = performance.now();
         });
+
+        winScreen.addEventListener('click', () => {
+            location.reload();
+        });
+
+        function showWinScreen() {
+            gameStarted = false;
+            const finalTime = getFormattedTime();
+            winTimeDisplay.innerText = finalTime;
+            winScreen.style.display = 'flex';
+            timerElement.style.display = 'none';
+            muteBtn.style.display = 'none';
+            if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+        }
 
         function pauseGame() {
             if (!gameStarted || isPaused) return;
@@ -455,14 +556,12 @@
             
             if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
 
-            // Reset inputs so character doesn't slide when unpaused
             moveForward = moveBackward = moveLeft = moveRight = false;
             joyX = joyY = 0;
             leftTouchId = rightTouchId = null;
             joyBase.style.display = 'none';
         }
 
-        // Trigger pause when leaving tab or window
         document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
         window.addEventListener('blur', pauseGame);
 
@@ -488,7 +587,6 @@
         function handlePointerStart(id, x, y, isMouse = false) {
             if (!gameStarted || isPaused) return;
             
-            // If it's touch and on the left side, treat as Joystick
             if (!isMouse && x < window.innerWidth / 2) {
                 if (leftTouchId === null) {
                     leftTouchId = id;
@@ -503,9 +601,7 @@
                     joyX = 0; 
                     joyY = 0;
                 }
-            } 
-            // Otherwise, treat as Camera Look (Right side touch OR Desktop mouse drag)
-            else {
+            } else {
                 if (rightTouchId === null) {
                     rightTouchId = id;
                     rightStart.x = x;
@@ -530,8 +626,7 @@
                 
                 joyX = displayX / MAX_JOY_RADIUS;
                 joyY = displayY / MAX_JOY_RADIUS;
-            } 
-            else if (id === rightTouchId) {
+            } else if (id === rightTouchId) {
                 const deltaX = x - rightStart.x;
                 const deltaY = y - rightStart.y;
                 
@@ -557,7 +652,6 @@
             }
         }
 
-        // Setup Event Listeners for Touch
         document.addEventListener('touchstart', (e) => {
             if (!gameStarted || isPaused) return;
             for (let t of e.changedTouches) handlePointerStart(t.identifier, t.clientX, t.clientY, false);
@@ -565,7 +659,7 @@
 
         document.addEventListener('touchmove', (e) => {
             if (!gameStarted || isPaused) return;
-            e.preventDefault(); // Prevent scrolling/zooming
+            e.preventDefault();
             for (let t of e.changedTouches) handlePointerMove(t.identifier, t.clientX, t.clientY);
         }, {passive: false});
 
@@ -577,7 +671,6 @@
             for (let t of e.changedTouches) handlePointerEnd(t.identifier);
         });
 
-        // Setup Event Listeners for Mouse
         let isMouseDown = false;
         document.addEventListener('mousedown', (e) => {
             if(!gameStarted || isPaused || e.target === startScreen || e.target === pauseScreen) return;
@@ -597,20 +690,19 @@
             }
         });
 
-        // Keyboard support
         document.addEventListener('keydown', (e) => {
             switch (e.code) {
                 case 'KeyW': case 'ArrowUp': moveForward = true; break;
                 case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
                 case 'KeyS': case 'ArrowDown': moveBackward = true; break;
                 case 'KeyD': case 'ArrowRight': moveRight = true; break;
-                case 'Escape': pauseGame(); break; // Allow hitting Esc to pause!
+                case 'Escape': pauseGame(); break;
                 case 'KeyT': 
-                    // Cheat code: Teleport directly to the exit!
+                    // Cheat: Teleport to exit
                     camera.position.set(
                         exitGroup.position.x, 
                         PLAYER_HEIGHT, 
-                        exitGroup.position.z + 40 // Places you slightly in front of the door
+                        exitGroup.position.z + 40
                     );
                     break;
             }
@@ -630,17 +722,13 @@
         let prevTime = performance.now();
         const velocity = new THREE.Vector3();
 
-        // High Performance Math-based Collision (O(1) time complexity)
         function checkCollision(targetPosition) {
-            // Exit Door checks
             playerCollider.setFromCenterAndSize(targetPosition, new THREE.Vector3(PLAYER_SIZE, WALL_HEIGHT, PLAYER_SIZE));
             if (playerCollider.intersectsBox(exitBox)) {
-                setTimeout(() => { alert(`You escaped the Backrooms in ${timerElement.innerText}!`); location.reload(); }, 100);
-                gameStarted = false;
+                showWinScreen();
                 return false;
             }
 
-            // Grid checks for wall collision
             const halfSize = PLAYER_SIZE / 2;
             const corners = [
                 {x: targetPosition.x - halfSize, z: targetPosition.z - halfSize},
@@ -650,14 +738,13 @@
             ];
 
             for (let c of corners) {
-                // Convert world position back to Grid Index
                 const gridX = Math.floor((c.x + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
                 const gridZ = Math.floor((c.z + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
 
                 if (gridX >= 0 && gridX < MAP_SIZE && gridZ >= 0 && gridZ < MAP_SIZE) {
                     if (grid[gridX][gridZ] === 1) return true;
                 } else {
-                    return true; // Outside bounds counts as a wall
+                    return true;
                 }
             }
             return false;
@@ -673,20 +760,16 @@
 
                 updateTimer(time);
 
-                // Lighting effects
                 playerLight.position.copy(camera.position);
                 if (Math.random() > 0.95) playerLight.intensity = Math.random() * 0.4 + 0.2;
                 else playerLight.intensity = 0.6;
 
-                // Friction
                 velocity.x -= velocity.x * 10.0 * delta; 
                 velocity.z -= velocity.z * 10.0 * delta;
 
-                // Combine joystick & keyboard input
                 let inputX = joyX + (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
                 let inputY = joyY + (moveBackward ? 1 : 0) - (moveForward ? 1 : 0); 
 
-                // Normalize input vectors so diagonal movement isnt faster
                 const inputMag = Math.hypot(inputX, inputY);
                 if (inputMag > 1) {
                     inputX /= inputMag;
@@ -701,12 +784,10 @@
                     direction.copy(sideVector).multiplyScalar(inputX).add(frontVector.multiplyScalar(-inputY));
                     direction.normalize();
 
-                    // Speed adjusts relative to input push amount (for smooth joystick)
                     const speedMultiplier = Math.min(inputMag, 1);
                     velocity.add(direction.multiplyScalar(PLAYER_SPEED * speedMultiplier * delta));
                 }
 
-                // Apply X movement
                 let targetX = camera.position.clone();
                 targetX.x += velocity.x * delta;
                 if (!checkCollision(targetX)) {
@@ -715,7 +796,6 @@
                     velocity.x = 0;
                 }
 
-                // Apply Z movement
                 let targetZ = camera.position.clone();
                 targetZ.z += velocity.z * delta;
                 if (!checkCollision(targetZ)) {
@@ -732,14 +812,12 @@
             renderer.render(scene, camera);
         }
 
-        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Start Loop
         animate();
     </script>
 </body>
