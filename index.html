@@ -265,6 +265,7 @@
         
         let spraysLeft = 30;
         let touchStartTime = 0;
+        let lastSprayTime = 0; // Fixes double count spray
 
         // --- SCENE SETUP ---
         const canvas = document.getElementById('game-canvas');
@@ -307,6 +308,14 @@
                 ctx.strokeStyle = '#999';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(0, 0, 256, 256);
+                
+                // Add fluorescent lights
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#ffffcc';
+                ctx.shadowBlur = 15;
+                ctx.fillRect(64, 80, 128, 20); // Light bulb 1
+                ctx.fillRect(64, 156, 128, 20); // Light bulb 2
+                ctx.shadowBlur = 0; // Reset shadow
             }
 
             const texture = new THREE.CanvasTexture(ctxCanvas);
@@ -439,11 +448,17 @@
 
         function sprayWall() {
             if (!gameStarted || isPaused || spraysLeft <= 0) return;
+            
+            // Prevent double spray bug
+            if (Date.now() - lastSprayTime < 300) return;
+            
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             const intersects = raycaster.intersectObject(instancedWalls);
             
             // Reduced distance to 12 (approx 1/2 of a tile) so player must be standing right next to wall
             if (intersects.length > 0 && intersects[0].distance < 12) {
+                lastSprayTime = Date.now(); // Trigger cooldown on successful spray
+                
                 const hit = intersects[0];
                 
                 // Use a PlaneGeometry instead of a Sprite to make it stick flat against the wall
