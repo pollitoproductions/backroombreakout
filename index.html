@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Backrooms - Endless Office Maze</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: monospace;
+            /* Prevent scrolling and pinch-zoom on mobile */
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Let clicks pass through to canvas by default */
+        }
+
+        #start-screen, #pause-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #d4d42b;
+            text-align: center;
+            pointer-events: auto; /* Catch clicks for start/resume */
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .title { font-size: 2.5em; margin-bottom: 20px; text-shadow: 0 0 10px #d4d42b; }
+        .subtitle { font-size: 1.2em; color: white; margin-bottom: 10px; }
+        .hint { color: #0f0; margin-top: 20px; text-shadow: 0 0 5px #0f0;}
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background-color: rgba(255,255,255,0.5);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+
+        /* TIMER STYLES */
+        #timer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 30;
+            text-shadow: 2px 2px 4px #000;
+            pointer-events: none;
+            display: none; /* hidden until start */
+        }
+
+        /* JOYSTICK STYLES */
+        #joystick-base {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        #joystick-stick {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.6);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        /* MUTE BUTTON */
+        #mute-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 30;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="timer">00:00</div>
+        <div id="mute-btn" style="display: none;">🔊</div>
+        
+        <div id="start-screen">
+            <div class="title">THE BACKROOMS</div>
+            <div class="subtitle">Mobile: Left side to Move | Right side to Look</div>
+            <div class="subtitle">Desktop: WASD to Move | Mouse to Look</div>
+            <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
+        </div>
+
+        <div id="pause-screen" style="display: none;">
+            <div class="title">PAUSED</div>
+            <div class="hint">Tap anywhere to resume.</div>
+        </div>
+        
+        <div id="crosshair"></div>
+
+        <div id="joystick-base" style="display: none;">
+            <div id="joystick-stick"></div>
+        </div>
+    </div>
+
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- GAME CONFIGURATION ---
+        const MAP_SIZE = 1000; 
+        const TILE_SIZE = 20;
+        const WALL_HEIGHT = 15;
+        const PLAYER_HEIGHT = 8;
+        const PLAYER_SIZE = 3;
+        const PLAYER_SPEED = 180.0;
+        
+        // --- SCENE SETUP ---
+        const canvas = document.getElementById('game-canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a00);
+        scene.fog = new THREE.Fog(0x3a3a10, 10, 120); 
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // optimize for mobile
+
+        // --- PROCEDURAL TEXTURES ---
+        function createTexture(type) {
+            const ctxCanvas = document.createElement('canvas');
+            ctxCanvas.width = 256;
+            ctxCanvas.height = 256;
+            const ctx = ctxCanvas.getContext('2d');
+
+            if (type === 'wall') {
+                ctx.fillStyle = '#c9b873'; // Mono-yellow
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#a89855';
+                for (let i = 0; i < 256; i += 16) ctx.fillRect(i, 0, 2, 256);
+                for(let i=0; i<2000; i++) {
+                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.05})`;
+                    ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+                }
+            } else if (type === 'floor') {
+                ctx.fillStyle = '#5c5432'; // Damp carpet
+                ctx.fillRect(0, 0, 256, 256);
+                for(let i=0; i<8000; i++) {
+                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
+                    ctx.fillRect(Math.random()*256, Math.random()*256, 3, 3);
+                }
+            } else if (type === 'ceiling') {
+                ctx.fillStyle = '#ddddcc'; // Acoustic tiles
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, 256, 256);
+            }
+
+            const texture = new THREE.CanvasTexture(ctxCanvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        const wallTex = createTexture('wall');
+        const floorTex = createTexture('floor');
+        const ceilTex = createTexture('ceiling');
+
+        const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
+        
+        floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
+        const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
+        
+        ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
+        const ceilMat = new THREE.MeshLambertMaterial({ map: ceilTex });
+
+        // --- BUILD ENVIRONMENT ---
+        const floorGeo = new THREE.PlaneGeometry(MAP_SIZE * TILE_SIZE, MAP_SIZE * TILE_SIZE);
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        const ceiling = new THREE.Mesh(floorGeo, ceilMat);
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.y = WALL_HEIGHT;
+        scene.add(ceiling);
+
+        // Calculate Random Exit Position
+        let exitGridX, exitGridZ;
+        do {
+            // Pick a random spot far away from spawn
+            exitGridX = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10; 
+            exitGridZ = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10;
+        } while (exitGridX < 10 && exitGridZ < 10); // Ensure it isn't close to the start
+
+        // Optimized Map Generation using InstancedMesh for 1000x1000 grid
+        const grid = [];
+        let wallCount = 0;
+        for (let x = 0; x < MAP_SIZE; x++) {
+            grid[x] = [];
+            for (let z = 0; z < MAP_SIZE; z++) {
+                let isWall = Math.random() > 0.75 ? 1 : 0;
+                
+                // Add solid boundary walls around the edge of the world
+                if (x === 0 || x === MAP_SIZE - 1 || z === 0 || z === MAP_SIZE - 1) {
+                    isWall = 1;
+                } else {
+                    // Clear spawn area safely inside the boundary (4x4 space)
+                    if (x >= 1 && x <= 4 && z >= 1 && z <= 4) isWall = 0; 
+                    
+                    // Clear an area around the random exit
+                    if (Math.abs(x - exitGridX) <= 1 && Math.abs(z - exitGridZ) <= 1) isWall = 0; 
+                }
+                
+                grid[x][z] = isWall;
+                if (isWall) wallCount++;
+            }
+        }
+
+        const wallGeo = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
+        const instancedWalls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
+        
+        let instanceIdx = 0;
+        const dummy = new THREE.Object3D();
+        for (let x = 0; x < MAP_SIZE; x++) {
+            for (let z = 0; z < MAP_SIZE; z++) {
+                if (grid[x][z]) {
+                    dummy.position.set(
+                        (x - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
+                        WALL_HEIGHT / 2,
+                        (z - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
+                    );
+                    dummy.updateMatrix();
+                    instancedWalls.setMatrixAt(instanceIdx++, dummy.matrix);
+                }
+            }
+        }
+        scene.add(instancedWalls);
+
+        // Add Exit Door
+        const exitGroup = new THREE.Group();
+        const doorGeo = new THREE.BoxGeometry(8, 12, 1);
+        const doorMat = new THREE.MeshLambertMaterial({ color: 0x4a3600 });
+        const door = new THREE.Mesh(doorGeo, doorMat);
+        door.position.y = 6;
+        exitGroup.add(door);
+
+        const signGeo = new THREE.BoxGeometry(6, 2, 1.2);
+        const signMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const sign = new THREE.Mesh(signGeo, signMat);
+        sign.position.y = 13;
+        exitGroup.add(sign);
+
+        const exitLight = new THREE.PointLight(0x00ff00, 1, 50);
+        exitLight.position.y = 13;
+        exitGroup.add(exitLight);
+
+        // Position exit at random location generated earlier
+        exitGroup.position.set(
+            (exitGridX - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
+            0,
+            (exitGridZ - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
+        );
+        scene.add(exitGroup);
+        const exitBox = new THREE.Box3().setFromObject(exitGroup);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.4);
+        scene.add(ambientLight);
+
+        const playerLight = new THREE.PointLight(0xfffdbb, 0.6, 60);
+        scene.add(playerLight);
+
+        // --- CAMERA AND GAME STATE ---
+        let yaw = Math.PI / 4; 
+        let pitch = 0;
+        let gameStarted = false;
+        let isPaused = false;
+
+        // --- TIMER SYSTEM ---
+        const timerElement = document.getElementById('timer');
+        let elapsedMilliseconds = 0;
+        let lastTimeFrame = 0;
+
+        function updateTimer(now) {
+            elapsedMilliseconds += (now - lastTimeFrame);
+            lastTimeFrame = now;
+
+            let totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+            let minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            let seconds = String(totalSeconds % 60).padStart(2, '0');
+            
+            timerElement.innerText = `${minutes}:${seconds}`;
+        }
+
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        let masterGain;
+        let isMuted = false;
+        
+        function initAudio() {
+            if (audioCtx) return; 
+            
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(audioCtx.destination);
+
+            // Drone 1 (Low sub frequency hum)
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sine';
+            osc1.frequency.value = 50; 
+            osc1.connect(masterGain);
+            osc1.start();
+
+            // Drone 2 (Slightly detuned for eerie beating effect)
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'triangle';
+            osc2.frequency.value = 52;
+            const gain2 = audioCtx.createGain();
+            gain2.gain.value = 0.4;
+            osc2.connect(gain2);
+            gain2.connect(masterGain);
+            osc2.start();
+
+            // High pitched fluorescent ringing
+            const osc3 = audioCtx.createOscillator();
+            osc3.type = 'sine';
+            osc3.frequency.value = 834;
+            const gain3 = audioCtx.createGain();
+            gain3.gain.value = 0.03;
+            osc3.connect(gain3);
+            gain3.connect(masterGain);
+            osc3.start();
+
+            // LFO to slowly modulate the high ringing (adds unease)
+            const lfo = audioCtx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.1;
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 15;
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc3.frequency);
+            lfo.start();
+        }
+
+        const muteBtn = document.getElementById('mute-btn');
+        muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent camera dragging
+            isMuted = !isMuted;
+            if (masterGain) {
+                masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.5, audioCtx.currentTime, 0.1);
+            }
+            muteBtn.innerText = isMuted ? "🔇" : "🔊";
+        });
+
+        // Spawn position: perfectly centered inside the 4x4 cleared area at grid (2, 2)
+        camera.position.set(
+            (2 - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
+            PLAYER_HEIGHT,
+            (2 - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
+        );
+        camera.rotation.order = 'YXZ';
+        camera.rotation.y = yaw;
+
+        const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+
+        startScreen.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            muteBtn.style.display = 'flex';
+            timerElement.style.display = 'block';
+            
+            initAudio(); 
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            gameStarted = true;
+            lastTimeFrame = performance.now();
+        });
+
+        pauseScreen.addEventListener('click', () => {
+            if (!gameStarted || !isPaused) return;
+            isPaused = false;
+            pauseScreen.style.display = 'none';
+            
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            lastTimeFrame = performance.now(); // Reset timer reference
+            prevTime = performance.now(); // Reset delta reference for physics
+        });
+
+        function pauseGame() {
+            if (!gameStarted || isPaused) return;
+            isPaused = true;
+            pauseScreen.style.display = 'flex';
+            
+            if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+
+            // Reset inputs so character doesn't slide when unpaused
+            moveForward = moveBackward = moveLeft = moveRight = false;
+            joyX = joyY = 0;
+            leftTouchId = rightTouchId = null;
+            joyBase.style.display = 'none';
+        }
+
+        // Trigger pause when leaving tab or window
+        document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+        window.addEventListener('blur', pauseGame);
+
+        // --- TOUCH / MOUSE CONTROLS ---
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+
+        let joyX = 0;
+        let joyY = 0;
+        
+        let leftTouchId = null;
+        let rightTouchId = null;
+
+        let leftStart = {x: 0, y: 0};
+        let rightStart = {x: 0, y: 0};
+
+        const joyBase = document.getElementById('joystick-base');
+        const joyStick = document.getElementById('joystick-stick');
+        const MAX_JOY_RADIUS = 40;
+
+        function handlePointerStart(id, x, y, isMouse = false) {
+            if (!gameStarted || isPaused) return;
+            
+            // If it's touch and on the left side, treat as Joystick
+            if (!isMouse && x < window.innerWidth / 2) {
+                if (leftTouchId === null) {
+                    leftTouchId = id;
+                    leftStart.x = x;
+                    leftStart.y = y;
+                    
+                    joyBase.style.display = 'block';
+                    joyBase.style.left = x + 'px';
+                    joyBase.style.top = y + 'px';
+                    joyStick.style.transform = `translate(-50%, -50%)`;
+                    
+                    joyX = 0; 
+                    joyY = 0;
+                }
+            } 
+            // Otherwise, treat as Camera Look (Right side touch OR Desktop mouse drag)
+            else {
+                if (rightTouchId === null) {
+                    rightTouchId = id;
+                    rightStart.x = x;
+                    rightStart.y = y;
+                }
+            }
+        }
+
+        function handlePointerMove(id, x, y) {
+            if (!gameStarted || isPaused) return;
+            
+            if (id === leftTouchId) {
+                const dx = x - leftStart.x;
+                const dy = y - leftStart.y;
+                const dist = Math.min(Math.hypot(dx, dy), MAX_JOY_RADIUS);
+                const angle = Math.atan2(dy, dx);
+                
+                const displayX = dist * Math.cos(angle);
+                const displayY = dist * Math.sin(angle);
+                
+                joyStick.style.transform = `translate(calc(-50% + ${displayX}px), calc(-50% + ${displayY}px))`;
+                
+                joyX = displayX / MAX_JOY_RADIUS;
+                joyY = displayY / MAX_JOY_RADIUS;
+            } 
+            else if (id === rightTouchId) {
+                const deltaX = x - rightStart.x;
+                const deltaY = y - rightStart.y;
+                
+                yaw -= deltaX * 0.005;
+                pitch -= deltaY * 0.005;
+                pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+                
+                camera.rotation.set(pitch, yaw, 0);
+                
+                rightStart.x = x;
+                rightStart.y = y;
+            }
+        }
+
+        function handlePointerEnd(id) {
+            if (id === leftTouchId) {
+                leftTouchId = null;
+                joyBase.style.display = 'none';
+                joyX = 0;
+                joyY = 0;
+            } else if (id === rightTouchId) {
+                rightTouchId = null;
+            }
+        }
+
+        // Setup Event Listeners for Touch
+        document.addEventListener('touchstart', (e) => {
+            if (!gameStarted || isPaused) return;
+            for (let t of e.changedTouches) handlePointerStart(t.identifier, t.clientX, t.clientY, false);
+        }, {passive: false});
+
+        document.addEventListener('touchmove', (e) => {
+            if (!gameStarted || isPaused) return;
+            e.preventDefault(); // Prevent scrolling/zooming
+            for (let t of e.changedTouches) handlePointerMove(t.identifier, t.clientX, t.clientY);
+        }, {passive: false});
+
+        document.addEventListener('touchend', (e) => {
+            for (let t of e.changedTouches) handlePointerEnd(t.identifier);
+        });
+
+        document.addEventListener('touchcancel', (e) => {
+            for (let t of e.changedTouches) handlePointerEnd(t.identifier);
+        });
+
+        // Setup Event Listeners for Mouse
+        let isMouseDown = false;
+        document.addEventListener('mousedown', (e) => {
+            if(!gameStarted || isPaused || e.target === startScreen || e.target === pauseScreen) return;
+            isMouseDown = true;
+            handlePointerStart('mouse', e.clientX, e.clientY, true);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if(!gameStarted || isPaused || !isMouseDown) return;
+            handlePointerMove('mouse', e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if(isMouseDown) {
+                handlePointerEnd('mouse');
+                isMouseDown = false;
+            }
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            switch (e.code) {
+                case 'KeyW': case 'ArrowUp': moveForward = true; break;
+                case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
+                case 'KeyS': case 'ArrowDown': moveBackward = true; break;
+                case 'KeyD': case 'ArrowRight': moveRight = true; break;
+                case 'Escape': pauseGame(); break; // Allow hitting Esc to pause!
+                case 'KeyT': 
+                    // Cheat code: Teleport directly to the exit!
+                    camera.position.set(
+                        exitGroup.position.x, 
+                        PLAYER_HEIGHT, 
+                        exitGroup.position.z + 40 // Places you slightly in front of the door
+                    );
+                    break;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            switch (e.code) {
+                case 'KeyW': case 'ArrowUp': moveForward = false; break;
+                case 'KeyA': case 'ArrowLeft': moveLeft = false; break;
+                case 'KeyS': case 'ArrowDown': moveBackward = false; break;
+                case 'KeyD': case 'ArrowRight': moveRight = false; break;
+            }
+        });
+
+        // --- GAME LOOP & PHYSICS ---
+        const playerCollider = new THREE.Box3();
+        let prevTime = performance.now();
+        const velocity = new THREE.Vector3();
+
+        // High Performance Math-based Collision (O(1) time complexity)
+        function checkCollision(targetPosition) {
+            // Exit Door checks
+            playerCollider.setFromCenterAndSize(targetPosition, new THREE.Vector3(PLAYER_SIZE, WALL_HEIGHT, PLAYER_SIZE));
+            if (playerCollider.intersectsBox(exitBox)) {
+                setTimeout(() => { alert(`You escaped the Backrooms in ${timerElement.innerText}!`); location.reload(); }, 100);
+                gameStarted = false;
+                return false;
+            }
+
+            // Grid checks for wall collision
+            const halfSize = PLAYER_SIZE / 2;
+            const corners = [
+                {x: targetPosition.x - halfSize, z: targetPosition.z - halfSize},
+                {x: targetPosition.x + halfSize, z: targetPosition.z - halfSize},
+                {x: targetPosition.x - halfSize, z: targetPosition.z + halfSize},
+                {x: targetPosition.x + halfSize, z: targetPosition.z + halfSize}
+            ];
+
+            for (let c of corners) {
+                // Convert world position back to Grid Index
+                const gridX = Math.floor((c.x + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
+                const gridZ = Math.floor((c.z + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
+
+                if (gridX >= 0 && gridX < MAP_SIZE && gridZ >= 0 && gridZ < MAP_SIZE) {
+                    if (grid[gridX][gridZ] === 1) return true;
+                } else {
+                    return true; // Outside bounds counts as a wall
+                }
+            }
+            return false;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameStarted && !isPaused) {
+                const time = performance.now();
+                const delta = Math.min((time - prevTime) / 1000, 0.1); 
+                prevTime = time;
+
+                updateTimer(time);
+
+                // Lighting effects
+                playerLight.position.copy(camera.position);
+                if (Math.random() > 0.95) playerLight.intensity = Math.random() * 0.4 + 0.2;
+                else playerLight.intensity = 0.6;
+
+                // Friction
+                velocity.x -= velocity.x * 10.0 * delta; 
+                velocity.z -= velocity.z * 10.0 * delta;
+
+                // Combine joystick & keyboard input
+                let inputX = joyX + (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+                let inputY = joyY + (moveBackward ? 1 : 0) - (moveForward ? 1 : 0); 
+
+                // Normalize input vectors so diagonal movement isnt faster
+                const inputMag = Math.hypot(inputX, inputY);
+                if (inputMag > 1) {
+                    inputX /= inputMag;
+                    inputY /= inputMag;
+                }
+
+                if (inputMag > 0) {
+                    const direction = new THREE.Vector3();
+                    const frontVector = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+                    const sideVector = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+
+                    direction.copy(sideVector).multiplyScalar(inputX).add(frontVector.multiplyScalar(-inputY));
+                    direction.normalize();
+
+                    // Speed adjusts relative to input push amount (for smooth joystick)
+                    const speedMultiplier = Math.min(inputMag, 1);
+                    velocity.add(direction.multiplyScalar(PLAYER_SPEED * speedMultiplier * delta));
+                }
+
+                // Apply X movement
+                let targetX = camera.position.clone();
+                targetX.x += velocity.x * delta;
+                if (!checkCollision(targetX)) {
+                    camera.position.x = targetX.x;
+                } else {
+                    velocity.x = 0;
+                }
+
+                // Apply Z movement
+                let targetZ = camera.position.clone();
+                targetZ.z += velocity.z * delta;
+                if (!checkCollision(targetZ)) {
+                    camera.position.z = targetZ.z;
+                } else {
+                    velocity.z = 0;
+                }
+
+                camera.position.y = PLAYER_HEIGHT;
+            } else {
+                prevTime = performance.now();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Loop
+        animate();
+    </script>
+</body>
+</html>
