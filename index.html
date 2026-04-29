@@ -6,982 +6,811 @@
     <title>The Backrooms - Breakout</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
             overflow: hidden;
             background-color: #000;
             font-family: monospace;
-            touch-action: none; 
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
-        
-        #game-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+        #game-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; }
+        #ui-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events:none; }
 
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
+        #start-screen, #pause-screen, #win-screen, #ad-prompt, #revive-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background-color: rgba(0,0,0,0.88);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #d4d42b; text-align: center;
+            pointer-events: auto; cursor: pointer; z-index: 20;
+            padding: 20px; box-sizing: border-box;
         }
+        #ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
+        #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; }
+        #revive-screen { color: #d4d42b; }
 
-        #start-screen, #pause-screen, #win-screen, #ad-prompt {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.85);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #d4d42b;
-            text-align: center;
-            pointer-events: auto;
-            cursor: pointer;
-            z-index: 20;
-        }
+        .title { font-size: 2.4em; margin-bottom: 14px; text-shadow: 0 0 10px #d4d42b; }
+        .subtitle { font-size: 1.05em; color: #ddd; margin-bottom: 9px; line-height: 1.55; max-width: 540px; }
+        .lore { font-size: 0.95em; color: #aaa; margin-bottom: 8px; max-width: 560px; line-height: 1.6; font-style: italic; }
+        .hint { color: #0f0; margin-top: 18px; text-shadow: 0 0 5px #0f0; font-size: 1.05em; }
+        .warn { color: #ff4444; font-weight: bold; margin-bottom: 8px; }
 
-        #ad-prompt {
-            background-color: rgba(10, 10, 0, 0.95);
-            display: none;
-        }
-
-        .btn-container { display: flex; gap: 20px; margin-top: 30px; }
-        
+        .btn-container { display:flex; gap:20px; margin-top:28px; flex-wrap:wrap; justify-content:center; }
         .choice-btn {
-            padding: 15px 30px; 
-            font-size: 1.2em; 
-            cursor: pointer; 
-            border: 2px solid #d4d42b;
-            background: none; 
-            color: #d4d42b; 
-            font-family: monospace; 
-            transition: background 0.2s;
+            padding: 14px 28px; font-size: 1.1em; cursor: pointer;
+            border: 2px solid #d4d42b; background: none; color: #d4d42b;
+            font-family: monospace; transition: background 0.2s, color 0.2s;
         }
-        
-        .choice-btn:hover { 
-            background: #d4d42b; 
-            color: #000; 
-        }
+        .choice-btn:hover { background: #d4d42b; color: #000; }
+        .choice-btn.green { border-color: #00ff00; color: #00ff00; }
+        .choice-btn.green:hover { background: #00ff00; color: #000; }
+        .choice-btn.red { border-color: #ff4444; color: #ff4444; }
+        .choice-btn.red:hover { background: #ff4444; color: #000; }
 
-        #win-screen {
-            background-color: rgba(0, 10, 0, 0.92);
-            color: #00ff00;
-        }
-
-        .title { font-size: 2.5em; margin-bottom: 20px; text-shadow: 0 0 10px #d4d42b; }
-        .subtitle { font-size: 1.2em; color: white; margin-bottom: 10px; }
-        .hint { color: #0f0; margin-top: 20px; text-shadow: 0 0 5px #0f0;}
-
-        .win-title {
-            font-size: 2.2em;
-            margin-bottom: 16px;
-            text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
-            letter-spacing: 2px;
-        }
-
-        .win-time {
-            font-size: 3em;
-            color: #fff;
-            margin: 10px 0 20px 0;
-            text-shadow: 0 0 10px #fff;
-            letter-spacing: 4px;
-        }
-
-        .win-hint {
-            font-size: 1em;
-            color: #00cc00;
-            margin-top: 30px;
-            opacity: 0.8;
-            text-shadow: 0 0 5px #00ff00;
-        }
-
-        .win-flavor {
-            font-size: 1.1em;
-            color: #aaffaa;
-            margin-bottom: 4px;
-        }
-
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 4px;
-            height: 4px;
-            background-color: rgba(255,255,255,0.5);
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-        }
+        .win-title { font-size: 2em; margin-bottom: 14px; text-shadow: 0 0 18px #00ff00, 0 0 36px #00ff00; letter-spacing:2px; }
+        .win-time { font-size: 2.8em; color:#fff; margin:10px 0 18px 0; text-shadow:0 0 10px #fff; letter-spacing:4px; }
+        .win-flavor { font-size:1.05em; color:#aaffaa; margin-bottom:4px; }
+        .win-hint { font-size:1em; color:#00cc00; margin-top:28px; opacity:0.8; text-shadow:0 0 5px #00ff00; }
 
         #timer {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            font-size: 24px;
-            font-weight: bold;
-            z-index: 30;
-            text-shadow: 2px 2px 4px #000;
-            pointer-events: none;
-            display: none;
+            position:absolute; top:20px; left:50%; transform:translateX(-50%);
+            color:#fff; font-size:24px; font-weight:bold; z-index:30;
+            text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
+        }
+        #spray-counter {
+            position:absolute; top:55px; left:50%; transform:translateX(-50%);
+            color:#ff8844; font-size:17px; font-weight:bold; z-index:30;
+            text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
         }
 
-        #spray-counter {
-            position: absolute;
-            top: 55px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ff4444;
-            font-size: 18px;
-            font-weight: bold;
-            z-index: 30;
-            text-shadow: 2px 2px 4px #000;
-            pointer-events: none;
-            display: none;
+        /* HYDRATION BAR */
+        #hydration-wrap {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: column; align-items: center;
+            z-index: 30; pointer-events: none;
+        }
+        #hydration-label {
+            color: #88ccff; font-size: 13px; margin-bottom: 4px;
+            text-shadow: 1px 1px 3px #000; letter-spacing: 1px;
+        }
+        #hydration-bar-bg {
+            width: 180px; height: 14px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(136,204,255,0.4);
+            border-radius: 3px; overflow: hidden;
+        }
+        #hydration-bar {
+            height: 100%; width: 100%;
+            background: linear-gradient(to right, #2288cc, #88ccff);
+            transition: width 0.3s, background 0.3s;
+            border-radius: 3px;
         }
 
         #joystick-base {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 15;
+            position:absolute; width:100px; height:100px; border-radius:50%;
+            background-color:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.4);
+            transform:translate(-50%,-50%); pointer-events:none; z-index:15;
         }
-        
         #joystick-stick {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.6);
-            transform: translate(-50%, -50%);
-            pointer-events: none;
+            position:absolute; top:50%; left:50%; width:40px; height:40px;
+            border-radius:50%; background-color:rgba(255,255,255,0.6);
+            transform:translate(-50%,-50%); pointer-events:none;
+        }
+        #mute-btn {
+            position:absolute; top:20px; right:20px; width:40px; height:40px;
+            background-color:rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.3);
+            border-radius:5px; color:white; font-size:20px;
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; pointer-events:auto; z-index:30; user-select:none;
+        }
+        #crosshair {
+            position:absolute; top:50%; left:50%; width:4px; height:4px;
+            background-color:rgba(255,255,255,0.5); transform:translate(-50%,-50%);
+            border-radius:50%;
         }
 
-        #mute-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            color: white;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            pointer-events: auto;
-            z-index: 30;
-            user-select: none;
+        /* dehydration vignette */
+        #thirst-vignette {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events: none; z-index: 9;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(180,60,0,0.0) 100%);
+            transition: opacity 0.5s;
+            opacity: 0;
+        }
+
+        #pickup-flash {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -300%);
+            color: #88ccff; font-size: 15px; font-weight: bold;
+            text-shadow: 0 0 8px #88ccff;
+            pointer-events: none; z-index: 35;
+            opacity: 0; transition: opacity 0.3s;
         }
     </style>
 </head>
 <body>
-    <canvas id="game-canvas"></canvas>
+<canvas id="game-canvas"></canvas>
+<div id="thirst-vignette"></div>
 
-    <div id="ui-layer">
-        <div id="timer">00:00</div>
-        <div id="spray-counter">Sprays: 30</div>
-        <div id="mute-btn" style="display: none;">🔊</div>
-        
-        <div id="start-screen">
-            <div class="title">THE BACKROOMS</div>
-            <div style="font-size:1.5em; color:#aaa; margin-bottom:18px; letter-spacing:4px;">BREAKOUT</div>
-            <div class="subtitle" style="color:#ff4444; font-weight:bold;">Quick Tap/Click or Press Space/E to spray a Red X</div>
-            <div class="subtitle">Mobile: Left side to Move | Right side to Look</div>
-            <div class="subtitle">Desktop: WASD to Move | Mouse to Look</div>
-            <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
+<div id="ui-layer">
+    <div id="timer">00:00</div>
+    <div id="spray-counter">Sprays: 50</div>
+    <div id="mute-btn" style="display:none;">🔊</div>
+
+    <div id="hydration-wrap">
+        <div id="hydration-label">HYDRATION</div>
+        <div id="hydration-bar-bg"><div id="hydration-bar"></div></div>
+    </div>
+
+    <div id="pickup-flash">💧 Almond Water +25</div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen">
+        <div class="title">THE BACKROOMS</div>
+        <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">BREAKOUT</div>
+        <div class="subtitle warn">Quick Tap / Press Space or E to spray a Red X on walls</div>
+        <div class="subtitle">Mobile: Left side → Move &nbsp;|&nbsp; Right side → Look</div>
+        <div class="subtitle">Desktop: WASD → Move &nbsp;|&nbsp; Mouse → Look</div>
+        <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
+    </div>
+
+    <!-- AD / LORE SCREEN -->
+    <div id="ad-prompt" style="display:none;">
+        <div class="title">YOU HAVE NOCLIPPED.</div>
+        <div class="lore">
+            You have slipped through the fabric of reality into a space roughly the size of
+            <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
         </div>
-
-        <div id="ad-prompt">
-            <div class="title">SUPPLY DROP?</div>
-            <div class="subtitle">Standard issue: 30 spray marks.</div>
-            <div class="subtitle" style="color:#0f0">Watch an ad to start with 75 sprays?</div>
-            <div class="btn-container">
-                <button class="choice-btn" id="ad-yes">YES (+45 SPRAYS)</button>
-                <button class="choice-btn" id="ad-no">NO THANKS</button>
-            </div>
+        <div class="lore">
+            Somehow — mercifully — it is <strong style="color:#0f0;">completely entity free.</strong>
+            Almond water flows in abundance here, if you know where to look.
         </div>
-
-        <div id="pause-screen" style="display: none;">
-            <div class="title">PAUSED</div>
-            <div class="hint">Tap anywhere to resume.</div>
+        <div class="lore">
+            You will need to find the <strong style="color:#00ff00;">Exit</strong> to return home.
+            The true sanity is in your endurance in your own <em>"reality."</em>
         </div>
-
-        <div id="win-screen" style="display: none;">
-            <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
-            <div class="win-flavor">Time spent in the Backrooms:</div>
-            <div class="win-time" id="win-time-display">00:00</div>
-            <div class="win-hint">Tap anywhere to try again.</div>
-        </div>
-        
-        <div id="crosshair"></div>
-
-        <div id="joystick-base" style="display: none;">
-            <div id="joystick-stick"></div>
+        <div style="margin-top:22px; color:#d4d42b; font-size:1.1em;">Standard issue: <strong>50 spray marks.</strong></div>
+        <div style="color:#88ff88; font-size:1em; margin-top:6px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
+        <div class="btn-container">
+            <button class="choice-btn green" id="ad-yes">▶ WATCH AD (UNLIMITED PAINT)</button>
+            <button class="choice-btn" id="ad-no">NO THANKS (50 SPRAYS)</button>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- PAUSE -->
+    <div id="pause-screen" style="display:none;">
+        <div class="title">PAUSED</div>
+        <div class="hint">Tap anywhere to resume.</div>
+    </div>
 
-    <script>
-        // --- GAME CONFIGURATION ---
-        const MAP_SIZE = 1000; 
-        const TILE_SIZE = 20;
-        const WALL_HEIGHT = 15;
-        const PLAYER_HEIGHT = 8;
-        const PLAYER_SIZE = 3;
-        const PLAYER_SPEED = 180.0;
+    <!-- WIN -->
+    <div id="win-screen" style="display:none;">
+        <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
+        <div class="win-flavor">Time spent in the Backrooms:</div>
+        <div class="win-time" id="win-time-display">00:00</div>
+        <div class="win-hint">Tap anywhere to try again.</div>
+    </div>
 
-        // Player spawns at grid center (500, 500)
-        const SPAWN_GRID_X = 500;
-        const SPAWN_GRID_Z = 500;
-        const SPAWN_CLEAR_RADIUS = 3; // tiles cleared around spawn
-        const EXIT_MIN_DISTANCE = 10; // tiles away from spawn
-        
-        let spraysLeft = 30;
-        let touchStartTime = 0;
-        let lastSprayTime = 0; // Fixes double count spray
+    <!-- REVIVE AD SCREEN -->
+    <div id="revive-screen" style="display:none;">
+        <div class="title" style="color:#ff8844;">DEHYDRATED.</div>
+        <div class="lore" style="color:#ccc;">
+            Your body has given out. The hum of the fluorescent lights grows distant.<br>
+            But wait — there may be one more chance...
+        </div>
+        <div style="color:#88ccff; font-size:1.1em; margin-top:10px;">Watch an ad and receive an emergency almond water drop?</div>
+        <div class="btn-container">
+            <button class="choice-btn green" id="revive-yes">▶ WATCH AD (REVIVE)</button>
+            <button class="choice-btn red" id="revive-no">ACCEPT FATE (QUIT)</button>
+        </div>
+    </div>
 
-        // --- SCENE SETUP ---
-        const canvas = document.getElementById('game-canvas');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a00);
-        scene.fog = new THREE.Fog(0x3a3a10, 10, 120); 
+    <div id="crosshair"></div>
+    <div id="joystick-base" style="display:none;"><div id="joystick-stick"></div></div>
+</div>
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const MAP_SIZE        = 1000;
+const TILE_SIZE       = 20;
+const WALL_HEIGHT     = 15;
+const PLAYER_HEIGHT   = 8;
+const PLAYER_SIZE     = 3;
+const PLAYER_SPEED    = 180.0;
+const SPAWN_GRID_X    = 500;
+const SPAWN_GRID_Z    = 500;
+const SPAWN_CLEAR_R   = 3;
+const EXIT_MIN_DIST   = 10;
 
-        // --- PROCEDURAL TEXTURES ---
-        function createTexture(type) {
-            const ctxCanvas = document.createElement('canvas');
-            ctxCanvas.width = 256;
-            ctxCanvas.height = 256;
-            const ctx = ctxCanvas.getContext('2d');
+// HYDRATION
+const HYDRATION_MAX      = 100;
+const HYDRATION_DRAIN    = 0.21;  // per second — ~8 min to empty with no water
+const HYDRATION_PER_BOTTLE = 30;
+const BOTTLE_COUNT       = 3500;  // dense enough to actually find in 1000x1000
+const BOTTLE_PICKUP_DIST = 20;    // world units
 
-            if (type === 'wall') {
-                ctx.fillStyle = '#c9b873';
-                ctx.fillRect(0, 0, 256, 256);
-                ctx.fillStyle = '#a89855';
-                for (let i = 0; i < 256; i += 16) ctx.fillRect(i, 0, 2, 256);
-                for(let i=0; i<2000; i++) {
-                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.05})`;
-                    ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
-                }
-            } else if (type === 'floor') {
-                ctx.fillStyle = '#5c5432';
-                ctx.fillRect(0, 0, 256, 256);
-                for(let i=0; i<8000; i++) {
-                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
-                    ctx.fillRect(Math.random()*256, Math.random()*256, 3, 3);
-                }
-            } else if (type === 'ceiling') {
-                ctx.fillStyle = '#ddddcc';
-                ctx.fillRect(0, 0, 256, 256);
-                ctx.strokeStyle = '#999';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(0, 0, 256, 256);
-                
-                // Add fluorescent lights
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowColor = '#ffffcc';
-                ctx.shadowBlur = 15;
-                ctx.fillRect(64, 80, 128, 20); // Light bulb 1
-                ctx.fillRect(64, 156, 128, 20); // Light bulb 2
-                ctx.shadowBlur = 0; // Reset shadow
+let spraysLeft    = 50;
+let unlimitedPaint = false;
+let touchStartTime = 0;
+let lastSprayTime  = 0;
+
+let hydration = HYDRATION_MAX;
+let isDead    = false;
+let hasRevived = false; // one free revive via ad
+
+// ─── SCENE ─────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('game-canvas');
+const scene   = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a00);
+scene.fog = new THREE.Fog(0x3a3a10, 10, 120);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// ─── TEXTURES ──────────────────────────────────────────────────────────────
+function createTexture(type) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const ctx = c.getContext('2d');
+    if (type === 'wall') {
+        ctx.fillStyle = '#c9b873'; ctx.fillRect(0,0,256,256);
+        ctx.fillStyle = '#a89855';
+        for (let i=0;i<256;i+=16) ctx.fillRect(i,0,2,256);
+        for (let i=0;i<2000;i++) { ctx.fillStyle=`rgba(0,0,0,${Math.random()*.05})`; ctx.fillRect(Math.random()*256,Math.random()*256,2,2); }
+    } else if (type === 'floor') {
+        ctx.fillStyle = '#5c5432'; ctx.fillRect(0,0,256,256);
+        for (let i=0;i<8000;i++) { ctx.fillStyle=`rgba(0,0,0,${Math.random()*.1})`; ctx.fillRect(Math.random()*256,Math.random()*256,3,3); }
+    } else if (type === 'ceiling') {
+        ctx.fillStyle = '#ddddcc'; ctx.fillRect(0,0,256,256);
+        ctx.strokeStyle='#999'; ctx.lineWidth=2; ctx.strokeRect(0,0,256,256);
+        ctx.fillStyle='#fff'; ctx.shadowColor='#ffffcc'; ctx.shadowBlur=15;
+        ctx.fillRect(64,80,128,20); ctx.fillRect(64,156,128,20);
+        ctx.shadowBlur=0;
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+}
+
+const wallTex  = createTexture('wall');
+const floorTex = createTexture('floor');
+const ceilTex  = createTexture('ceiling');
+floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
+ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
+
+const wallMat  = new THREE.MeshLambertMaterial({ map: wallTex });
+const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
+const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex });
+
+// ─── FLOOR / CEILING ───────────────────────────────────────────────────────
+const planeGeo = new THREE.PlaneGeometry(MAP_SIZE*TILE_SIZE, MAP_SIZE*TILE_SIZE);
+const floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
+const ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
+
+// ─── EXIT POSITION ─────────────────────────────────────────────────────────
+let exitGridX, exitGridZ;
+do {
+    exitGridX = Math.floor(Math.random()*(MAP_SIZE-20))+10;
+    exitGridZ = Math.floor(Math.random()*(MAP_SIZE-20))+10;
+} while (Math.abs(exitGridX-SPAWN_GRID_X)<EXIT_MIN_DIST && Math.abs(exitGridZ-SPAWN_GRID_Z)<EXIT_MIN_DIST);
+
+// ─── MAP GENERATION ────────────────────────────────────────────────────────
+const grid = [];
+let wallCount = 0;
+for (let x=0;x<MAP_SIZE;x++) {
+    grid[x]=[];
+    for (let z=0;z<MAP_SIZE;z++) {
+        let w = Math.random()>0.75 ? 1 : 0;
+        if (x===0||x===MAP_SIZE-1||z===0||z===MAP_SIZE-1) w=1;
+        else {
+            if (Math.abs(x-SPAWN_GRID_X)<=SPAWN_CLEAR_R && Math.abs(z-SPAWN_GRID_Z)<=SPAWN_CLEAR_R) w=0;
+            if (Math.abs(x-exitGridX)<=1 && Math.abs(z-exitGridZ)<=1) w=0;
+        }
+        grid[x][z]=w;
+        if(w) wallCount++;
+    }
+}
+
+const wallGeo = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
+const instancedWalls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
+const dummy = new THREE.Object3D();
+let idx = 0;
+for (let x=0;x<MAP_SIZE;x++) for (let z=0;z<MAP_SIZE;z++) if(grid[x][z]) {
+    dummy.position.set((x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, WALL_HEIGHT/2, (z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
+    dummy.updateMatrix();
+    instancedWalls.setMatrixAt(idx++, dummy.matrix);
+}
+scene.add(instancedWalls);
+
+// ─── SPRAY PAINT ───────────────────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+const sprayC = document.createElement('canvas'); sprayC.width=sprayC.height=128;
+const sCtx = sprayC.getContext('2d');
+function drawStroke(ctx,x1,y1,x2,y2){
+    ctx.strokeStyle='rgba(220,20,20,0.85)'; ctx.shadowColor='rgba(255,0,0,0.8)';
+    ctx.shadowBlur=8; ctx.lineWidth=12; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    for(let i=0;i<40;i++){
+        let t=Math.random(),sx=x1+(x2-x1)*t+(Math.random()-.5)*20,sy=y1+(y2-y1)*t+(Math.random()-.5)*20;
+        ctx.fillStyle=`rgba(200,0,0,${Math.random()*.7})`;
+        ctx.beginPath(); ctx.arc(sx,sy,Math.random()*2.5,0,Math.PI*2); ctx.fill();
+    }
+}
+drawStroke(sCtx,25,25,103,103); drawStroke(sCtx,103,25,25,103); drawStroke(sCtx,64,64,64,85);
+const sprayTex = new THREE.CanvasTexture(sprayC);
+
+function sprayWall() {
+    if (!gameStarted||isPaused||isDead) return;
+    if (!unlimitedPaint && spraysLeft<=0) return;
+    if (Date.now()-lastSprayTime<300) return;
+    raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+    const hits = raycaster.intersectObject(instancedWalls);
+    if (hits.length>0 && hits[0].distance<12) {
+        lastSprayTime=Date.now();
+        const hit=hits[0];
+        const g=new THREE.PlaneGeometry(6,6);
+        const m=new THREE.MeshBasicMaterial({map:sprayTex,transparent:true,depthWrite:false,color:0xffffff});
+        const mesh=new THREE.Mesh(g,m);
+        mesh.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.05));
+        mesh.lookAt(mesh.position.clone().add(hit.face.normal));
+        scene.add(mesh);
+        if (!unlimitedPaint) {
+            spraysLeft--;
+            sprayCounterEl.innerText = `Sprays: ${spraysLeft}`;
+        }
+    }
+}
+
+// ─── ALMOND WATER BOTTLES ──────────────────────────────────────────────────
+// Build bottle mesh (brown glass bottle silhouette)
+function makeBottle() {
+    const group = new THREE.Group();
+
+    // Body
+    const bodyGeo = new THREE.CylinderGeometry(1.1, 1.3, 4.5, 7);
+    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 2.25;
+    group.add(body);
+
+    // Neck
+    const neckGeo = new THREE.CylinderGeometry(0.55, 1.0, 1.5, 7);
+    const neckMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
+    const neck = new THREE.Mesh(neckGeo, neckMat);
+    neck.position.y = 5.25;
+    group.add(neck);
+
+    // Cap
+    const capGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 7);
+    const capMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const cap = new THREE.Mesh(capGeo, capMat);
+    cap.position.y = 6.3;
+    group.add(cap);
+
+    // Inner liquid shimmer
+    const liqGeo = new THREE.CylinderGeometry(0.9, 1.1, 3.8, 8);
+    const liqMat = new THREE.MeshBasicMaterial({ color: 0xeeddaa, transparent: true, opacity: 0.22 });
+    const liq = new THREE.Mesh(liqGeo, liqMat);
+    liq.position.y = 2.1;
+    group.add(liq);
+
+    return group;
+}
+
+// Place bottles randomly in open tiles, not too close to spawn
+const bottleData = []; // { group, worldX, worldZ, collected }
+const bottleScale = 0.35;
+
+(function placeBottles() {
+    let placed = 0;
+    let attempts = 0;
+    while (placed < BOTTLE_COUNT && attempts < BOTTLE_COUNT * 20) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0) continue;
+        // Not too close to spawn
+        if (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6) continue;
+
+        const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+        const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+
+        const bottle = makeBottle();
+        bottle.scale.setScalar(bottleScale);
+        bottle.position.set(wx, 0, wz);
+        // Random rotation
+        bottle.rotation.y = Math.random()*Math.PI*2;
+        scene.add(bottle);
+        bottleData.push({ group: bottle, wx, wz, collected: false });
+        placed++;
+    }
+})();
+
+// ─── EXIT DOOR ─────────────────────────────────────────────────────────────
+const exitGroup = new THREE.Group();
+const door = new THREE.Mesh(new THREE.BoxGeometry(8,12,1), new THREE.MeshLambertMaterial({color:0x4a3600}));
+door.position.y=6; exitGroup.add(door);
+const sign = new THREE.Mesh(new THREE.BoxGeometry(6,2,1.2), new THREE.MeshBasicMaterial({color:0x00ff00}));
+sign.position.y=13; exitGroup.add(sign);
+const eC=document.createElement('canvas'); eC.width=256; eC.height=64;
+const eCtx=eC.getContext('2d');
+eCtx.fillStyle='#00ff00'; eCtx.fillRect(0,0,256,64);
+eCtx.fillStyle='#000'; eCtx.font='bold 48px monospace'; eCtx.textAlign='center'; eCtx.textBaseline='middle';
+eCtx.fillText('EXIT',128,32);
+const exitTex=new THREE.CanvasTexture(eC);
+const sf=new THREE.Mesh(new THREE.PlaneGeometry(5.8,1.9),new THREE.MeshBasicMaterial({map:exitTex}));
+sf.position.set(0,13,0.7); exitGroup.add(sf);
+const sb=new THREE.Mesh(new THREE.PlaneGeometry(5.8,1.9),new THREE.MeshBasicMaterial({map:exitTex}));
+sb.position.set(0,13,-0.7); sb.rotation.y=Math.PI; exitGroup.add(sb);
+const exitLight=new THREE.PointLight(0x00ff00,1,50); exitLight.position.y=13; exitGroup.add(exitLight);
+exitGroup.position.set((exitGridX-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2,0,(exitGridZ-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
+scene.add(exitGroup);
+const exitBox=new THREE.Box3().setFromObject(exitGroup);
+
+// ─── LIGHTING ──────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xfffdbb, 0.4));
+const playerLight=new THREE.PointLight(0xfffdbb,0.6,60);
+scene.add(playerLight);
+
+// ─── CAMERA / STATE ────────────────────────────────────────────────────────
+let yaw=Math.PI/4, pitch=0;
+let gameStarted=false, isPaused=false;
+
+camera.position.set(
+    (SPAWN_GRID_X-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, PLAYER_HEIGHT,
+    (SPAWN_GRID_Z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2
+);
+camera.rotation.order='YXZ';
+camera.rotation.y=yaw;
+
+// ─── TIMER ─────────────────────────────────────────────────────────────────
+const timerEl=document.getElementById('timer');
+let elapsed=0, lastTF=0;
+function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+// ─── AUDIO ─────────────────────────────────────────────────────────────────
+let audioCtx, masterGain, isMuted=false;
+function initAudio(){
+    if(audioCtx) return;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    audioCtx=new AC(); masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);
+    const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(masterGain); o1.start();
+    const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(masterGain); o2.start();
+    const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.03; o3.connect(g3); g3.connect(masterGain); o3.start();
+    const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=15; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
+}
+document.getElementById('mute-btn').addEventListener('click',e=>{
+    e.stopPropagation(); isMuted=!isMuted;
+    if(masterGain) masterGain.gain.setTargetAtTime(isMuted?0:0.5,audioCtx.currentTime,0.1);
+    document.getElementById('mute-btn').innerText=isMuted?'🔇':'🔊';
+});
+
+// ─── UI REFS ───────────────────────────────────────────────────────────────
+const startScreen  = document.getElementById('start-screen');
+const adPrompt     = document.getElementById('ad-prompt');
+const pauseScreen  = document.getElementById('pause-screen');
+const winScreen    = document.getElementById('win-screen');
+const reviveScreen = document.getElementById('revive-screen');
+const winTimeDisp  = document.getElementById('win-time-display');
+const sprayCounterEl = document.getElementById('spray-counter');
+const hydrationWrap= document.getElementById('hydration-wrap');
+const hydrationBar = document.getElementById('hydration-bar');
+const vignetteEl   = document.getElementById('thirst-vignette');
+const pickupFlash  = document.getElementById('pickup-flash');
+
+// ─── SCREEN FLOW ───────────────────────────────────────────────────────────
+startScreen.addEventListener('click', ()=>{
+    startScreen.style.display='none';
+    adPrompt.style.display='flex';
+});
+
+document.getElementById('ad-yes').addEventListener('click', e=>{
+    e.stopPropagation();
+    unlimitedPaint=true;
+    sprayCounterEl.innerText='Sprays: ∞';
+    startGame();
+});
+document.getElementById('ad-no').addEventListener('click', e=>{
+    e.stopPropagation();
+    unlimitedPaint=false;
+    spraysLeft=50;
+    sprayCounterEl.innerText=`Sprays: ${spraysLeft}`;
+    startGame();
+});
+
+function startGame(){
+    adPrompt.style.display='none';
+    document.getElementById('mute-btn').style.display='flex';
+    timerEl.style.display='block';
+    sprayCounterEl.style.display='block';
+    hydrationWrap.style.display='flex';
+    initAudio();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    gameStarted=true;
+    lastTF=performance.now();
+    prevTime=performance.now();
+    hydration=HYDRATION_MAX;
+    updateHydrationBar();
+}
+
+pauseScreen.addEventListener('click', ()=>{
+    if(!gameStarted||!isPaused) return;
+    isPaused=false;
+    pauseScreen.style.display='none';
+    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+    lastTF=performance.now(); prevTime=performance.now();
+});
+
+winScreen.addEventListener('click', ()=>location.reload());
+
+document.getElementById('revive-yes').addEventListener('click', e=>{
+    e.stopPropagation();
+    reviveScreen.style.display='none';
+    hydration=60;
+    isDead=false;
+    hasRevived=true;
+    isPaused=false;
+    updateHydrationBar();
+    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+    lastTF=performance.now(); prevTime=performance.now();
+});
+document.getElementById('revive-no').addEventListener('click', e=>{
+    e.stopPropagation();
+    location.reload();
+});
+
+function showWinScreen(){
+    gameStarted=false;
+    winTimeDisp.innerText=fmtTime();
+    winScreen.style.display='flex';
+    timerEl.style.display='none';
+    sprayCounterEl.style.display='none';
+    hydrationWrap.style.display='none';
+    document.getElementById('mute-btn').style.display='none';
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+}
+
+function showDeathScreen(){
+    isDead=true;
+    isPaused=true;
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    if(!hasRevived){
+        reviveScreen.style.display='flex';
+    } else {
+        // already used revive — just game over
+        reviveScreen.querySelector('.title').innerText='DEHYDRATED.';
+        reviveScreen.querySelector('.lore').innerHTML='You have succumbed to the endless corridors.<br>No one is coming for you.';
+        reviveScreen.querySelector('#revive-yes').style.display='none';
+        reviveScreen.querySelector('#revive-no').innerText='RESTART';
+        reviveScreen.style.display='flex';
+    }
+}
+
+function pauseGame(){
+    if(!gameStarted||isPaused) return;
+    isPaused=true;
+    pauseScreen.style.display='flex';
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false;
+    joyX=joyY=0; leftTouchId=rightTouchId=null;
+    joyBase.style.display='none';
+}
+
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
+window.addEventListener('blur', pauseGame);
+
+// ─── HYDRATION ─────────────────────────────────────────────────────────────
+function updateHydrationBar(){
+    const pct = Math.max(0, hydration/HYDRATION_MAX*100);
+    hydrationBar.style.width = pct+'%';
+    if(pct>50) hydrationBar.style.background='linear-gradient(to right,#2288cc,#88ccff)';
+    else if(pct>25) hydrationBar.style.background='linear-gradient(to right,#aa6600,#ffaa44)';
+    else hydrationBar.style.background='linear-gradient(to right,#880000,#ff4444)';
+
+    // Thirst vignette intensity
+    const danger = Math.max(0, 1-(pct/30));
+    vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
+    vignetteEl.style.opacity=danger>0?1:0;
+}
+
+let pickupFlashTimer=0;
+function showPickupFlash(){
+    pickupFlash.style.opacity='1';
+    pickupFlashTimer=1.2;
+}
+
+function checkBottlePickups(){
+    const px=camera.position.x, pz=camera.position.z;
+    for(let b of bottleData){
+        if(b.collected) continue;
+        const dx=px-b.wx, dz=pz-b.wz;
+        if(Math.sqrt(dx*dx+dz*dz)<BOTTLE_PICKUP_DIST){
+            b.collected=true;
+            scene.remove(b.group);
+            hydration=Math.min(HYDRATION_MAX, hydration+HYDRATION_PER_BOTTLE);
+            updateHydrationBar();
+            showPickupFlash();
+        }
+    }
+}
+
+// ─── CONTROLS ──────────────────────────────────────────────────────────────
+let moveForward=false,moveBackward=false,moveLeft=false,moveRight=false;
+let joyX=0,joyY=0;
+let leftTouchId=null,rightTouchId=null;
+let leftStart={x:0,y:0},rightStart={x:0,y:0};
+const joyBase=document.getElementById('joystick-base');
+const joyStick=document.getElementById('joystick-stick');
+const MAX_JOY=40;
+
+function handlePointerStart(id,x,y,isMouse=false){
+    if(!gameStarted||isPaused) return;
+    if(!isMouse&&x<window.innerWidth/2){
+        if(leftTouchId===null){
+            leftTouchId=id; leftStart={x,y};
+            joyBase.style.display='block'; joyBase.style.left=x+'px'; joyBase.style.top=y+'px';
+            joyStick.style.transform='translate(-50%,-50%)';
+            joyX=joyY=0;
+        }
+    } else {
+        if(rightTouchId===null){ rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); }
+    }
+}
+function handlePointerMove(id,x,y){
+    if(!gameStarted||isPaused) return;
+    if(id===leftTouchId){
+        const dx=x-leftStart.x,dy=y-leftStart.y;
+        const dist=Math.min(Math.hypot(dx,dy),MAX_JOY),angle=Math.atan2(dy,dx);
+        const dX=dist*Math.cos(angle),dY=dist*Math.sin(angle);
+        joyStick.style.transform=`translate(calc(-50% + ${dX}px),calc(-50% + ${dY}px))`;
+        joyX=dX/MAX_JOY; joyY=dY/MAX_JOY;
+    } else if(id===rightTouchId){
+        yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
+        pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
+        camera.rotation.set(pitch,yaw,0);
+        rightStart={x,y};
+    }
+}
+function handlePointerEnd(id){
+    if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
+    else if(id===rightTouchId){
+        if(Date.now()-touchStartTime<200) sprayWall();
+        rightTouchId=null;
+    }
+}
+
+document.addEventListener('touchstart',e=>{ if(!gameStarted||isPaused) return; for(let t of e.changedTouches) handlePointerStart(t.identifier,t.clientX,t.clientY,false); },{passive:false});
+document.addEventListener('touchmove',e=>{ if(!gameStarted||isPaused) return; e.preventDefault(); for(let t of e.changedTouches) handlePointerMove(t.identifier,t.clientX,t.clientY); },{passive:false});
+document.addEventListener('touchend',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
+document.addEventListener('touchcancel',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
+
+let isMouseDown=false;
+document.addEventListener('mousedown',e=>{ if(!gameStarted||isPaused) return; isMouseDown=true; handlePointerStart('mouse',e.clientX,e.clientY,true); });
+document.addEventListener('mousemove',e=>{ if(!gameStarted||isPaused||!isMouseDown) return; handlePointerMove('mouse',e.clientX,e.clientY); });
+window.addEventListener('mouseup',()=>{ if(isMouseDown){ handlePointerEnd('mouse'); isMouseDown=false; } });
+
+document.addEventListener('keydown',e=>{
+    switch(e.code){
+        case 'KeyW': case 'ArrowUp':    moveForward=true;  break;
+        case 'KeyA': case 'ArrowLeft':  moveLeft=true;     break;
+        case 'KeyS': case 'ArrowDown':  moveBackward=true; break;
+        case 'KeyD': case 'ArrowRight': moveRight=true;    break;
+        case 'Space': case 'KeyE': sprayWall(); break;
+        case 'Escape': pauseGame(); break;
+        case 'KeyT':
+            camera.position.set(exitGroup.position.x, PLAYER_HEIGHT, exitGroup.position.z+40);
+            break;
+    }
+});
+document.addEventListener('keyup',e=>{
+    switch(e.code){
+        case 'KeyW': case 'ArrowUp':    moveForward=false;  break;
+        case 'KeyA': case 'ArrowLeft':  moveLeft=false;     break;
+        case 'KeyS': case 'ArrowDown':  moveBackward=false; break;
+        case 'KeyD': case 'ArrowRight': moveRight=false;    break;
+    }
+});
+
+// ─── PHYSICS / COLLISION ───────────────────────────────────────────────────
+const playerCollider=new THREE.Box3();
+let prevTime=performance.now();
+const velocity=new THREE.Vector3();
+
+function checkCollision(pos){
+    playerCollider.setFromCenterAndSize(pos,new THREE.Vector3(PLAYER_SIZE,WALL_HEIGHT,PLAYER_SIZE));
+    if(playerCollider.intersectsBox(exitBox)){ showWinScreen(); return false; }
+    const h=PLAYER_SIZE/2;
+    const corners=[{x:pos.x-h,z:pos.z-h},{x:pos.x+h,z:pos.z-h},{x:pos.x-h,z:pos.z+h},{x:pos.x+h,z:pos.z+h}];
+    for(let c of corners){
+        const gx=Math.floor((c.x+(MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        const gz=Math.floor((c.z+(MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        if(gx>=0&&gx<MAP_SIZE&&gz>=0&&gz<MAP_SIZE){ if(grid[gx][gz]===1) return true; } else return true;
+    }
+    return false;
+}
+
+// ─── GAME LOOP ─────────────────────────────────────────────────────────────
+function animate(){
+    requestAnimationFrame(animate);
+
+    if(gameStarted&&!isPaused){
+        const time=performance.now();
+        const delta=Math.min((time-prevTime)/1000,0.1);
+        prevTime=time;
+
+        updateTimer(time);
+
+        // Hydration drain
+        hydration-=HYDRATION_DRAIN*delta;
+        if(hydration<=0){ hydration=0; updateHydrationBar(); showDeathScreen(); return; }
+        updateHydrationBar();
+
+        // Pickup flash fade
+        if(pickupFlashTimer>0){
+            pickupFlashTimer-=delta;
+            if(pickupFlashTimer<=0){ pickupFlash.style.opacity='0'; pickupFlashTimer=0; }
+        }
+
+        // Bottle pickups
+        checkBottlePickups();
+
+        // Lighting flicker
+        playerLight.position.copy(camera.position);
+        playerLight.intensity = Math.random()>0.95 ? Math.random()*0.4+0.2 : 0.6;
+
+        // Friction
+        velocity.x-=velocity.x*10*delta;
+        velocity.z-=velocity.z*10*delta;
+
+        let iX=joyX+(moveRight?1:0)-(moveLeft?1:0);
+        let iY=joyY+(moveBackward?1:0)-(moveForward?1:0);
+        const mag=Math.hypot(iX,iY);
+        if(mag>1){ iX/=mag; iY/=mag; }
+
+        if(mag>0){
+            const dir=new THREE.Vector3();
+            const fwd=new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
+            const sid=new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
+            dir.copy(sid).multiplyScalar(iX).add(fwd.multiplyScalar(-iY)).normalize();
+            velocity.add(dir.multiplyScalar(PLAYER_SPEED*Math.min(mag,1)*delta));
+        }
+
+        const tX=camera.position.clone(); tX.x+=velocity.x*delta;
+        if(!checkCollision(tX)) camera.position.x=tX.x; else velocity.x=0;
+        const tZ=camera.position.clone(); tZ.z+=velocity.z*delta;
+        if(!checkCollision(tZ)) camera.position.z=tZ.z; else velocity.z=0;
+        camera.position.y=PLAYER_HEIGHT;
+
+        // Bob only nearby bottles (perf: skip distant ones)
+        const t2=time*0.001;
+        const px2=camera.position.x, pz2=camera.position.z;
+        for(let b of bottleData){
+            if(b.collected) continue;
+            const ddx=px2-b.wx, ddz=pz2-b.wz;
+            if(ddx*ddx+ddz*ddz < 200*200) {
+                b.group.position.y=Math.sin(t2*1.2+b.wx*0.01)*0.35;
             }
-
-            const texture = new THREE.CanvasTexture(ctxCanvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            return texture;
         }
 
-        const wallTex = createTexture('wall');
-        const floorTex = createTexture('floor');
-        const ceilTex = createTexture('ceiling');
-
-        const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
-        
-        floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
-        const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
-        
-        ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
-        const ceilMat = new THREE.MeshLambertMaterial({ map: ceilTex });
-
-        // --- BUILD ENVIRONMENT ---
-        const floorGeo = new THREE.PlaneGeometry(MAP_SIZE * TILE_SIZE, MAP_SIZE * TILE_SIZE);
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
-
-        const ceiling = new THREE.Mesh(floorGeo, ceilMat);
-        ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.y = WALL_HEIGHT;
-        scene.add(ceiling);
-
-        // --- EXIT POSITION: random, at least EXIT_MIN_DISTANCE tiles from spawn ---
-        let exitGridX, exitGridZ;
-        do {
-            exitGridX = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10; 
-            exitGridZ = Math.floor(Math.random() * (MAP_SIZE - 20)) + 10;
-        } while (
-            Math.abs(exitGridX - SPAWN_GRID_X) < EXIT_MIN_DISTANCE &&
-            Math.abs(exitGridZ - SPAWN_GRID_Z) < EXIT_MIN_DISTANCE
-        );
-
-        // --- MAP GENERATION ---
-        const grid = [];
-        let wallCount = 0;
-        for (let x = 0; x < MAP_SIZE; x++) {
-            grid[x] = [];
-            for (let z = 0; z < MAP_SIZE; z++) {
-                let isWall = Math.random() > 0.75 ? 1 : 0;
-                
-                // Solid boundary walls
-                if (x === 0 || x === MAP_SIZE - 1 || z === 0 || z === MAP_SIZE - 1) {
-                    isWall = 1;
-                } else {
-                    // Clear spawn area (centered at 500, 500)
-                    if (
-                        Math.abs(x - SPAWN_GRID_X) <= SPAWN_CLEAR_RADIUS &&
-                        Math.abs(z - SPAWN_GRID_Z) <= SPAWN_CLEAR_RADIUS
-                    ) {
-                        isWall = 0;
-                    }
-                    
-                    // Clear area around exit
-                    if (Math.abs(x - exitGridX) <= 1 && Math.abs(z - exitGridZ) <= 1) isWall = 0; 
-                }
-                
-                grid[x][z] = isWall;
-                if (isWall) wallCount++;
-            }
-        }
-
-        const wallGeo = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
-        const instancedWalls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
-        
-        let instanceIdx = 0;
-        const dummy = new THREE.Object3D();
-        for (let x = 0; x < MAP_SIZE; x++) {
-            for (let z = 0; z < MAP_SIZE; z++) {
-                if (grid[x][z]) {
-                    dummy.position.set(
-                        (x - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
-                        WALL_HEIGHT / 2,
-                        (z - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
-                    );
-                    dummy.updateMatrix();
-                    instancedWalls.setMatrixAt(instanceIdx++, dummy.matrix);
-                }
-            }
-        }
-        scene.add(instancedWalls);
-
-        // --- SPRAY PAINT SYSTEM ---
-        const raycaster = new THREE.Raycaster();
-        const sprayCanvas = document.createElement('canvas');
-        sprayCanvas.width = 128;
-        sprayCanvas.height = 128;
-        const sprayCtx = sprayCanvas.getContext('2d');
-        
-        // Function to draw realistic spray paint stroke
-        function drawSprayStroke(ctx, x1, y1, x2, y2) {
-            ctx.strokeStyle = 'rgba(220, 20, 20, 0.85)';
-            ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
-            ctx.shadowBlur = 8;
-            ctx.lineWidth = 12;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-
-            // Splatter effect around stroke
-            for(let i = 0; i < 40; i++) {
-                let t = Math.random();
-                let sx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 20;
-                let sy = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 20;
-                ctx.fillStyle = `rgba(200, 0, 0, ${Math.random() * 0.7})`;
-                ctx.beginPath();
-                ctx.arc(sx, sy, Math.random() * 2.5, 0, Math.PI*2);
-                ctx.fill();
-            }
-        }
-        
-        // Draw the X
-        drawSprayStroke(sprayCtx, 25, 25, 103, 103);
-        drawSprayStroke(sprayCtx, 103, 25, 25, 103);
-        
-        // Add a drip to the center
-        drawSprayStroke(sprayCtx, 64, 64, 64, 85); 
-
-        const sprayTexture = new THREE.CanvasTexture(sprayCanvas);
-
-        function sprayWall() {
-            if (!gameStarted || isPaused || spraysLeft <= 0) return;
-            
-            // Prevent double spray bug
-            if (Date.now() - lastSprayTime < 300) return;
-            
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObject(instancedWalls);
-            
-            // Reduced distance to 12 (approx 1/2 of a tile) so player must be standing right next to wall
-            if (intersects.length > 0 && intersects[0].distance < 12) {
-                lastSprayTime = Date.now(); // Trigger cooldown on successful spray
-                
-                const hit = intersects[0];
-                
-                // Use a PlaneGeometry instead of a Sprite to make it stick flat against the wall
-                const sprayGeo = new THREE.PlaneGeometry(6, 6);
-                const sprayMat = new THREE.MeshBasicMaterial({ 
-                    map: sprayTexture, 
-                    transparent: true, 
-                    depthWrite: false, // Prevents z-fighting clipping issues
-                    color: 0xffffff 
-                });
-                const spray = new THREE.Mesh(sprayGeo, sprayMat);
-                
-                // Position slightly off the wall face
-                spray.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.05));
-                
-                // Align plane to perfectly face outward from the wall
-                spray.lookAt(spray.position.clone().add(hit.face.normal));
-                
-                scene.add(spray);
-                spraysLeft--;
-                document.getElementById('spray-counter').innerText = `Sprays: ${spraysLeft}`;
-            }
-        }
-
-        // --- EXIT DOOR ---
-        const exitGroup = new THREE.Group();
-
-        // Door frame
-        const doorGeo = new THREE.BoxGeometry(8, 12, 1);
-        const doorMat = new THREE.MeshLambertMaterial({ color: 0x4a3600 });
-        const door = new THREE.Mesh(doorGeo, doorMat);
-        door.position.y = 6;
-        exitGroup.add(door);
-
-        // Green sign box
-        const signGeo = new THREE.BoxGeometry(6, 2, 1.2);
-        const signMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        const sign = new THREE.Mesh(signGeo, signMat);
-        sign.position.y = 13;
-        exitGroup.add(sign);
-
-        // "EXIT" text on sign using a canvas texture
-        const exitCanvas = document.createElement('canvas');
-        exitCanvas.width = 256;
-        exitCanvas.height = 64;
-        const exitCtx = exitCanvas.getContext('2d');
-        exitCtx.fillStyle = '#00ff00';
-        exitCtx.fillRect(0, 0, 256, 64);
-        exitCtx.fillStyle = '#000000';
-        exitCtx.font = 'bold 48px monospace';
-        exitCtx.textAlign = 'center';
-        exitCtx.textBaseline = 'middle';
-        exitCtx.fillText('EXIT', 128, 32);
-        const exitTex = new THREE.CanvasTexture(exitCanvas);
-
-        // Front face of sign with text
-        const signFrontGeo = new THREE.PlaneGeometry(5.8, 1.9);
-        const signFrontMat = new THREE.MeshBasicMaterial({ map: exitTex });
-        const signFront = new THREE.Mesh(signFrontGeo, signFrontMat);
-        signFront.position.set(0, 13, 0.7);
-        exitGroup.add(signFront);
-
-        // Back face of sign with text
-        const signBackGeo = new THREE.PlaneGeometry(5.8, 1.9);
-        const signBackMat = new THREE.MeshBasicMaterial({ map: exitTex });
-        const signBack = new THREE.Mesh(signBackGeo, signBackMat);
-        signBack.position.set(0, 13, -0.7);
-        signBack.rotation.y = Math.PI;
-        exitGroup.add(signBack);
-
-        const exitLight = new THREE.PointLight(0x00ff00, 1, 50);
-        exitLight.position.y = 13;
-        exitGroup.add(exitLight);
-
-        // Position exit
-        exitGroup.position.set(
-            (exitGridX - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
-            0,
-            (exitGridZ - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
-        );
-        scene.add(exitGroup);
-        const exitBox = new THREE.Box3().setFromObject(exitGroup);
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.4);
-        scene.add(ambientLight);
-
-        const playerLight = new THREE.PointLight(0xfffdbb, 0.6, 60);
-        scene.add(playerLight);
-
-        // --- CAMERA AND GAME STATE ---
-        let yaw = Math.PI / 4; 
-        let pitch = 0;
-        let gameStarted = false;
-        let isPaused = false;
-
-        // --- TIMER SYSTEM ---
-        const timerElement = document.getElementById('timer');
-        let elapsedMilliseconds = 0;
-        let lastTimeFrame = 0;
-
-        function updateTimer(now) {
-            elapsedMilliseconds += (now - lastTimeFrame);
-            lastTimeFrame = now;
-
-            let totalSeconds = Math.floor(elapsedMilliseconds / 1000);
-            let minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-            let seconds = String(totalSeconds % 60).padStart(2, '0');
-            
-            timerElement.innerText = `${minutes}:${seconds}`;
-        }
-
-        function getFormattedTime() {
-            let totalSeconds = Math.floor(elapsedMilliseconds / 1000);
-            let minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-            let seconds = String(totalSeconds % 60).padStart(2, '0');
-            return `${minutes}:${seconds}`;
-        }
-
-        // --- AUDIO SYSTEM ---
-        let audioCtx;
-        let masterGain;
-        let isMuted = false;
-        
-        function initAudio() {
-            if (audioCtx) return; 
-            
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.5;
-            masterGain.connect(audioCtx.destination);
-
-            const osc1 = audioCtx.createOscillator();
-            osc1.type = 'sine';
-            osc1.frequency.value = 50; 
-            osc1.connect(masterGain);
-            osc1.start();
-
-            const osc2 = audioCtx.createOscillator();
-            osc2.type = 'triangle';
-            osc2.frequency.value = 52;
-            const gain2 = audioCtx.createGain();
-            gain2.gain.value = 0.4;
-            osc2.connect(gain2);
-            gain2.connect(masterGain);
-            osc2.start();
-
-            const osc3 = audioCtx.createOscillator();
-            osc3.type = 'sine';
-            osc3.frequency.value = 834;
-            const gain3 = audioCtx.createGain();
-            gain3.gain.value = 0.03;
-            osc3.connect(gain3);
-            gain3.connect(masterGain);
-            osc3.start();
-
-            const lfo = audioCtx.createOscillator();
-            lfo.type = 'sine';
-            lfo.frequency.value = 0.1;
-            const lfoGain = audioCtx.createGain();
-            lfoGain.gain.value = 15;
-            lfo.connect(lfoGain);
-            lfoGain.connect(osc3.frequency);
-            lfo.start();
-        }
-
-        const muteBtn = document.getElementById('mute-btn');
-        muteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isMuted = !isMuted;
-            if (masterGain) {
-                masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.5, audioCtx.currentTime, 0.1);
-            }
-            muteBtn.innerText = isMuted ? "🔇" : "🔊";
-        });
-
-        // Spawn at center of map (500, 500)
-        camera.position.set(
-            (SPAWN_GRID_X - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2,
-            PLAYER_HEIGHT,
-            (SPAWN_GRID_Z - MAP_SIZE/2) * TILE_SIZE + TILE_SIZE/2
-        );
-        camera.rotation.order = 'YXZ';
-        camera.rotation.y = yaw;
-
-        const startScreen = document.getElementById('start-screen');
-        const adPrompt = document.getElementById('ad-prompt');
-        const pauseScreen = document.getElementById('pause-screen');
-        const winScreen = document.getElementById('win-screen');
-        const winTimeDisplay = document.getElementById('win-time-display');
-        const sprayCounter = document.getElementById('spray-counter');
-
-        startScreen.addEventListener('click', () => {
-            startScreen.style.display = 'none';
-            adPrompt.style.display = 'flex';
-        });
-
-        document.getElementById('ad-yes').addEventListener('click', (e) => {
-            e.stopPropagation();
-            startGame(75);
-        });
-
-        document.getElementById('ad-no').addEventListener('click', (e) => {
-            e.stopPropagation();
-            startGame(30);
-        });
-
-        function startGame(sprays) {
-            spraysLeft = sprays;
-            sprayCounter.innerText = `Sprays: ${spraysLeft}`;
-            adPrompt.style.display = 'none';
-            muteBtn.style.display = 'flex';
-            timerElement.style.display = 'block';
-            sprayCounter.style.display = 'block';
-            
-            initAudio(); 
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            gameStarted = true;
-            lastTimeFrame = performance.now();
-        }
-
-        pauseScreen.addEventListener('click', () => {
-            if (!gameStarted || !isPaused) return;
-            isPaused = false;
-            pauseScreen.style.display = 'none';
-            
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            
-            lastTimeFrame = performance.now();
-            prevTime = performance.now();
-        });
-
-        winScreen.addEventListener('click', () => {
-            location.reload();
-        });
-
-        function showWinScreen() {
-            gameStarted = false;
-            const finalTime = getFormattedTime();
-            winTimeDisplay.innerText = finalTime;
-            winScreen.style.display = 'flex';
-            timerElement.style.display = 'none';
-            sprayCounter.style.display = 'none';
-            muteBtn.style.display = 'none';
-            if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
-        }
-
-        function pauseGame() {
-            if (!gameStarted || isPaused) return;
-            isPaused = true;
-            pauseScreen.style.display = 'flex';
-            
-            if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
-
-            moveForward = moveBackward = moveLeft = moveRight = false;
-            joyX = joyY = 0;
-            leftTouchId = rightTouchId = null;
-            joyBase.style.display = 'none';
-        }
-
-        document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
-        window.addEventListener('blur', pauseGame);
-
-        // --- TOUCH / MOUSE CONTROLS ---
-        let moveForward = false;
-        let moveBackward = false;
-        let moveLeft = false;
-        let moveRight = false;
-
-        let joyX = 0;
-        let joyY = 0;
-        
-        let leftTouchId = null;
-        let rightTouchId = null;
-
-        let leftStart = {x: 0, y: 0};
-        let rightStart = {x: 0, y: 0};
-
-        const joyBase = document.getElementById('joystick-base');
-        const joyStick = document.getElementById('joystick-stick');
-        const MAX_JOY_RADIUS = 40;
-
-        function handlePointerStart(id, x, y, isMouse = false) {
-            if (!gameStarted || isPaused) return;
-            
-            if (!isMouse && x < window.innerWidth / 2) {
-                if (leftTouchId === null) {
-                    leftTouchId = id;
-                    leftStart.x = x;
-                    leftStart.y = y;
-                    
-                    joyBase.style.display = 'block';
-                    joyBase.style.left = x + 'px';
-                    joyBase.style.top = y + 'px';
-                    joyStick.style.transform = `translate(-50%, -50%)`;
-                    
-                    joyX = 0; 
-                    joyY = 0;
-                }
-            } else {
-                if (rightTouchId === null) {
-                    rightTouchId = id;
-                    rightStart.x = x;
-                    rightStart.y = y;
-                    touchStartTime = Date.now(); // Track tap time for spray
-                }
-            }
-        }
-
-        function handlePointerMove(id, x, y) {
-            if (!gameStarted || isPaused) return;
-            
-            if (id === leftTouchId) {
-                const dx = x - leftStart.x;
-                const dy = y - leftStart.y;
-                const dist = Math.min(Math.hypot(dx, dy), MAX_JOY_RADIUS);
-                const angle = Math.atan2(dy, dx);
-                
-                const displayX = dist * Math.cos(angle);
-                const displayY = dist * Math.sin(angle);
-                
-                joyStick.style.transform = `translate(calc(-50% + ${displayX}px), calc(-50% + ${displayY}px))`;
-                
-                joyX = displayX / MAX_JOY_RADIUS;
-                joyY = displayY / MAX_JOY_RADIUS;
-            } else if (id === rightTouchId) {
-                const deltaX = x - rightStart.x;
-                const deltaY = y - rightStart.y;
-                
-                yaw -= deltaX * 0.005;
-                pitch -= deltaY * 0.005;
-                pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
-                
-                camera.rotation.set(pitch, yaw, 0);
-                
-                rightStart.x = x;
-                rightStart.y = y;
-            }
-        }
-
-        function handlePointerEnd(id) {
-            if (id === leftTouchId) {
-                leftTouchId = null;
-                joyBase.style.display = 'none';
-                joyX = 0;
-                joyY = 0;
-            } else if (id === rightTouchId) {
-                // If the pointer was held for less than 200ms, it's a tap -> Spray!
-                if (Date.now() - touchStartTime < 200) sprayWall();
-                rightTouchId = null;
-            }
-        }
-
-        document.addEventListener('touchstart', (e) => {
-            if (!gameStarted || isPaused) return;
-            for (let t of e.changedTouches) handlePointerStart(t.identifier, t.clientX, t.clientY, false);
-        }, {passive: false});
-
-        document.addEventListener('touchmove', (e) => {
-            if (!gameStarted || isPaused) return;
-            e.preventDefault();
-            for (let t of e.changedTouches) handlePointerMove(t.identifier, t.clientX, t.clientY);
-        }, {passive: false});
-
-        document.addEventListener('touchend', (e) => {
-            for (let t of e.changedTouches) handlePointerEnd(t.identifier);
-        });
-
-        document.addEventListener('touchcancel', (e) => {
-            for (let t of e.changedTouches) handlePointerEnd(t.identifier);
-        });
-
-        let isMouseDown = false;
-        document.addEventListener('mousedown', (e) => {
-            if(!gameStarted || isPaused || e.target === startScreen || e.target === pauseScreen || e.target === adPrompt) return;
-            isMouseDown = true;
-            handlePointerStart('mouse', e.clientX, e.clientY, true);
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if(!gameStarted || isPaused || !isMouseDown) return;
-            handlePointerMove('mouse', e.clientX, e.clientY);
-        });
-
-        window.addEventListener('mouseup', () => {
-            if(isMouseDown) {
-                handlePointerEnd('mouse');
-                isMouseDown = false;
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            switch (e.code) {
-                case 'KeyW': case 'ArrowUp': moveForward = true; break;
-                case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
-                case 'KeyS': case 'ArrowDown': moveBackward = true; break;
-                case 'KeyD': case 'ArrowRight': moveRight = true; break;
-                case 'Space': case 'KeyE': sprayWall(); break;
-                case 'Escape': pauseGame(); break;
-                case 'KeyT': 
-                    // Cheat: Teleport to exit
-                    camera.position.set(
-                        exitGroup.position.x, 
-                        PLAYER_HEIGHT, 
-                        exitGroup.position.z + 40
-                    );
-                    break;
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            switch (e.code) {
-                case 'KeyW': case 'ArrowUp': moveForward = false; break;
-                case 'KeyA': case 'ArrowLeft': moveLeft = false; break;
-                case 'KeyS': case 'ArrowDown': moveBackward = false; break;
-                case 'KeyD': case 'ArrowRight': moveRight = false; break;
-            }
-        });
-
-        // --- GAME LOOP & PHYSICS ---
-        const playerCollider = new THREE.Box3();
-        let prevTime = performance.now();
-        const velocity = new THREE.Vector3();
-
-        function checkCollision(targetPosition) {
-            playerCollider.setFromCenterAndSize(targetPosition, new THREE.Vector3(PLAYER_SIZE, WALL_HEIGHT, PLAYER_SIZE));
-            if (playerCollider.intersectsBox(exitBox)) {
-                showWinScreen();
-                return false;
-            }
-
-            const halfSize = PLAYER_SIZE / 2;
-            const corners = [
-                {x: targetPosition.x - halfSize, z: targetPosition.z - halfSize},
-                {x: targetPosition.x + halfSize, z: targetPosition.z - halfSize},
-                {x: targetPosition.x - halfSize, z: targetPosition.z + halfSize},
-                {x: targetPosition.x + halfSize, z: targetPosition.z + halfSize}
-            ];
-
-            for (let c of corners) {
-                const gridX = Math.floor((c.x + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
-                const gridZ = Math.floor((c.z + (MAP_SIZE/2) * TILE_SIZE) / TILE_SIZE);
-
-                if (gridX >= 0 && gridX < MAP_SIZE && gridZ >= 0 && gridZ < MAP_SIZE) {
-                    if (grid[gridX][gridZ] === 1) return true;
-                } else {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (gameStarted && !isPaused) {
-                const time = performance.now();
-                const delta = Math.min((time - prevTime) / 1000, 0.1); 
-                prevTime = time;
-
-                updateTimer(time);
-
-                playerLight.position.copy(camera.position);
-                if (Math.random() > 0.95) playerLight.intensity = Math.random() * 0.4 + 0.2;
-                else playerLight.intensity = 0.6;
-
-                velocity.x -= velocity.x * 10.0 * delta; 
-                velocity.z -= velocity.z * 10.0 * delta;
-
-                let inputX = joyX + (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
-                let inputY = joyY + (moveBackward ? 1 : 0) - (moveForward ? 1 : 0); 
-
-                const inputMag = Math.hypot(inputX, inputY);
-                if (inputMag > 1) {
-                    inputX /= inputMag;
-                    inputY /= inputMag;
-                }
-
-                if (inputMag > 0) {
-                    const direction = new THREE.Vector3();
-                    const frontVector = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-                    const sideVector = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-
-                    direction.copy(sideVector).multiplyScalar(inputX).add(frontVector.multiplyScalar(-inputY));
-                    direction.normalize();
-
-                    const speedMultiplier = Math.min(inputMag, 1);
-                    velocity.add(direction.multiplyScalar(PLAYER_SPEED * speedMultiplier * delta));
-                }
-
-                let targetX = camera.position.clone();
-                targetX.x += velocity.x * delta;
-                if (!checkCollision(targetX)) {
-                    camera.position.x = targetX.x;
-                } else {
-                    velocity.x = 0;
-                }
-
-                let targetZ = camera.position.clone();
-                targetZ.z += velocity.z * delta;
-                if (!checkCollision(targetZ)) {
-                    camera.position.z = targetZ.z;
-                } else {
-                    velocity.z = 0;
-                }
-
-                camera.position.y = PLAYER_HEIGHT;
-            } else {
-                prevTime = performance.now();
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        animate();
-    </script>
+    } else {
+        prevTime=performance.now();
+    }
+
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+animate();
+</script>
 </body>
 </html>
