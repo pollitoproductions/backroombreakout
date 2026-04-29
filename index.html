@@ -142,7 +142,7 @@
 
 <div id="ui-layer">
     <div id="timer">00:00</div>
-    <div id="spray-counter">SPRAYS: 50</div>
+    <div id="spray-counter">SPRAYS: 100</div>
     <div id="mute-btn" style="display:none;">🔊</div>
 
     <div id="status-wrap">
@@ -175,18 +175,18 @@
             <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
         </div>
         <div class="lore">
-            <strong style="color:#ff4444;">Watch out for the Wanderers. 666 of them roam these halls.</strong>
+            <strong style="color:#ff4444;">Watch out for the Wanderers. 1000 of them roam these halls.</strong>
             They will sprint if they hear you close, but they tire quickly. Use your spray-paint and lighter as a flamethrower to burn them.
         </div>
         <div class="lore">
             Find <strong style="color:#88ccff;">Almond Water</strong> and <strong style="color:#ff6666;">First Aid Kits</strong> to survive. 
             You must find the <strong style="color:#00ff00;">Exit</strong> to return home.
         </div>
-        <div style="margin-top:22px; color:#d4d42b; font-size:1.1em;">Standard issue: <strong>50 spray marks.</strong></div>
+        <div style="margin-top:22px; color:#d4d42b; font-size:1.1em;">Standard issue: <strong>100 spray marks.</strong></div>
         <div style="color:#88ff88; font-size:1em; margin-top:6px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
         <div class="btn-container">
             <button class="choice-btn green" id="ad-yes">▶ WATCH AD (UNLIMITED PAINT)</button>
-            <button class="choice-btn" id="ad-no">NO THANKS (50 SPRAYS)</button>
+            <button class="choice-btn" id="ad-no">NO THANKS (100 SPRAYS)</button>
         </div>
     </div>
 
@@ -241,15 +241,15 @@ const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
 const HYD_PER_BOTTLE     = 30;
 const HP_PER_MEDKIT      = 25;
-const BOTTLE_COUNT       = 3500;  
+const BOTTLE_COUNT       = 3000;  
 const MEDKIT_COUNT       = 1750;  
 const ITEM_PICKUP_DIST   = 20;    
 
 // ENTITY AI
-const ENTITY_COUNT       = 666;
+const ENTITY_COUNT       = 1000;
 const ENTITY_MIN_DIST    = 10.0; // Distance to stop running so they don't clip into camera
 
-let spraysLeft    = 50;
+let spraysLeft    = 100;
 let unlimitedPaint = false;
 let touchStartTime = 0;
 let lastTapTime    = 0;
@@ -641,7 +641,7 @@ document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; startGame();
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
-    e.stopPropagation(); unlimitedPaint=false; spraysLeft=50; sprayCounterEl.innerText=`SPRAYS: ${spraysLeft}`; startGame();
+    e.stopPropagation(); unlimitedPaint=false; spraysLeft=100; sprayCounterEl.innerText=`SPRAYS: ${spraysLeft}`; startGame();
 });
 
 function startGame(){
