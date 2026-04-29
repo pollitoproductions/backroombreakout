@@ -64,28 +64,30 @@
             text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
         }
 
-        /* HYDRATION BAR */
-        #hydration-wrap {
+        /* HYDRATION & HEALTH BARS */
+        #status-wrap {
             position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: column; align-items: center;
+            display: none; flex-direction: column; align-items: center; gap: 8px;
             z-index: 30; pointer-events: none;
         }
-        #hydration-label {
-            color: #88ccff; font-size: 13px; margin-bottom: 4px;
+        .status-container { display: flex; flex-direction: column; align-items: center; }
+        .status-label {
+            font-size: 13px; margin-bottom: 4px; font-weight: bold;
             text-shadow: 1px 1px 3px #000; letter-spacing: 1px;
         }
-        #hydration-bar-bg {
-            width: 180px; height: 14px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(136,204,255,0.4);
+        .status-bar-bg {
+            width: 200px; height: 14px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 3px; overflow: hidden;
         }
-        #hydration-bar {
+        .status-bar-fill {
             height: 100%; width: 100%;
-            background: linear-gradient(to right, #2288cc, #88ccff);
             transition: width 0.3s, background 0.3s;
             border-radius: 3px;
         }
+        #health-bar { background: linear-gradient(to right, #880000, #ff4444); }
+        #hydration-bar { background: linear-gradient(to right, #2288cc, #88ccff); }
 
         #joystick-base {
             position:absolute; width:100px; height:100px; border-radius:50%;
@@ -110,20 +112,24 @@
             border-radius:50%;
         }
 
-        /* dehydration vignette */
+        /* OVERLAYS */
         #thirst-vignette {
             position: absolute; top:0; left:0; width:100%; height:100%;
             pointer-events: none; z-index: 9;
             background: radial-gradient(ellipse at center, transparent 50%, rgba(180,60,0,0.0) 100%);
-            transition: opacity 0.5s;
-            opacity: 0;
+            transition: opacity 0.5s; opacity: 0;
         }
-
+        #damage-flash {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events: none; z-index: 10;
+            background-color: rgba(255,0,0,0.4);
+            opacity: 0; transition: opacity 0.1s;
+        }
         #pickup-flash {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -300%);
-            color: #88ccff; font-size: 15px; font-weight: bold;
-            text-shadow: 0 0 8px #88ccff;
+            color: #88ccff; font-size: 16px; font-weight: bold;
+            text-shadow: 0 0 8px #000;
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
@@ -132,26 +138,32 @@
 <body>
 <canvas id="game-canvas"></canvas>
 <div id="thirst-vignette"></div>
+<div id="damage-flash"></div>
 
 <div id="ui-layer">
     <div id="timer">00:00</div>
-    <div id="spray-counter">Sprays: 50</div>
+    <div id="spray-counter">SPRAYS: 50</div>
     <div id="mute-btn" style="display:none;">🔊</div>
 
-    <div id="hydration-wrap">
-        <div id="hydration-label">HYDRATION</div>
-        <div id="hydration-bar-bg"><div id="hydration-bar"></div></div>
+    <div id="status-wrap">
+        <div class="status-container">
+            <div class="status-label" style="color:#ff6666;">HEALTH</div>
+            <div class="status-bar-bg"><div id="health-bar" class="status-bar-fill"></div></div>
+        </div>
+        <div class="status-container">
+            <div class="status-label" style="color:#88ccff;">HYDRATION</div>
+            <div class="status-bar-bg"><div id="hydration-bar" class="status-bar-fill"></div></div>
+        </div>
     </div>
 
-    <div id="pickup-flash">💧 Almond Water +25</div>
+    <div id="pickup-flash">💧 Almond Water +30</div>
 
     <!-- START SCREEN -->
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
         <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">BREAKOUT</div>
-        <div class="subtitle warn">Quick Tap / Press Space or E to spray a Red X on walls</div>
-        <div class="subtitle">Mobile: Left side → Move &nbsp;|&nbsp; Right side → Look</div>
-        <div class="subtitle">Desktop: WASD → Move &nbsp;|&nbsp; Mouse → Look</div>
+        <div class="subtitle warn">Double tap on walls beside you to mark them with paint,<br>double tapping farther away will spray flames!</div>
+        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look</div>
         <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
     </div>
 
@@ -163,12 +175,12 @@
             <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
         </div>
         <div class="lore">
-            Somehow — mercifully — it is <strong style="color:#0f0;">completely entity free.</strong>
-            Almond water flows in abundance here, if you know where to look.
+            <strong style="color:#ff4444;">Watch out for the Wanderers. 666 of them roam these halls.</strong>
+            They will sprint if they hear you close, but they tire quickly. Use your spray-paint and lighter as a flamethrower to burn them.
         </div>
         <div class="lore">
-            You will need to find the <strong style="color:#00ff00;">Exit</strong> to return home.
-            The true sanity is in your endurance in your own <em>"reality."</em>
+            Find <strong style="color:#88ccff;">Almond Water</strong> and <strong style="color:#ff6666;">First Aid Kits</strong> to survive. 
+            You must find the <strong style="color:#00ff00;">Exit</strong> to return home.
         </div>
         <div style="margin-top:22px; color:#d4d42b; font-size:1.1em;">Standard issue: <strong>50 spray marks.</strong></div>
         <div style="color:#88ff88; font-size:1em; margin-top:6px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
@@ -194,12 +206,12 @@
 
     <!-- REVIVE AD SCREEN -->
     <div id="revive-screen" style="display:none;">
-        <div class="title" style="color:#ff8844;">DEHYDRATED.</div>
-        <div class="lore" style="color:#ccc;">
+        <div class="title" id="death-title" style="color:#ff8844;">DEHYDRATED.</div>
+        <div class="lore" id="death-lore" style="color:#ccc;">
             Your body has given out. The hum of the fluorescent lights grows distant.<br>
             But wait — there may be one more chance...
         </div>
-        <div style="color:#88ccff; font-size:1.1em; margin-top:10px;">Watch an ad and receive an emergency almond water drop?</div>
+        <div style="color:#88ccff; font-size:1.1em; margin-top:10px;" id="revive-offer">Watch an ad to revive with half health and hydration?</div>
         <div class="btn-container">
             <button class="choice-btn green" id="revive-yes">▶ WATCH AD (REVIVE)</button>
             <button class="choice-btn red" id="revive-no">ACCEPT FATE (QUIT)</button>
@@ -224,21 +236,29 @@ const SPAWN_GRID_Z    = 500;
 const SPAWN_CLEAR_R   = 3;
 const EXIT_MIN_DIST   = 10;
 
-// HYDRATION
-const HYDRATION_MAX      = 100;
-const HYDRATION_DRAIN    = 0.28;  // per second — ~6 min to empty with no water
-const HYDRATION_PER_BOTTLE = 30;
-const BOTTLE_COUNT       = 3500;  // dense enough to actually find in 1000x1000
-const BOTTLE_PICKUP_DIST = 20;    // world units
+// SURVIVAL STATS
+const STAT_MAX           = 100;
+const HYDRATION_DRAIN    = 0.28;  
+const HYD_PER_BOTTLE     = 30;
+const HP_PER_MEDKIT      = 25;
+const BOTTLE_COUNT       = 3500;  
+const MEDKIT_COUNT       = 1750;  
+const ITEM_PICKUP_DIST   = 20;    
+
+// ENTITY AI
+const ENTITY_COUNT       = 666;
+const ENTITY_MIN_DIST    = 10.0; // Distance to stop running so they don't clip into camera
 
 let spraysLeft    = 50;
 let unlimitedPaint = false;
 let touchStartTime = 0;
+let lastTapTime    = 0;
 let lastSprayTime  = 0;
 
-let hydration = HYDRATION_MAX;
+let hydration = STAT_MAX;
+let health    = STAT_MAX;
 let isDead    = false;
-let hasRevived = false; // one free revive via ad
+let hasRevived = false; 
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -267,7 +287,8 @@ function createTexture(type) {
     } else if (type === 'ceiling') {
         ctx.fillStyle = '#ddddcc'; ctx.fillRect(0,0,256,256);
         ctx.strokeStyle='#999'; ctx.lineWidth=2; ctx.strokeRect(0,0,256,256);
-        ctx.fillStyle='#fff'; ctx.shadowColor='#ffffcc'; ctx.shadowBlur=15;
+        // Fluorescent lights
+        ctx.fillStyle='#ffffff'; ctx.shadowColor='#ffffcc'; ctx.shadowBlur=15;
         ctx.fillRect(64,80,128,20); ctx.fillRect(64,156,128,20);
         ctx.shadowBlur=0;
     }
@@ -326,7 +347,69 @@ for (let x=0;x<MAP_SIZE;x++) for (let z=0;z<MAP_SIZE;z++) if(grid[x][z]) {
 }
 scene.add(instancedWalls);
 
-// ─── SPRAY PAINT ───────────────────────────────────────────────────────────
+// ─── CANON ENTITY TEXTURE (WANDERER/BACTERIA) ──────────────────────────────
+function generateEntityTexture() {
+    const entCanvas = document.createElement('canvas');
+    entCanvas.width = 256; entCanvas.height = 512;
+    const entCtx = entCanvas.getContext('2d');
+    entCtx.clearRect(0,0,256,512);
+    entCtx.strokeStyle = 'rgba(0,0,0,0.9)';
+    entCtx.lineWidth = 4;
+    entCtx.lineCap = 'round';
+    
+    entCtx.beginPath(); entCtx.moveTo(128, 480); entCtx.lineTo(128, 100);
+    // Spindly, chaotic wireframe limbs
+    for(let i=0; i<14; i++) {
+        entCtx.moveTo(128, 120 + i*25);
+        entCtx.lineTo(128 + (Math.random()-0.5)*200, 160 + i*30);
+    }
+    entCtx.stroke();
+    
+    // Glowing white eyes
+    entCtx.fillStyle = '#ffffff';
+    entCtx.shadowColor = '#ffffff'; entCtx.shadowBlur = 15;
+    entCtx.beginPath(); entCtx.arc(105, 80, 6, 0, Math.PI*2); entCtx.fill();
+    entCtx.beginPath(); entCtx.arc(151, 80, 6, 0, Math.PI*2); entCtx.fill();
+    entCtx.shadowBlur = 0;
+    return new THREE.CanvasTexture(entCanvas);
+}
+const entityTex = generateEntityTexture();
+const entityMat = new THREE.SpriteMaterial({ map: entityTex, color: 0xffffff, transparent: true });
+
+const entities = [];
+(function placeEntities() {
+    let placed = 0, attempts = 0;
+    while (placed < ENTITY_COUNT && attempts < ENTITY_COUNT * 20) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<15 && Math.abs(gz-SPAWN_GRID_Z)<15)) continue;
+
+        const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
+        const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
+        
+        const sprite = new THREE.Sprite(entityMat.clone());
+        sprite.scale.set(12, 24, 1);
+        sprite.position.set(wx, WALL_HEIGHT/2, wz);
+        scene.add(sprite);
+
+        entities.push({
+            mesh: sprite,
+            stamina: 3.0,
+            staminaCooldown: 0,
+            bob: Math.random() * Math.PI * 2,
+            onFire: false,
+            fireTimer: 0
+        });
+        placed++;
+    }
+})();
+
+// Ghost Scare variables
+let ghostTimer = 180 + Math.random() * 120; // 3 to 5 mins
+let activeGhost = null;
+
+// ─── SPRAY PAINT & FLAMETHROWER ───────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 const sprayC = document.createElement('canvas'); sprayC.width=sprayC.height=128;
 const sCtx = sprayC.getContext('2d');
@@ -341,91 +424,138 @@ function drawStroke(ctx,x1,y1,x2,y2){
     }
 }
 drawStroke(sCtx,25,25,103,103); drawStroke(sCtx,103,25,25,103); drawStroke(sCtx,64,64,64,85);
-const sprayTex = new THREE.CanvasTexture(sprayC);
+const sprayTexture = new THREE.CanvasTexture(sprayC);
+
+let fireParticles = [];
+const fireTex = (function(){
+    const c = document.createElement('canvas'); c.width=c.height=64;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createRadialGradient(32,32,0,32,32,32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.2, 'rgba(255,150,0,0.8)');
+    grad.addColorStop(0.5, 'rgba(255,50,0,0.5)');
+    grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+})();
 
 function sprayWall() {
     if (!gameStarted||isPaused||isDead) return;
     if (!unlimitedPaint && spraysLeft<=0) return;
-    if (Date.now()-lastSprayTime<300) return;
+    if (Date.now()-lastSprayTime<300) return; // FIX: Prevent double usage
+    lastSprayTime=Date.now();
+
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
-    if (hits.length>0 && hits[0].distance<12) {
-        lastSprayTime=Date.now();
-        const hit=hits[0];
-        const g=new THREE.PlaneGeometry(6,6);
-        const m=new THREE.MeshBasicMaterial({map:sprayTex,transparent:true,depthWrite:false,color:0xffffff});
-        const mesh=new THREE.Mesh(g,m);
+
+    // If near a wall, just paint it
+    if (hits.length > 0 && hits[0].distance < 15) {
+        const hit = hits[0];
+        const g = new THREE.PlaneGeometry(6,6);
+        const m = new THREE.MeshBasicMaterial({map:sprayTexture,transparent:true,depthWrite:false,color:0xffffff});
+        const mesh = new THREE.Mesh(g,m);
         mesh.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.05));
         mesh.lookAt(mesh.position.clone().add(hit.face.normal));
         scene.add(mesh);
+        
         if (!unlimitedPaint) {
             spraysLeft--;
-            sprayCounterEl.innerText = `Sprays: ${spraysLeft}`;
+            sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+        }
+    } else {
+        // Far away from wall - shoot flames
+        for(let i=0; i<8; i++) {
+            const p = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
+            const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+            p.position.copy(camera.position).add(camDir.multiplyScalar(5 + Math.random()*5));
+            p.position.x += (Math.random()-0.5)*3;
+            p.position.y += (Math.random()-0.5)*3 - 2;
+            p.scale.set(4,4,1);
+            scene.add(p);
+            fireParticles.push({mesh: p, life: 0.4, vel: camDir.clone().multiplyScalar(40).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
+        }
+
+        // Check Flamethrower Entity Hit
+        const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+        for(let e of entities) {
+            if(e.onFire) continue;
+            const dist = camera.position.distanceTo(e.mesh.position);
+            if(dist < 50) { 
+                const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
+                if(dirToEnt.dot(camDir) > 0.85) { 
+                    e.onFire = true;
+                    e.fireTimer = 1.5;
+                    if(masterGain) {
+                        const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
+                        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
+                        osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.5);
+                    }
+                }
+            }
+        }
+
+        if (!unlimitedPaint) {
+            spraysLeft--;
+            sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
         }
     }
 }
 
-// ─── ALMOND WATER BOTTLES ──────────────────────────────────────────────────
-// Build bottle mesh (brown glass bottle silhouette)
+// ─── ITEMS: ALMOND WATER & MEDKITS ──────────────────────────────────────────
+const itemData = []; 
+
 function makeBottle() {
     const group = new THREE.Group();
-
-    // Body
     const bodyGeo = new THREE.CylinderGeometry(1.1, 1.3, 4.5, 7);
     const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 2.25;
-    group.add(body);
-
-    // Neck
+    const body = new THREE.Mesh(bodyGeo, bodyMat); body.position.y = 2.25; group.add(body);
     const neckGeo = new THREE.CylinderGeometry(0.55, 1.0, 1.5, 7);
     const neckMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
-    const neck = new THREE.Mesh(neckGeo, neckMat);
-    neck.position.y = 5.25;
-    group.add(neck);
-
-    // Cap
+    const neck = new THREE.Mesh(neckGeo, neckMat); neck.position.y = 5.25; group.add(neck);
     const capGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 7);
     const capMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
-    const cap = new THREE.Mesh(capGeo, capMat);
-    cap.position.y = 6.3;
-    group.add(cap);
-
-    // Inner liquid shimmer
-    const liqGeo = new THREE.CylinderGeometry(0.9, 1.1, 3.8, 8);
-    const liqMat = new THREE.MeshBasicMaterial({ color: 0xeeddaa, transparent: true, opacity: 0.22 });
-    const liq = new THREE.Mesh(liqGeo, liqMat);
-    liq.position.y = 2.1;
-    group.add(liq);
-
+    const cap = new THREE.Mesh(capGeo, capMat); cap.position.y = 6.3; group.add(cap);
     return group;
 }
 
-// Place bottles randomly in open tiles, not too close to spawn
-const bottleData = []; // { group, worldX, worldZ, collected }
-const bottleScale = 0.35;
+function makeMedkit() {
+    const geo = new THREE.BoxGeometry(4, 3, 1.5);
+    const c = document.createElement('canvas'); c.width=128; c.height=128;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,128,128);
+    ctx.fillStyle='#ee0000'; ctx.fillRect(48,20,32,88); ctx.fillRect(20,48,88,32);
+    const tex = new THREE.CanvasTexture(c);
+    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = 1.5;
+    return mesh;
+}
 
-(function placeBottles() {
-    let placed = 0;
-    let attempts = 0;
+(function placeItems() {
+    let placed = 0, attempts = 0;
     while (placed < BOTTLE_COUNT && attempts < BOTTLE_COUNT * 20) {
         attempts++;
         const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
         const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
-        if (grid[gx][gz] !== 0) continue;
-        // Not too close to spawn
-        if (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6) continue;
-
+        if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6)) continue;
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
-
-        const bottle = makeBottle();
-        bottle.scale.setScalar(bottleScale);
-        bottle.position.set(wx, 0, wz);
-        // Random rotation
-        bottle.rotation.y = Math.random()*Math.PI*2;
-        scene.add(bottle);
-        bottleData.push({ group: bottle, wx, wz, collected: false });
+        const mesh = makeBottle(); mesh.scale.setScalar(0.35); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
+        scene.add(mesh);
+        itemData.push({ group: mesh, wx, wz, type: 'water', collected: false });
+        placed++;
+    }
+    placed = 0; attempts = 0;
+    while (placed < MEDKIT_COUNT && attempts < MEDKIT_COUNT * 20) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6)) continue;
+        const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+        const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+        const mesh = makeMedkit(); mesh.scale.setScalar(0.7); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
+        scene.add(mesh);
+        itemData.push({ group: mesh, wx, wz, type: 'medkit', collected: false });
         placed++;
     }
 })();
@@ -490,7 +620,7 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('mute-btn').innerText=isMuted?'🔇':'🔊';
 });
 
-// ─── UI REFS ───────────────────────────────────────────────────────────────
+// ─── UI REFS & FLOW ───────────────────────────────────────────────────────
 const startScreen  = document.getElementById('start-screen');
 const adPrompt     = document.getElementById('ad-prompt');
 const pauseScreen  = document.getElementById('pause-screen');
@@ -498,50 +628,32 @@ const winScreen    = document.getElementById('win-screen');
 const reviveScreen = document.getElementById('revive-screen');
 const winTimeDisp  = document.getElementById('win-time-display');
 const sprayCounterEl = document.getElementById('spray-counter');
-const hydrationWrap= document.getElementById('hydration-wrap');
+const statusWrap   = document.getElementById('status-wrap');
+const healthBar    = document.getElementById('health-bar');
 const hydrationBar = document.getElementById('hydration-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
+const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 
-// ─── SCREEN FLOW ───────────────────────────────────────────────────────────
-startScreen.addEventListener('click', ()=>{
-    startScreen.style.display='none';
-    adPrompt.style.display='flex';
-});
+startScreen.addEventListener('click', ()=>{ startScreen.style.display='none'; adPrompt.style.display='flex'; });
 
 document.getElementById('ad-yes').addEventListener('click', e=>{
-    e.stopPropagation();
-    unlimitedPaint=true;
-    sprayCounterEl.innerText='Sprays: ∞';
-    startGame();
+    e.stopPropagation(); unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; startGame();
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
-    e.stopPropagation();
-    unlimitedPaint=false;
-    spraysLeft=50;
-    sprayCounterEl.innerText=`Sprays: ${spraysLeft}`;
-    startGame();
+    e.stopPropagation(); unlimitedPaint=false; spraysLeft=50; sprayCounterEl.innerText=`SPRAYS: ${spraysLeft}`; startGame();
 });
 
 function startGame(){
-    adPrompt.style.display='none';
-    document.getElementById('mute-btn').style.display='flex';
-    timerEl.style.display='block';
-    sprayCounterEl.style.display='block';
-    hydrationWrap.style.display='flex';
-    initAudio();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    gameStarted=true;
-    lastTF=performance.now();
-    prevTime=performance.now();
-    hydration=HYDRATION_MAX;
-    updateHydrationBar();
+    adPrompt.style.display='none'; document.getElementById('mute-btn').style.display='flex';
+    timerEl.style.display='block'; sprayCounterEl.style.display='block'; statusWrap.style.display='flex';
+    initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
+    gameStarted=true; lastTF=performance.now(); prevTime=performance.now();
+    health=STAT_MAX; hydration=STAT_MAX; updateStatusBars();
 }
 
 pauseScreen.addEventListener('click', ()=>{
-    if(!gameStarted||!isPaused) return;
-    isPaused=false;
-    pauseScreen.style.display='none';
+    if(!gameStarted||!isPaused) return; isPaused=false; pauseScreen.style.display='none';
     if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
     lastTF=performance.now(); prevTime=performance.now();
 });
@@ -549,92 +661,81 @@ pauseScreen.addEventListener('click', ()=>{
 winScreen.addEventListener('click', ()=>location.reload());
 
 document.getElementById('revive-yes').addEventListener('click', e=>{
-    e.stopPropagation();
-    reviveScreen.style.display='none';
-    hydration=60;
-    isDead=false;
-    hasRevived=true;
-    isPaused=false;
-    updateHydrationBar();
+    e.stopPropagation(); reviveScreen.style.display='none';
+    health=50; hydration=50; isDead=false; hasRevived=true; isPaused=false;
+    updateStatusBars();
     if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
     lastTF=performance.now(); prevTime=performance.now();
 });
-document.getElementById('revive-no').addEventListener('click', e=>{
-    e.stopPropagation();
-    location.reload();
-});
+document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
 
 function showWinScreen(){
-    gameStarted=false;
-    winTimeDisp.innerText=fmtTime();
-    winScreen.style.display='flex';
-    timerEl.style.display='none';
-    sprayCounterEl.style.display='none';
-    hydrationWrap.style.display='none';
-    document.getElementById('mute-btn').style.display='none';
+    gameStarted=false; winTimeDisp.innerText=fmtTime(); winScreen.style.display='flex';
+    timerEl.style.display='none'; sprayCounterEl.style.display='none'; statusWrap.style.display='none'; document.getElementById('mute-btn').style.display='none';
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
 }
 
-function showDeathScreen(){
-    isDead=true;
-    isPaused=true;
+function showDeathScreen(title, lore){
+    isDead=true; isPaused=true;
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     if(!hasRevived){
+        document.getElementById('death-title').innerText = title;
+        document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
         reviveScreen.style.display='flex';
     } else {
-        // already used revive — just game over
-        reviveScreen.querySelector('.title').innerText='DEHYDRATED.';
-        reviveScreen.querySelector('.lore').innerHTML='You have succumbed to the endless corridors.<br>No one is coming for you.';
-        reviveScreen.querySelector('#revive-yes').style.display='none';
-        reviveScreen.querySelector('#revive-no').innerText='RESTART';
+        document.getElementById('death-title').innerText = title;
+        document.getElementById('death-lore').innerHTML = lore + "<br>No one is coming for you.";
+        document.getElementById('revive-yes').style.display='none';
+        document.getElementById('revive-no').innerText='RESTART';
         reviveScreen.style.display='flex';
     }
 }
 
 function pauseGame(){
-    if(!gameStarted||isPaused) return;
-    isPaused=true;
-    pauseScreen.style.display='flex';
+    if(!gameStarted||isPaused||isDead) return;
+    isPaused=true; pauseScreen.style.display='flex';
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-    moveForward=moveBackward=moveLeft=moveRight=false;
-    joyX=joyY=0; leftTouchId=rightTouchId=null;
-    joyBase.style.display='none';
+    moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
 }
-
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
 window.addEventListener('blur', pauseGame);
 
-// ─── HYDRATION ─────────────────────────────────────────────────────────────
-function updateHydrationBar(){
-    const pct = Math.max(0, hydration/HYDRATION_MAX*100);
-    hydrationBar.style.width = pct+'%';
-    if(pct>50) hydrationBar.style.background='linear-gradient(to right,#2288cc,#88ccff)';
-    else if(pct>25) hydrationBar.style.background='linear-gradient(to right,#aa6600,#ffaa44)';
-    else hydrationBar.style.background='linear-gradient(to right,#880000,#ff4444)';
-
-    // Thirst vignette intensity
-    const danger = Math.max(0, 1-(pct/30));
+// ─── STATUS & LOGIC ────────────────────────────────────────────────────────
+function updateStatusBars(){
+    const hPct = Math.max(0, health/STAT_MAX*100);
+    healthBar.style.width = hPct+'%';
+    const wPct = Math.max(0, hydration/STAT_MAX*100);
+    hydrationBar.style.width = wPct+'%';
+    
+    const danger = Math.max(0, 1-(wPct/30));
     vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
     vignetteEl.style.opacity=danger>0?1:0;
 }
 
 let pickupFlashTimer=0;
-function showPickupFlash(){
+function showPickupFlash(text, color){
+    pickupFlash.innerText = text;
+    pickupFlash.style.color = color;
+    pickupFlash.style.textShadow = `0 0 8px ${color}`;
     pickupFlash.style.opacity='1';
     pickupFlashTimer=1.2;
 }
 
-function checkBottlePickups(){
+function checkItemPickups(){
     const px=camera.position.x, pz=camera.position.z;
-    for(let b of bottleData){
+    for(let i=0; i<itemData.length; i++){
+        let b = itemData[i];
         if(b.collected) continue;
-        const dx=px-b.wx, dz=pz-b.wz;
-        if(Math.sqrt(dx*dx+dz*dz)<BOTTLE_PICKUP_DIST){
-            b.collected=true;
-            scene.remove(b.group);
-            hydration=Math.min(HYDRATION_MAX, hydration+HYDRATION_PER_BOTTLE);
-            updateHydrationBar();
-            showPickupFlash();
+        if(Math.sqrt((px-b.wx)**2 + (pz-b.wz)**2) < ITEM_PICKUP_DIST){
+            b.collected=true; scene.remove(b.group);
+            if(b.type === 'water') {
+                hydration=Math.min(STAT_MAX, hydration+HYD_PER_BOTTLE);
+                showPickupFlash('💧 Almond Water +30', '#88ccff');
+            } else {
+                health=Math.min(STAT_MAX, health+HP_PER_MEDKIT);
+                showPickupFlash('✚ Medkit +25', '#ff6666');
+            }
+            updateStatusBars();
         }
     }
 }
@@ -649,20 +750,19 @@ const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
 
 function handlePointerStart(id,x,y,isMouse=false){
-    if(!gameStarted||isPaused) return;
+    if(!gameStarted||isPaused||isDead) return;
     if(!isMouse&&x<window.innerWidth/2){
         if(leftTouchId===null){
             leftTouchId=id; leftStart={x,y};
             joyBase.style.display='block'; joyBase.style.left=x+'px'; joyBase.style.top=y+'px';
-            joyStick.style.transform='translate(-50%,-50%)';
-            joyX=joyY=0;
+            joyStick.style.transform='translate(-50%,-50%)'; joyX=joyY=0;
         }
     } else {
         if(rightTouchId===null){ rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); }
     }
 }
 function handlePointerMove(id,x,y){
-    if(!gameStarted||isPaused) return;
+    if(!gameStarted||isPaused||isDead) return;
     if(id===leftTouchId){
         const dx=x-leftStart.x,dy=y-leftStart.y;
         const dist=Math.min(Math.hypot(dx,dy),MAX_JOY),angle=Math.atan2(dy,dx);
@@ -672,15 +772,22 @@ function handlePointerMove(id,x,y){
     } else if(id===rightTouchId){
         yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
         pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
-        camera.rotation.set(pitch,yaw,0);
-        rightStart={x,y};
+        camera.rotation.set(pitch,yaw,0); rightStart={x,y};
     }
 }
+
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
-    else if(id===rightTouchId){
-        if(Date.now()-touchStartTime<200) sprayWall();
-        rightTouchId=null;
+    else if(id===rightTouchId){ 
+        if(Date.now()-touchStartTime<200) {
+            if (Date.now() - lastTapTime < 400) {
+                sprayWall();
+                lastTapTime = 0;
+            } else {
+                lastTapTime = Date.now();
+            }
+        }
+        rightTouchId=null; 
     }
 }
 
@@ -690,21 +797,23 @@ document.addEventListener('touchend',e=>{ for(let t of e.changedTouches) handleP
 document.addEventListener('touchcancel',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
 
 let isMouseDown=false;
-document.addEventListener('mousedown',e=>{ if(!gameStarted||isPaused) return; isMouseDown=true; handlePointerStart('mouse',e.clientX,e.clientY,true); });
+document.addEventListener('mousedown',e=>{ if(!gameStarted||isPaused||isDead) return; isMouseDown=true; handlePointerStart('mouse',e.clientX,e.clientY,true); });
 document.addEventListener('mousemove',e=>{ if(!gameStarted||isPaused||!isMouseDown) return; handlePointerMove('mouse',e.clientX,e.clientY); });
 window.addEventListener('mouseup',()=>{ if(isMouseDown){ handlePointerEnd('mouse'); isMouseDown=false; } });
 
+let lastKeyTime = 0;
 document.addEventListener('keydown',e=>{
     switch(e.code){
         case 'KeyW': case 'ArrowUp':    moveForward=true;  break;
         case 'KeyA': case 'ArrowLeft':  moveLeft=true;     break;
         case 'KeyS': case 'ArrowDown':  moveBackward=true; break;
         case 'KeyD': case 'ArrowRight': moveRight=true;    break;
-        case 'Space': case 'KeyE': sprayWall(); break;
-        case 'Escape': pauseGame(); break;
-        case 'KeyT':
-            camera.position.set(exitGroup.position.x, PLAYER_HEIGHT, exitGroup.position.z+40);
+        case 'Space': case 'KeyE': 
+            if(Date.now() - lastKeyTime < 400) { sprayWall(); lastKeyTime = 0; }
+            else { lastKeyTime = Date.now(); }
             break;
+        case 'Escape': pauseGame(); break;
+        case 'KeyT': camera.position.set(exitGroup.position.x, PLAYER_HEIGHT, exitGroup.position.z+40); break;
     }
 });
 document.addEventListener('keyup',e=>{
@@ -716,98 +825,180 @@ document.addEventListener('keyup',e=>{
     }
 });
 
-// ─── PHYSICS / COLLISION ───────────────────────────────────────────────────
-const playerCollider=new THREE.Box3();
-let prevTime=performance.now();
-const velocity=new THREE.Vector3();
+// ─── PHYSICS & AI LOOP ─────────────────────────────────────────────────────
+const playerCollider = new THREE.Box3();
+let prevTime = performance.now();
+const velocity = new THREE.Vector3();
 
-function checkCollision(pos){
-    playerCollider.setFromCenterAndSize(pos,new THREE.Vector3(PLAYER_SIZE,WALL_HEIGHT,PLAYER_SIZE));
-    if(playerCollider.intersectsBox(exitBox)){ showWinScreen(); return false; }
-    const h=PLAYER_SIZE/2;
-    const corners=[{x:pos.x-h,z:pos.z-h},{x:pos.x+h,z:pos.z-h},{x:pos.x-h,z:pos.z+h},{x:pos.x+h,z:pos.z+h}];
-    for(let c of corners){
-        const gx=Math.floor((c.x+(MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
-        const gz=Math.floor((c.z+(MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
-        if(gx>=0&&gx<MAP_SIZE&&gz>=0&&gz<MAP_SIZE){ if(grid[gx][gz]===1) return true; } else return true;
+function checkCollision(targetPosition) {
+    playerCollider.setFromCenterAndSize(targetPosition, new THREE.Vector3(PLAYER_SIZE, WALL_HEIGHT, PLAYER_SIZE));
+    if (playerCollider.intersectsBox(exitBox)) { showWinScreen(); return false; }
+    const hs = PLAYER_SIZE / 2;
+    const corners = [ {x:targetPosition.x-hs, z:targetPosition.z-hs}, {x:targetPosition.x+hs, z:targetPosition.z-hs}, {x:targetPosition.x-hs, z:targetPosition.z+hs}, {x:targetPosition.x+hs, z:targetPosition.z+hs} ];
+    for (let c of corners) {
+        const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE), gz = Math.floor((c.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        if (gx<0 || gx>=MAP_SIZE || gz<0 || gz>=MAP_SIZE || grid[gx][gz]===1) return true;
     }
     return false;
 }
 
-// ─── GAME LOOP ─────────────────────────────────────────────────────────────
-function animate(){
+// Entity collision requires sliding against walls 
+function checkEntityCollision(targetPosition) {
+    const hs = 2.0; // Entities have slightly smaller collision bounds
+    const corners = [ {x:targetPosition.x-hs, z:targetPosition.z-hs}, {x:targetPosition.x+hs, z:targetPosition.z-hs}, {x:targetPosition.x-hs, z:targetPosition.z+hs}, {x:targetPosition.x+hs, z:targetPosition.z+hs} ];
+    for (let c of corners) {
+        const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        const gz = Math.floor((c.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        if (gx<0 || gx>=MAP_SIZE || gz<0 || gz>=MAP_SIZE || grid[gx][gz]===1) return true;
+    }
+    return false;
+}
+
+function spawnGhost() {
+    const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+    const sprite = new THREE.Sprite(entityMat.clone());
+    sprite.material.color.setHex(0x555555);
+    sprite.scale.set(16, 32, 1);
+    sprite.position.copy(camera.position).add(camDir.multiplyScalar(150)); // spawn 150 units ahead
+    sprite.position.y = WALL_HEIGHT/2;
+    scene.add(sprite);
+    
+    if(masterGain) {
+        const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime+0.5);
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.8, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.0);
+        osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.0);
+    }
+    return { mesh: sprite, life: 1.5 };
+}
+
+function animate() {
     requestAnimationFrame(animate);
 
-    if(gameStarted&&!isPaused){
-        const time=performance.now();
-        const delta=Math.min((time-prevTime)/1000,0.1);
-        prevTime=time;
+    if (gameStarted && !isPaused && !isDead) {
+        const time = performance.now();
+        const delta = Math.min((time - prevTime) / 1000, 0.1); 
+        prevTime = time;
 
         updateTimer(time);
 
-        // Hydration drain
-        hydration-=HYDRATION_DRAIN*delta;
-        if(hydration<=0){ hydration=0; updateHydrationBar(); showDeathScreen(); return; }
-        updateHydrationBar();
+        // Survival Drain
+        hydration -= HYDRATION_DRAIN * delta;
+        if(hydration <= 0) showDeathScreen("DEHYDRATED.", "Your body has given out.");
+        updateStatusBars();
+        checkItemPickups();
 
-        // Pickup flash fade
-        if(pickupFlashTimer>0){
-            pickupFlashTimer-=delta;
-            if(pickupFlashTimer<=0){ pickupFlash.style.opacity='0'; pickupFlashTimer=0; }
+        if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
+
+        // Particles
+        for(let i=fireParticles.length-1; i>=0; i--) {
+            let p = fireParticles[i]; p.life -= delta;
+            if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); }
+            else { p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); p.mesh.material.opacity = p.life/0.4; }
         }
 
-        // Bottle pickups
-        checkBottlePickups();
-
-        // Lighting flicker
-        playerLight.position.copy(camera.position);
-        playerLight.intensity = Math.random()>0.95 ? Math.random()*0.4+0.2 : 0.6;
-
-        // Friction
-        velocity.x-=velocity.x*10*delta;
-        velocity.z-=velocity.z*10*delta;
-
-        let iX=joyX+(moveRight?1:0)-(moveLeft?1:0);
-        let iY=joyY+(moveBackward?1:0)-(moveForward?1:0);
-        const mag=Math.hypot(iX,iY);
-        if(mag>1){ iX/=mag; iY/=mag; }
-
-        if(mag>0){
-            const dir=new THREE.Vector3();
-            const fwd=new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
-            const sid=new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
-            dir.copy(sid).multiplyScalar(iX).add(fwd.multiplyScalar(-iY)).normalize();
-            velocity.add(dir.multiplyScalar(PLAYER_SPEED*Math.min(mag,1)*delta));
+        // Ghost Scare Logic
+        ghostTimer -= delta;
+        if(ghostTimer <= 0 && !activeGhost) {
+            activeGhost = spawnGhost();
+            ghostTimer = 240 + Math.random() * 120; // reset 4-6 mins
         }
-
-        const tX=camera.position.clone(); tX.x+=velocity.x*delta;
-        if(!checkCollision(tX)) camera.position.x=tX.x; else velocity.x=0;
-        const tZ=camera.position.clone(); tZ.z+=velocity.z*delta;
-        if(!checkCollision(tZ)) camera.position.z=tZ.z; else velocity.z=0;
-        camera.position.y=PLAYER_HEIGHT;
-
-        // Bob only nearby bottles (perf: skip distant ones)
-        const t2=time*0.001;
-        const px2=camera.position.x, pz2=camera.position.z;
-        for(let b of bottleData){
-            if(b.collected) continue;
-            const ddx=px2-b.wx, ddz=pz2-b.wz;
-            if(ddx*ddx+ddz*ddz < 200*200) {
-                b.group.position.y=Math.sin(t2*1.2+b.wx*0.01)*0.35;
+        if(activeGhost) {
+            activeGhost.life -= delta;
+            const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
+            activeGhost.mesh.position.add(dir.multiplyScalar(400 * delta)); // very fast
+            activeGhost.mesh.position.y = WALL_HEIGHT/2 + Math.sin(time/50)*2;
+            if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 15) {
+                scene.remove(activeGhost.mesh); activeGhost = null;
             }
         }
 
+        // Entities AI (Sliding + Min Distance)
+        let tookDamage = false;
+        for(let i=entities.length-1; i>=0; i--) {
+            let e = entities[i];
+            if(e.onFire) {
+                e.fireTimer -= delta;
+                e.mesh.material.color.setHex(0xffaa00);
+                e.mesh.scale.y = Math.max(0.1, e.mesh.scale.y - delta * 15);
+                if(e.fireTimer <= 0) { scene.remove(e.mesh); entities.splice(i,1); }
+                continue;
+            }
+
+            const dist = camera.position.distanceTo(e.mesh.position);
+            if(dist < 200) { // 10 Tiles detection
+                let speed = 90; // Walk speed
+                if(dist < 100 && e.stamina > 0) { // 5 Tiles sprint
+                    speed = 250;
+                    e.stamina -= delta;
+                } else if(e.stamina <= 0) {
+                    e.staminaCooldown -= delta;
+                    if(e.staminaCooldown <= 0) { e.stamina = 3.0; e.staminaCooldown = 5.0; } // Reset after 5s breath
+                }
+
+                if(dist < 15) {
+                    health -= 10 * delta; // 10% per second
+                    tookDamage = true;
+                    if(health <= 0) showDeathScreen("SLAIN.", "You were caught by a Wanderer.");
+                }
+
+                // Move Entity
+                const dir = camera.position.clone().sub(e.mesh.position).normalize(); dir.y=0;
+                
+                // Do not step closer if within ENTITY_MIN_DIST (prevents clipping through camera)
+                const effectiveSpeed = dist < ENTITY_MIN_DIST ? 0 : speed;
+                
+                let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
+                let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
+                
+                // Entity Wall Collision (Sliding)
+                if(!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
+                if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
+
+                e.bob += delta * effectiveSpeed * 0.05;
+                e.mesh.position.y = WALL_HEIGHT/2 + Math.sin(e.bob) * 1.5;
+            }
+        }
+
+        dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
+        if(tookDamage) updateStatusBars();
+
+        // Player Light
+        playerLight.position.copy(camera.position);
+        playerLight.intensity = Math.random() > 0.95 ? 0.3 : 0.6;
+
+        // Player Movement
+        velocity.x -= velocity.x * 10.0 * delta; 
+        velocity.z -= velocity.z * 10.0 * delta;
+
+        let inputX = joyX + (moveRight?1:0) - (moveLeft?1:0);
+        let inputY = joyY + (moveBackward?1:0) - (moveForward?1:0); 
+        const inputMag = Math.hypot(inputX, inputY);
+        if (inputMag > 1) { inputX /= inputMag; inputY /= inputMag; }
+
+        if (inputMag > 0) {
+            const dir = new THREE.Vector3();
+            const fV = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            const sV = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            dir.copy(sV).multiplyScalar(inputX).add(fV.multiplyScalar(-inputY)).normalize();
+            velocity.add(dir.multiplyScalar(PLAYER_SPEED * Math.min(inputMag, 1) * delta));
+        }
+
+        let targetX = camera.position.clone(); targetX.x += velocity.x * delta;
+        if (!checkCollision(targetX)) camera.position.x = targetX.x; else velocity.x = 0;
+        let targetZ = camera.position.clone(); targetZ.z += velocity.z * delta;
+        if (!checkCollision(targetZ)) camera.position.z = targetZ.z; else velocity.z = 0;
+
+        camera.position.y = PLAYER_HEIGHT;
     } else {
-        prevTime=performance.now();
+        prevTime = performance.now();
     }
 
     renderer.render(scene, camera);
 }
 
-window.addEventListener('resize',()=>{
-    camera.aspect=window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth,window.innerHeight);
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 animate();
