@@ -258,7 +258,6 @@ let lastSprayTime  = 0;
 let hydration = STAT_MAX;
 let health    = STAT_MAX;
 let isDead    = false;
-let hasRevived = false; 
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -662,7 +661,7 @@ winScreen.addEventListener('click', ()=>location.reload());
 
 document.getElementById('revive-yes').addEventListener('click', e=>{
     e.stopPropagation(); reviveScreen.style.display='none';
-    health=50; hydration=50; isDead=false; hasRevived=true; isPaused=false;
+    health=Math.max(50, health); hydration=Math.max(50, hydration); isDead=false; isPaused=false;
     updateStatusBars();
     if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
     lastTF=performance.now(); prevTime=performance.now();
@@ -678,17 +677,10 @@ function showWinScreen(){
 function showDeathScreen(title, lore){
     isDead=true; isPaused=true;
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-    if(!hasRevived){
-        document.getElementById('death-title').innerText = title;
-        document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
-        reviveScreen.style.display='flex';
-    } else {
-        document.getElementById('death-title').innerText = title;
-        document.getElementById('death-lore').innerHTML = lore + "<br>No one is coming for you.";
-        document.getElementById('revive-yes').style.display='none';
-        document.getElementById('revive-no').innerText='RESTART';
-        reviveScreen.style.display='flex';
-    }
+    
+    document.getElementById('death-title').innerText = title;
+    document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
+    reviveScreen.style.display='flex';
 }
 
 function pauseGame(){
