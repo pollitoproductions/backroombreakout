@@ -635,36 +635,52 @@ const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 
 // --- REWARD AD INTEGRATION ---
-async function showRewardAd(onSuccess) {
+function showRewardAd(onSuccess) {
+    // 1. Expose callback to the global window so your Native Android Code can trigger the reward!
+    // From Android Kotlin/Java, you must call: webView.evaluateJavascript("window.onRewardEarned()", null)
+    window.onRewardEarned = onSuccess;
+
     try {
-        // 1. Capacitor AdMob Plugin Check
+        // 2. Android Native Bridge (Standard Webview)
+        // This looks for a bridge object called 'Android' injected via addJavascriptInterface
+        if (typeof Android !== 'undefined') {
+            if (typeof Android.showRewardAd === 'function') {
+                Android.showRewardAd();
+                return;
+            } else if (typeof Android.showRewardedAd === 'function') {
+                Android.showRewardedAd();
+                return;
+            } else {
+                alert("Android bridge found, but 'showRewardAd' function is missing in your Kotlin/Java @JavascriptInterface!");
+            }
+        }
+
+        // 3. Capacitor AdMob Plugin Check
         if (typeof window !== 'undefined' && window.AdMob) {
-            await window.AdMob.showRewardVideoAd();
-            window.AdMob.addListener('rewardedVideoUserDidEarnReward', () => {
-                onSuccess();
+            window.AdMob.showRewardVideoAd().then(() => {
+                window.AdMob.addListener('rewardedVideoUserDidEarnReward', () => onSuccess());
             });
             return; 
         }
-        // 2. Cordova AdMob Plugin Check
-        else if (typeof admob !== 'undefined' && admob.rewardvideo) {
-            await admob.rewardvideo.show();
-            document.addEventListener('admob.rewardvideo.events.REWARD', () => {
-                onSuccess();
-            }, {once: true});
+        
+        // 4. Cordova AdMob Plugin Check
+        if (typeof admob !== 'undefined' && admob.rewardvideo) {
+            admob.rewardvideo.show().then(() => {
+                document.addEventListener('admob.rewardvideo.events.REWARD', () => onSuccess(), {once: true});
+            });
             return;
         }
-        // 3. Custom Android WebView Interface Check
-        else if (typeof Android !== 'undefined' && Android.showRewardedAd) {
-            // Expose callback to global window for Android to call
-            window.onRewardEarned = onSuccess;
-            Android.showRewardedAd();
-            return;
+
+        // If we detect Android but no bridge matched, alert the developer to fix the Android source code:
+        if (/android/i.test(navigator.userAgent) && !window.location.href.includes('http')) {
+            alert("NATIVE AD BRIDGE MISSING: The HTML cannot reach the AdMob SDK. Make sure you added webView.addJavascriptInterface(..., 'Android') in your Android code!");
         }
+
     } catch (e) {
-        console.log("Native Ad SDK error, falling back to simulator:", e);
+        console.log("Native Ad SDK error:", e);
     }
 
-    // Simulated Test Ad Overlay for Browser Testing
+    // Simulated Test Ad Overlay for Browser Testing (Fallback)
     const adOverlay = document.createElement('div');
     adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
     adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">TEST REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK ad playback...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">3</p>';
