@@ -642,16 +642,19 @@ function showRewardAd(onSuccess) {
 
     try {
         // 2. Android Native Bridge (Standard Webview)
-        // This looks for a bridge object called 'Android' injected via addJavascriptInterface
-        if (typeof Android !== 'undefined') {
-            if (typeof Android.showRewardAd === 'function') {
+        if (typeof Android !== 'undefined' && Android !== null) {
+            // DO NOT use typeof === 'function' here! Android interfaces register as an 'object' in the WebView.
+            // We just attempt to call it directly.
+            try {
                 Android.showRewardAd();
-                return;
-            } else if (typeof Android.showRewardedAd === 'function') {
-                Android.showRewardedAd();
-                return;
-            } else {
-                alert("Android bridge found, but 'showRewardAd' function is missing in your Kotlin/Java @JavascriptInterface!");
+                return; // Successfully sent to Android Native!
+            } catch (err1) {
+                try {
+                    Android.showRewardedAd();
+                    return; // Fallback native name
+                } catch (err2) {
+                    console.log("Android bridge found, but method call failed:", err1);
+                }
             }
         }
 
@@ -669,11 +672,6 @@ function showRewardAd(onSuccess) {
                 document.addEventListener('admob.rewardvideo.events.REWARD', () => onSuccess(), {once: true});
             });
             return;
-        }
-
-        // If we detect Android but no bridge matched, alert the developer to fix the Android source code:
-        if (/android/i.test(navigator.userAgent) && !window.location.href.includes('http')) {
-            alert("NATIVE AD BRIDGE MISSING: The HTML cannot reach the AdMob SDK. Make sure you added webView.addJavascriptInterface(..., 'Android') in your Android code!");
         }
 
     } catch (e) {
