@@ -634,10 +634,38 @@ const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 
+// --- REWARD AD INTEGRATION ---
+function showRewardAd(onSuccess) {
+    // --- ACTUAL SDK TRIGGER GOES HERE ---
+    // When you compile the app bundle, replace the simulation below with your SDK call.
+    // Example: if (typeof admob !== 'undefined') { admob.rewardVideo.show().then(onSuccess); return; }
+
+    // Simulated Test Ad Overlay for Browser Testing
+    const adOverlay = document.createElement('div');
+    adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
+    adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">TEST REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK ad playback...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">3</p>';
+    document.body.appendChild(adOverlay);
+
+    let timeLeft = 3;
+    const timerInt = setInterval(() => {
+        timeLeft--;
+        if(timeLeft > 0) {
+            document.getElementById('test-ad-timer').innerText = timeLeft;
+        } else {
+            clearInterval(timerInt);
+            document.body.removeChild(adOverlay);
+            onSuccess(); // Grant the reward
+        }
+    }, 1000);
+}
+
 startScreen.addEventListener('click', ()=>{ startScreen.style.display='none'; adPrompt.style.display='flex'; });
 
 document.getElementById('ad-yes').addEventListener('click', e=>{
-    e.stopPropagation(); unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; startGame();
+    e.stopPropagation(); 
+    showRewardAd(() => {
+        unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; startGame();
+    });
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
     e.stopPropagation(); unlimitedPaint=false; spraysLeft=100; sprayCounterEl.innerText=`SPRAYS: ${spraysLeft}`; startGame();
@@ -660,11 +688,14 @@ pauseScreen.addEventListener('click', ()=>{
 winScreen.addEventListener('click', ()=>location.reload());
 
 document.getElementById('revive-yes').addEventListener('click', e=>{
-    e.stopPropagation(); reviveScreen.style.display='none';
-    health=Math.max(50, health); hydration=Math.max(50, hydration); isDead=false; isPaused=false;
-    updateStatusBars();
-    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
-    lastTF=performance.now(); prevTime=performance.now();
+    e.stopPropagation(); 
+    showRewardAd(() => {
+        reviveScreen.style.display='none';
+        health=Math.max(50, health); hydration=Math.max(50, hydration); isDead=false; isPaused=false;
+        updateStatusBars();
+        if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+        lastTF=performance.now(); prevTime=performance.now();
+    });
 });
 document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
 
