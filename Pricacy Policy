@@ -13,8 +13,6 @@ Google Play Services: Used for app distribution and licensing.
 
 AdMob: Used to serve advertisements (including rewarded videos). AdMob may collect data such as advertising IDs, device location, and usage data to personalize ads.
 
-Firebase: Used for a real time database so players can share their best times optionally.
-
 3. Cookies and Local Storage
 The Service may use "cookies" or local browser storage to save your game progress (e.g., whether you have successfully escaped or if you have unlocked unlimited spray paint). These are stored locally on your device and are not transmitted to us.
 
