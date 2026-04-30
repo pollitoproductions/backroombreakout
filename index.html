@@ -635,10 +635,34 @@ const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 
 // --- REWARD AD INTEGRATION ---
-function showRewardAd(onSuccess) {
-    // --- ACTUAL SDK TRIGGER GOES HERE ---
-    // When you compile the app bundle, replace the simulation below with your SDK call.
-    // Example: if (typeof admob !== 'undefined') { admob.rewardVideo.show().then(onSuccess); return; }
+async function showRewardAd(onSuccess) {
+    try {
+        // 1. Capacitor AdMob Plugin Check
+        if (typeof window !== 'undefined' && window.AdMob) {
+            await window.AdMob.showRewardVideoAd();
+            window.AdMob.addListener('rewardedVideoUserDidEarnReward', () => {
+                onSuccess();
+            });
+            return; 
+        }
+        // 2. Cordova AdMob Plugin Check
+        else if (typeof admob !== 'undefined' && admob.rewardvideo) {
+            await admob.rewardvideo.show();
+            document.addEventListener('admob.rewardvideo.events.REWARD', () => {
+                onSuccess();
+            }, {once: true});
+            return;
+        }
+        // 3. Custom Android WebView Interface Check
+        else if (typeof Android !== 'undefined' && Android.showRewardedAd) {
+            // Expose callback to global window for Android to call
+            window.onRewardEarned = onSuccess;
+            Android.showRewardedAd();
+            return;
+        }
+    } catch (e) {
+        console.log("Native Ad SDK error, falling back to simulator:", e);
+    }
 
     // Simulated Test Ad Overlay for Browser Testing
     const adOverlay = document.createElement('div');
