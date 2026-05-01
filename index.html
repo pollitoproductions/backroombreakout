@@ -55,20 +55,20 @@
         .win-hint { font-size:1em; color:#00cc00; margin-top:28px; opacity:0.8; text-shadow:0 0 5px #00ff00; }
 
         #timer {
-            position:absolute; top:20px; left:50%; transform:translateX(-50%);
+            position:absolute; top:15px; left:50%; transform:translateX(-50%);
             color:#fff; font-size:24px; font-weight:bold; z-index:30;
             text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
         }
         #spray-counter {
-            position:absolute; top:55px; left:50%; transform:translateX(-50%);
+            position:absolute; top:45px; left:50%; transform:translateX(-50%);
             color:#ff8844; font-size:17px; font-weight:bold; z-index:30;
             text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
         }
 
-        /* HYDRATION & HEALTH BARS */
+        /* HYDRATION & HEALTH BARS (MOVED TO TOP) */
         #status-wrap {
-            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: column; align-items: center; gap: 8px;
+            position: absolute; top: 75px; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: row; align-items: center; gap: 20px;
             z-index: 30; pointer-events: none;
         }
         .status-container { display: flex; flex-direction: column; align-items: center; }
@@ -77,7 +77,7 @@
             text-shadow: 1px 1px 3px #000; letter-spacing: 1px;
         }
         .status-bar-bg {
-            width: 200px; height: 14px;
+            width: 120px; height: 12px;
             background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 3px; overflow: hidden;
@@ -186,7 +186,7 @@
             You have slipped through the fabric of reality into a space roughly the size of
             <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
         </div>
-        <div class="subtitle warn" style="margin-top:20px;">Double tap on walls beside you to mark them with paint,<br>double tapping farther away will spray flames!</div>
+        <div class="subtitle warn" style="margin-top:20px;">Hold Space/E (or double-tap & hold) for continuous Flamethrower!</div>
         <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look</div>
         <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
     </div>
@@ -225,7 +225,7 @@
             Your body has given out. The hum of the fluorescent lights grows distant.<br>
             But wait — there may be one more chance...
         </div>
-        <div style="color:#88ccff; font-size:1.1em; margin-top:10px;" id="revive-offer">Watch an ad to revive with half health and hydration?</div>
+        <div style="color:#88ccff; font-size:1.1em; margin-top:10px;" id="revive-offer">Watch an ad to revive FULLY? (3 left)</div>
         <div class="btn-container">
             <button class="choice-btn green" id="revive-yes">▶ WATCH AD (REVIVE)</button>
             <button class="choice-btn red" id="revive-no">ACCEPT FATE (QUIT)</button>
@@ -248,7 +248,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
-const MAP_SIZE        = 1000; // Restored exactly to your original specification!
+const MAP_SIZE        = 1000; 
 const TILE_SIZE       = 20;
 const WALL_HEIGHT     = 15;
 const PLAYER_HEIGHT   = 8;
@@ -262,15 +262,13 @@ const EXIT_MIN_DIST   = 80;
 // SURVIVAL STATS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
-const HYD_PER_BOTTLE     = 25;    // Reduced slightly from 30
-const HP_PER_MEDKIT      = 25;
-const BOTTLE_COUNT       = 1000;  // Optimized for 1000x1000
-const MEDKIT_COUNT       = 600;   // Optimized for 1000x1000
-const ITEM_PICKUP_DIST   = 20;    
+const BOTTLE_COUNT       = 1500;  
+const JELLY_COUNT        = 1000;  
+const ITEM_PICKUP_DIST   = 25;    
 
 // ENTITY AI
-const ENTITY_COUNT       = 250;   // Optimized balance for map size
-const ENTITY_MIN_DIST    = 10.0; 
+const ENTITY_COUNT       = 250;   
+const ENTITY_MIN_DIST    = 22.0; // Distance where entities "back off" and stop moving forward
 
 let spraysLeft    = 100;
 let unlimitedPaint = false;
@@ -278,9 +276,13 @@ let touchStartTime = 0;
 let lastTapTime    = 0;
 let lastSprayTime  = 0;
 
-let hydration = STAT_MAX;
-let health    = STAT_MAX;
-let isDead    = false;
+let isFiring = false;
+let fireAccumulator = 0;
+
+let hydration   = STAT_MAX;
+let health      = STAT_MAX;
+let isDead      = false;
+let revivesLeft = 3; // Maximum of 3 revives per game
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -471,23 +473,22 @@ const fireTex = (function(){
     return new THREE.CanvasTexture(c);
 })();
 
-function sprayWall() {
+function startAction() {
     if (!gameStarted||isPaused||isDead) return;
-    
-    // Check if player has ran out of paint
     if (!unlimitedPaint && spraysLeft <= 0) {
         pauseGame();
         document.getElementById('paint-ad-prompt').style.display = 'flex';
         return;
     }
 
-    if (Date.now()-lastSprayTime<300) return; 
-    lastSprayTime=Date.now();
-
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
 
+    // If close to wall, do a single spray paint
     if (hits.length > 0 && hits[0].distance < 15) {
+        if (Date.now()-lastSprayTime<300) return; 
+        lastSprayTime=Date.now();
+
         const hit = hits[0];
         const g = new THREE.PlaneGeometry(6,6);
         const m = new THREE.MeshBasicMaterial({map:sprayTexture,transparent:true,depthWrite:false,color:0xffffff});
@@ -500,81 +501,47 @@ function sprayWall() {
             spraysLeft--;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
         }
+        isFiring = false;
     } else {
-        // Flamethrower shot
-        for(let i=0; i<8; i++) {
-            const p = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
-            const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-            p.position.copy(camera.position).add(camDir.multiplyScalar(5 + Math.random()*5));
-            p.position.x += (Math.random()-0.5)*3;
-            p.position.y += (Math.random()-0.5)*3 - 2;
-            p.scale.set(4,4,1);
-            scene.add(p);
-            fireParticles.push({mesh: p, life: 0.4, vel: camDir.clone().multiplyScalar(40).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
-        }
-
-        const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-        for(let e of entities) {
-            if(e.onFire) continue;
-            
-            // Fast Distance Optimization (Manhattan distance)
-            if (Math.abs(camera.position.x - e.mesh.position.x) > 50 || Math.abs(camera.position.z - e.mesh.position.z) > 50) continue;
-            
-            const dist = camera.position.distanceTo(e.mesh.position);
-            if(dist < 50) { 
-                const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
-                if(dirToEnt.dot(camDir) > 0.85) { 
-                    e.onFire = true;
-                    e.fireTimer = 1.5;
-                    
-                    if (e.type === 'SMILING_SHADOW') {
-                        document.getElementById('entity-eyes-smile').style.opacity = 0;
-                    }
-
-                    if(masterGain) {
-                        const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
-                        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
-                        osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.5);
-                    }
-                }
-            }
-        }
-
-        if (!unlimitedPaint) {
-            spraysLeft--;
-            sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
-        }
+        // Start continuous firing logic
+        isFiring = true;
+        fireAccumulator = 0.1; // trigger instantly
     }
 }
 
-// ─── ITEMS ─────────────────────────────────────────────────────────────────
+function stopAction() {
+    isFiring = false;
+}
+
+// ─── ITEMS: ALMOND WATER & MOTH JELLY ──────────────────────────────────────
 const itemData = []; 
 
 function makeBottle() {
     const group = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(1.1, 1.3, 4.5, 7);
-    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
+    // Dark brown/amber basic material to glow slightly and look like Almond Water
+    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
     const body = new THREE.Mesh(bodyGeo, bodyMat); body.position.y = 2.25; group.add(body);
     const neckGeo = new THREE.CylinderGeometry(0.55, 1.0, 1.5, 7);
-    const neckMat = new THREE.MeshLambertMaterial({ color: 0x4a2800, transparent: true, opacity: 0.85 });
+    const neckMat = new THREE.MeshBasicMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
     const neck = new THREE.Mesh(neckGeo, neckMat); neck.position.y = 5.25; group.add(neck);
     const capGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 7);
-    const capMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const capMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const cap = new THREE.Mesh(capGeo, capMat); cap.position.y = 6.3; group.add(cap);
     return group;
 }
 
-function makeMedkit() {
-    const geo = new THREE.BoxGeometry(4, 3, 1.5);
-    const c = document.createElement('canvas'); c.width=128; c.height=128;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,128,128);
-    ctx.fillStyle='#ee0000'; ctx.fillRect(48,20,32,88); ctx.fillRect(20,48,88,32);
-    const tex = new THREE.CanvasTexture(c);
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 1.5;
-    return mesh;
+function makeMothJelly() {
+    const group = new THREE.Group();
+    const jarGeo = new THREE.CylinderGeometry(1.5, 1.5, 3.5, 8);
+    const jarMat = new THREE.MeshBasicMaterial({ color: 0x88ffcc, transparent: true, opacity: 0.9 });
+    const jar = new THREE.Mesh(jarGeo, jarMat);
+    jar.position.y = 1.75; group.add(jar);
+    const lidGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.5, 8);
+    const lidMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const lid = new THREE.Mesh(lidGeo, lidMat);
+    lid.position.y = 3.75; group.add(lid);
+    return group;
 }
 
 (function placeItems() {
@@ -586,22 +553,22 @@ function makeMedkit() {
         if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6)) continue;
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
-        const mesh = makeBottle(); mesh.scale.setScalar(0.35); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
+        const mesh = makeBottle(); mesh.scale.setScalar(0.6); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
         scene.add(mesh);
         itemData.push({ group: mesh, wx, wz, type: 'water', collected: false });
         placed++;
     }
     placed = 0; attempts = 0;
-    while (placed < MEDKIT_COUNT && attempts < MEDKIT_COUNT * 20) {
+    while (placed < JELLY_COUNT && attempts < JELLY_COUNT * 20) {
         attempts++;
         const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
         const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
         if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6)) continue;
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
-        const mesh = makeMedkit(); mesh.scale.setScalar(0.7); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
+        const mesh = makeMothJelly(); mesh.scale.setScalar(1.0); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
         scene.add(mesh);
-        itemData.push({ group: mesh, wx, wz, type: 'medkit', collected: false });
+        itemData.push({ group: mesh, wx, wz, type: 'jelly', collected: false });
         placed++;
     }
 })();
@@ -690,7 +657,6 @@ function showRewardAd(onSuccess) {
         }
     } catch (e) { console.log("Native Ad error:", e); }
 
-    // Fallback Simulated Ad
     const adOverlay = document.createElement('div');
     adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
     adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK connection...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">2</p>';
@@ -748,8 +714,10 @@ winScreen.addEventListener('click', ()=>location.reload());
 document.getElementById('revive-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
     showRewardAd(() => {
+        revivesLeft--; // Deduct 1 revive usage
         reviveScreen.style.display='none';
-        health=Math.max(50, health); hydration=Math.max(50, hydration); isDead=false; isPaused=false;
+        health=STAT_MAX; hydration=STAT_MAX; // 100% Full restore
+        isDead=false; isPaused=false;
         updateStatusBars();
         if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
         lastTF=performance.now(); prevTime=performance.now();
@@ -760,20 +728,35 @@ document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropag
 function showWinScreen(){
     gameStarted=false; winTimeDisp.innerText=fmtTime(); winScreen.style.display='flex';
     timerEl.style.display='none'; sprayCounterEl.style.display='none'; statusWrap.style.display='none'; document.getElementById('mute-btn').style.display='none';
+    stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
 }
 
 function showDeathScreen(title, lore){
     isDead=true; isPaused=true;
+    stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     document.getElementById('death-title').innerText = title;
-    document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
+    
+    if (revivesLeft > 0) {
+        document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
+        document.getElementById('revive-offer').innerText = `Watch an ad to revive FULLY? (${revivesLeft} left)`;
+        document.getElementById('revive-yes').style.display = 'inline-block';
+        document.getElementById('revive-no').innerText = 'ACCEPT FATE (QUIT)';
+    } else {
+        document.getElementById('death-lore').innerHTML = lore + "<br>You have no revives left.";
+        document.getElementById('revive-offer').innerText = "";
+        document.getElementById('revive-yes').style.display = 'none';
+        document.getElementById('revive-no').innerText = 'RESTART';
+    }
+    
     reviveScreen.style.display='flex';
 }
 
 function pauseGame(){
     if(!gameStarted||isPaused||isDead) return;
     isPaused=true; 
+    stopAction();
     if(paintAdPrompt.style.display !== 'flex') pauseScreen.style.display='flex';
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
@@ -810,18 +793,20 @@ function checkItemPickups(){
         if (Math.abs(px - b.wx) < ITEM_PICKUP_DIST && Math.abs(pz - b.wz) < ITEM_PICKUP_DIST) {
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
-                hydration=Math.min(STAT_MAX, hydration+HYD_PER_BOTTLE);
-                showPickupFlash(`💧 Almond Water +${HYD_PER_BOTTLE}`, '#88ccff');
+                const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
+                hydration = Math.min(STAT_MAX, hydration + val);
+                showPickupFlash(`💧 Almond Water +${val}`, '#88ccff');
             } else {
-                health=Math.min(STAT_MAX, health+HP_PER_MEDKIT);
-                showPickupFlash(`✚ Medkit +${HP_PER_MEDKIT}`, '#ff6666');
+                const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
+                health = Math.min(STAT_MAX, health + val);
+                showPickupFlash(`🧪 Moth Jelly +${val}`, '#aaffcc');
             }
             updateStatusBars();
         }
     }
 }
 
-// ─── CONTROLS ──────────────────────────────────────────────────────────────
+// ─── CONTROLS (INCLUDES CONTINUOUS FIRE LOGIC) ─────────────────────────────
 let moveForward=false,moveBackward=false,moveLeft=false,moveRight=false;
 let joyX=0,joyY=0;
 let leftTouchId=null,rightTouchId=null;
@@ -829,6 +814,8 @@ let leftStart={x:0,y:0},rightStart={x:0,y:0};
 const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
+
+let isRightTouchDoubleTapped = false;
 
 function handlePointerStart(id,x,y,isMouse=false){
     if(!gameStarted||isPaused||isDead) return;
@@ -839,7 +826,15 @@ function handlePointerStart(id,x,y,isMouse=false){
             joyStick.style.transform='translate(-50%,-50%)'; joyX=joyY=0;
         }
     } else {
-        if(rightTouchId===null){ rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); }
+        if(rightTouchId===null){ 
+            rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); 
+            
+            // Double Tap to Hold
+            if (Date.now() - lastTapTime < 400) {
+                isRightTouchDoubleTapped = true;
+                startAction();
+            }
+        }
     }
 }
 function handlePointerMove(id,x,y){
@@ -851,17 +846,24 @@ function handlePointerMove(id,x,y){
         joyStick.style.transform=`translate(calc(-50% + ${dX}px),calc(-50% + ${dY}px))`;
         joyX=dX/MAX_JOY; joyY=dY/MAX_JOY;
     } else if(id===rightTouchId){
-        yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
-        pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
-        camera.rotation.set(pitch,yaw,0); rightStart={x,y};
+        if (!isRightTouchDoubleTapped) { // Optional: Stop camera movement while firing
+            yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
+            pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
+            camera.rotation.set(pitch,yaw,0); rightStart={x,y};
+        }
     }
 }
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
     else if(id===rightTouchId){ 
-        if(Date.now()-touchStartTime<200) {
-            if (Date.now() - lastTapTime < 400) { sprayWall(); lastTapTime = 0; }
-            else { lastTapTime = Date.now(); }
+        if (isRightTouchDoubleTapped) {
+            stopAction();
+            isRightTouchDoubleTapped = false;
+            lastTapTime = 0; // reset
+        } else {
+            if(Date.now()-touchStartTime<200) {
+                lastTapTime = Date.now();
+            }
         }
         rightTouchId=null; 
     }
@@ -873,20 +875,45 @@ document.addEventListener('touchend',e=>{ for(let t of e.changedTouches) handleP
 document.addEventListener('touchcancel',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
 
 let isMouseDown=false;
-document.addEventListener('mousedown',e=>{ if(!gameStarted||isPaused||isDead) return; isMouseDown=true; handlePointerStart('mouse',e.clientX,e.clientY,true); });
-document.addEventListener('mousemove',e=>{ if(!gameStarted||isPaused||!isMouseDown) return; handlePointerMove('mouse',e.clientX,e.clientY); });
-window.addEventListener('mouseup',()=>{ if(isMouseDown){ handlePointerEnd('mouse'); isMouseDown=false; } });
+document.addEventListener('mousedown',e=>{ 
+    if(!gameStarted||isPaused||isDead) return; 
+    isMouseDown=true; 
+    if(e.button === 0) {
+        if (Date.now() - lastTapTime < 400) {
+            isRightTouchDoubleTapped = true;
+            startAction();
+        } else {
+            handlePointerStart('mouse',e.clientX,e.clientY,true); 
+        }
+    }
+});
+document.addEventListener('mousemove',e=>{ 
+    if(!gameStarted||isPaused||!isMouseDown) return; 
+    if(!isRightTouchDoubleTapped) handlePointerMove('mouse',e.clientX,e.clientY); 
+});
+window.addEventListener('mouseup',e=>{ 
+    if(isMouseDown){ 
+        if (isRightTouchDoubleTapped) {
+            stopAction();
+            isRightTouchDoubleTapped = false;
+            lastTapTime = 0;
+        } else {
+            handlePointerEnd('mouse'); 
+            lastTapTime = Date.now(); 
+        }
+        isMouseDown=false; 
+    } 
+});
 
-let lastKeyTime = 0;
 document.addEventListener('keydown',e=>{
+    if(e.repeat) return;
     switch(e.code){
         case 'KeyW': case 'ArrowUp':    moveForward=true;  break;
         case 'KeyA': case 'ArrowLeft':  moveLeft=true;     break;
         case 'KeyS': case 'ArrowDown':  moveBackward=true; break;
         case 'KeyD': case 'ArrowRight': moveRight=true;    break;
         case 'Space': case 'KeyE': 
-            if(Date.now() - lastKeyTime < 400) { sprayWall(); lastKeyTime = 0; }
-            else { lastKeyTime = Date.now(); }
+            startAction();
             break;
         case 'Escape': pauseGame(); break;
     }
@@ -897,6 +924,9 @@ document.addEventListener('keyup',e=>{
         case 'KeyA': case 'ArrowLeft':  moveLeft=false;     break;
         case 'KeyS': case 'ArrowDown':  moveBackward=false; break;
         case 'KeyD': case 'ArrowRight': moveRight=false;    break;
+        case 'Space': case 'KeyE': 
+            stopAction();
+            break;
     }
 });
 
@@ -962,6 +992,59 @@ function animate() {
 
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
+        // Continuous Flamethrower Process
+        if (isFiring) {
+            if (!unlimitedPaint && spraysLeft <= 0) {
+                isFiring = false;
+                pauseGame();
+                document.getElementById('paint-ad-prompt').style.display = 'flex';
+            } else {
+                fireAccumulator += delta;
+                if (fireAccumulator >= 0.1) { // Fires 10 times a second
+                    fireAccumulator -= 0.1;
+
+                    for(let i=0; i<3; i++) {
+                        const p = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
+                        const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+                        p.position.copy(camera.position).add(camDir.multiplyScalar(5 + Math.random()*5));
+                        p.position.x += (Math.random()-0.5)*3;
+                        p.position.y += (Math.random()-0.5)*3 - 2;
+                        p.scale.set(4,4,1);
+                        scene.add(p);
+                        fireParticles.push({mesh: p, life: 0.4, vel: camDir.clone().multiplyScalar(40).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
+                    }
+
+                    const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+                    for(let e of entities) {
+                        if(e.onFire) continue;
+                        if (Math.abs(camera.position.x - e.mesh.position.x) > 50 || Math.abs(camera.position.z - e.mesh.position.z) > 50) continue; 
+
+                        const dist = camera.position.distanceTo(e.mesh.position);
+                        if(dist < 50) { 
+                            const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
+                            if(dirToEnt.dot(camDir) > 0.85) { 
+                                e.onFire = true;
+                                e.fireTimer = 1.5;
+                                if (e.type === 'SMILING_SHADOW') {
+                                    document.getElementById('entity-eyes-smile').style.opacity = 0;
+                                }
+                                if(masterGain) {
+                                    const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
+                                    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
+                                    osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.5);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!unlimitedPaint) {
+                        spraysLeft--;
+                        sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+                    }
+                }
+            }
+        }
+
         for(let i=fireParticles.length-1; i>=0; i--) {
             let p = fireParticles[i]; p.life -= delta;
             if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); }
@@ -1000,7 +1083,7 @@ function animate() {
                 continue;
             }
 
-            // High Performance Distance Check: Skip entities more than 250 units away
+            // High Performance Distance Check
             let dx = px - e.mesh.position.x;
             let dz = pz - e.mesh.position.z;
             if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; 
@@ -1030,7 +1113,9 @@ function animate() {
                     if(e.staminaCooldown <= 0) { e.stamina = 3.0; e.staminaCooldown = 5.0; }
                 }
 
-                if(dist < 15) {
+                // Entities now stop advancing at ENTITY_MIN_DIST (22 units)
+                // but if they get within 25 units (because of glitch or you walking into them) they hurt you
+                if(dist < 25) {
                     health -= 10 * delta; 
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("SLAIN.", "You were caught by a Wanderer.");
@@ -1051,9 +1136,10 @@ function animate() {
         }
 
         let shadowOverlay = document.getElementById('entity-eyes-smile');
-        if (closestShadowDist < 60) {
-            let scale = Math.max(1, 40 / closestShadowDist);
-            let opacity = Math.min(1, 40 / closestShadowDist - 0.4); 
+        if (closestShadowDist < 80) {
+            // Less aggressive screen filling
+            let scale = Math.max(1, 60 / Math.max(10, closestShadowDist));
+            let opacity = Math.min(1, 60 / closestShadowDist - 0.5); 
             shadowOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
             shadowOverlay.style.opacity = opacity;
         } else {
