@@ -33,7 +33,7 @@
 
         .title { font-size: 2.4em; margin-bottom: 14px; text-shadow: 0 0 10px #d4d42b; }
         .subtitle { font-size: 1.05em; color: #ddd; margin-bottom: 9px; line-height: 1.55; max-width: 540px; }
-        .lore { font-size: 0.95em; color: #aaa; margin-bottom: 8px; max-width: 560px; line-height: 1.6; font-style: italic; }
+        .lore { font-size: 0.95em; color: #aaa; margin-bottom: 12px; max-width: 560px; line-height: 1.6; font-style: italic; }
         .hint { color: #0f0; margin-top: 18px; text-shadow: 0 0 5px #0f0; font-size: 1.05em; }
         .warn { color: #ff4444; font-weight: bold; margin-bottom: 8px; }
 
@@ -97,8 +97,7 @@
         #mute-btn {
             position:absolute; top:20px; right:20px; width:40px; height:40px;
             background-color:rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.3);
-            border-radius:5px; color:white; font-size:20px;
-            display:flex; align-items:center; justify-content:center;
+            border-radius:5px; display:flex; align-items:center; justify-content:center;
             cursor:pointer; pointer-events:auto; z-index:30; user-select:none;
         }
         #crosshair {
@@ -168,18 +167,31 @@
         </div>
     </div>
 
-    <div id="mute-btn" style="display:none;">🔊</div>
+    <!-- SPEAKER ICON -->
+    <div id="mute-btn" style="display:none;">
+        <svg id="speaker-icon" viewBox="0 0 24 24" width="22" height="22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path id="speaker-waves" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <line id="speaker-mute-line" x1="1" y1="1" x2="23" y2="23" style="display:none; stroke: #ff4444; stroke-width: 3;"></line>
+        </svg>
+    </div>
+    
     <div id="pickup-flash">💧 Almond Water +25</div>
 
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
         <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">NOCLIP SIM</div>
         <div class="lore">
-            You have slipped through the fabric of reality into a space roughly the size of
-            <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
+            You were spraying a political message on an oppressive government's capitol building in the dead of night.
         </div>
-        <div class="subtitle warn" style="margin-top:20px;">Hold Space/E (or double-tap & hold) for continuous Flamethrower!</div>
-        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look</div>
+        <div class="lore">
+            Leaning against the wall to hide from a patrol, you fell through the solid concrete and noclipped into a space roughly the size of <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
+        </div>
+        <div class="lore">
+            You have nothing but the clothes on your back, your can of paint, and a lighter in your pocket.
+        </div>
+        <div class="subtitle warn" style="margin-top:20px;">Hold Space/E (or double-tap & hold) to use your lighter and paint as a continuous Flamethrower!</div>
+        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look & Fire</div>
         <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
     </div>
 
@@ -250,12 +262,12 @@ const EXIT_MIN_DIST   = 80;
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
 const BOTTLE_COUNT       = 1500;  
-const JELLY_COUNT        = 1500;  
-const PAINT_COUNT        = 500;  
+const JELLY_COUNT        = 1000;  
+const PAINT_COUNT        = 300;   // Very sparse drops of spray paint  
 const ITEM_PICKUP_DIST   = 25;    
 
 // ENTITY AI
-const ENTITY_COUNT       = 2500;   //
+const ENTITY_COUNT       = 2500;   // 10x the enemies for the massive map!
 const ENTITY_MIN_DIST    = 22.0; // Distance where entities "back off" and stop moving forward
 
 let spraysLeft    = 100;
@@ -365,20 +377,42 @@ function generateWiryTexture() {
     const entCtx = entCanvas.getContext('2d');
     entCtx.clearRect(0,0,256,512);
     entCtx.strokeStyle = 'rgba(0,0,0,0.9)';
-    entCtx.lineWidth = 4; entCtx.lineCap = 'round';
+    entCtx.lineWidth = 5; entCtx.lineCap = 'round'; entCtx.lineJoin = 'round';
     
-    entCtx.beginPath(); entCtx.moveTo(128, 480); entCtx.lineTo(128, 100);
-    for(let i=0; i<14; i++) {
-        entCtx.moveTo(128, 120 + i*25);
-        entCtx.lineTo(128 + (Math.random()-0.5)*200, 160 + i*30);
+    // Wire Ball Head
+    entCtx.beginPath();
+    for(let i=0; i<80; i++) {
+        entCtx.arc(128 + (Math.random()-0.5)*50, 100 + (Math.random()-0.5)*50, 5 + Math.random()*20, 0, Math.PI*2);
     }
     entCtx.stroke();
     
+    // Block Torso
+    entCtx.beginPath();
+    for(let i=0; i<150; i++) {
+        entCtx.moveTo(80 + Math.random()*96, 150 + Math.random()*170);
+        entCtx.lineTo(80 + Math.random()*96, 150 + Math.random()*170);
+    }
+    entCtx.stroke();
+    
+    // Spindly Arms
+    entCtx.beginPath();
+    entCtx.moveTo(80, 160); entCtx.lineTo(30, 280); entCtx.lineTo(40, 400); // Left
+    entCtx.moveTo(176, 160); entCtx.lineTo(226, 280); entCtx.lineTo(216, 400); // Right
+    entCtx.stroke();
+    
+    // Spindly Legs
+    entCtx.beginPath();
+    entCtx.moveTo(100, 320); entCtx.lineTo(80, 450); entCtx.lineTo(90, 510); // Left
+    entCtx.moveTo(156, 320); entCtx.lineTo(176, 450); entCtx.lineTo(166, 510); // Right
+    entCtx.stroke();
+    
+    // Glowing eerie eyes
     entCtx.fillStyle = '#ffffff';
     entCtx.shadowColor = '#ffffff'; entCtx.shadowBlur = 15;
-    entCtx.beginPath(); entCtx.arc(105, 80, 6, 0, Math.PI*2); entCtx.fill();
-    entCtx.beginPath(); entCtx.arc(151, 80, 6, 0, Math.PI*2); entCtx.fill();
+    entCtx.beginPath(); entCtx.arc(110, 110, 6, 0, Math.PI*2); entCtx.fill();
+    entCtx.beginPath(); entCtx.arc(146, 110, 6, 0, Math.PI*2); entCtx.fill();
     entCtx.shadowBlur = 0;
+    
     return new THREE.CanvasTexture(entCanvas);
 }
 
@@ -647,7 +681,8 @@ function initAudio(){
 document.getElementById('mute-btn').addEventListener('click',e=>{
     e.stopPropagation(); isMuted=!isMuted;
     if(masterGain) masterGain.gain.setTargetAtTime(isMuted?0:0.5,audioCtx.currentTime,0.1);
-    document.getElementById('mute-btn').innerText=isMuted?'🔇':'🔊';
+    document.getElementById('speaker-waves').style.display = isMuted ? 'none' : 'block';
+    document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
 });
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
@@ -871,11 +906,10 @@ function handlePointerMove(id,x,y){
         joyStick.style.transform=`translate(calc(-50% + ${dX}px),calc(-50% + ${dY}px))`;
         joyX=dX/MAX_JOY; joyY=dY/MAX_JOY;
     } else if(id===rightTouchId){
-        if (!isRightTouchDoubleTapped) { // Optional: Stop camera movement while firing
-            yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
-            pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
-            camera.rotation.set(pitch,yaw,0); rightStart={x,y};
-        }
+        // Removed the strict camera lock while firing, so you can turn while spraying!
+        yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
+        pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
+        camera.rotation.set(pitch,yaw,0); rightStart={x,y};
     }
 }
 function handlePointerEnd(id){
@@ -914,7 +948,7 @@ document.addEventListener('mousedown',e=>{
 });
 document.addEventListener('mousemove',e=>{ 
     if(!gameStarted||isPaused||!isMouseDown) return; 
-    if(!isRightTouchDoubleTapped) handlePointerMove('mouse',e.clientX,e.clientY); 
+    handlePointerMove('mouse',e.clientX,e.clientY); // Look around even if firing
 });
 window.addEventListener('mouseup',e=>{ 
     if(isMouseDown){ 
@@ -1129,9 +1163,10 @@ function animate() {
                     if(e.glitchTimer <= 0) e.isGlitching = false;
                 }
 
-                let speed = e.type === 'SMILING_SHADOW' ? 60 : 90;
+                // Slowed down entities
+                let speed = e.type === 'SMILING_SHADOW' ? 35 : 45;
                 if(dist < 100 && e.stamina > 0 && e.type === 'WIRY_FRAME') {
-                    speed = 250;
+                    speed = 100; // Slower sprint
                     e.stamina -= delta;
                 } else if(e.stamina <= 0) {
                     e.staminaCooldown -= delta;
