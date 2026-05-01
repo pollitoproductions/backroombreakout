@@ -176,8 +176,9 @@
         </div>
     </div>
 
-    <div id="pickup-flash">💧 Almond Water +30</div>
+    <div id="pickup-flash">💧 Almond Water +25</div>
 
+    <!-- START SCREEN -->
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
         <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">NOCLIP SIM</div>
@@ -190,6 +191,7 @@
         <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
     </div>
 
+    <!-- OUT OF PAINT AD SCREEN -->
     <div id="paint-ad-prompt" style="display:none;">
         <div class="title">OUT OF PAINT!</div>
         <div class="lore">
@@ -202,11 +204,13 @@
         </div>
     </div>
 
+    <!-- PAUSE -->
     <div id="pause-screen" style="display:none;">
         <div class="title">PAUSED</div>
         <div class="hint">Tap anywhere to resume.</div>
     </div>
 
+    <!-- WIN -->
     <div id="win-screen" style="display:none;">
         <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
         <div class="win-flavor">Time spent in the Backrooms:</div>
@@ -214,6 +218,7 @@
         <div class="win-hint">Tap anywhere to try again.</div>
     </div>
 
+    <!-- REVIVE AD SCREEN -->
     <div id="revive-screen" style="display:none;">
         <div class="title" id="death-title" style="color:#ff8844;">DEHYDRATED.</div>
         <div class="lore" id="death-lore" style="color:#ccc;">
@@ -227,6 +232,7 @@
         </div>
     </div>
 
+    <!-- SMILING SHADOW CSS OVERLAY -->
     <div id="entity-eyes-smile">
         <div class="entity-eye" style="left: 0;"><div class="pupil"></div></div>
         <div class="entity-eye" style="right: 0;"><div class="pupil"></div></div>
@@ -242,7 +248,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
-const MAP_SIZE        = 3000; // Increased map scale representation internally
+const MAP_SIZE        = 1000; // Restored exactly to your original specification!
 const TILE_SIZE       = 20;
 const WALL_HEIGHT     = 15;
 const PLAYER_HEIGHT   = 8;
@@ -251,20 +257,20 @@ const PLAYER_SPEED    = 180.0;
 const SPAWN_GRID_X    = MAP_SIZE/2;
 const SPAWN_GRID_Z    = MAP_SIZE/2;
 const SPAWN_CLEAR_R   = 3;
-const EXIT_MIN_DIST   = 10;
+const EXIT_MIN_DIST   = 80;
 
 // SURVIVAL STATS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
-const HYD_PER_BOTTLE     = 25;    // Reduced from 30
+const HYD_PER_BOTTLE     = 25;    // Reduced slightly from 30
 const HP_PER_MEDKIT      = 25;
-const BOTTLE_COUNT       = 2400;  // Reduced spawn count
-const MEDKIT_COUNT       = 1750;  
+const BOTTLE_COUNT       = 1000;  // Optimized for 1000x1000
+const MEDKIT_COUNT       = 600;   // Optimized for 1000x1000
 const ITEM_PICKUP_DIST   = 20;    
 
 // ENTITY AI
-const ENTITY_COUNT       = 1000;
-const ENTITY_MIN_DIST    = 10.0; // Distance to stop running so they don't clip into camera
+const ENTITY_COUNT       = 250;   // Optimized balance for map size
+const ENTITY_MIN_DIST    = 10.0; 
 
 let spraysLeft    = 100;
 let unlimitedPaint = false;
@@ -303,7 +309,6 @@ function createTexture(type) {
     } else if (type === 'ceiling') {
         ctx.fillStyle = '#ddddcc'; ctx.fillRect(0,0,256,256);
         ctx.strokeStyle='#999'; ctx.lineWidth=2; ctx.strokeRect(0,0,256,256);
-        // Fluorescent lights
         ctx.fillStyle='#ffffff'; ctx.shadowColor='#ffffcc'; ctx.shadowBlur=15;
         ctx.fillRect(64,80,128,20); ctx.fillRect(64,156,128,20);
         ctx.shadowBlur=0;
@@ -433,8 +438,7 @@ const entities = [];
     }
 })();
 
-// Ghost Scare variables
-let ghostTimer = 180 + Math.random() * 120; // 3 to 5 mins
+let ghostTimer = 180 + Math.random() * 120;
 let activeGhost = null;
 
 // ─── SPRAY PAINT & FLAMETHROWER ───────────────────────────────────────────
@@ -470,7 +474,7 @@ const fireTex = (function(){
 function sprayWall() {
     if (!gameStarted||isPaused||isDead) return;
     
-    // Out of Paint Trigger
+    // Check if player has ran out of paint
     if (!unlimitedPaint && spraysLeft <= 0) {
         pauseGame();
         document.getElementById('paint-ad-prompt').style.display = 'flex';
@@ -483,7 +487,6 @@ function sprayWall() {
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
 
-    // If near a wall, paint it
     if (hits.length > 0 && hits[0].distance < 15) {
         const hit = hits[0];
         const g = new THREE.PlaneGeometry(6,6);
@@ -498,7 +501,7 @@ function sprayWall() {
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
         }
     } else {
-        // Far away from wall - shoot flames
+        // Flamethrower shot
         for(let i=0; i<8; i++) {
             const p = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
             const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
@@ -510,10 +513,13 @@ function sprayWall() {
             fireParticles.push({mesh: p, life: 0.4, vel: camDir.clone().multiplyScalar(40).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
         }
 
-        // Check Flamethrower Entity Hit
         const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
         for(let e of entities) {
             if(e.onFire) continue;
+            
+            // Fast Distance Optimization (Manhattan distance)
+            if (Math.abs(camera.position.x - e.mesh.position.x) > 50 || Math.abs(camera.position.z - e.mesh.position.z) > 50) continue;
+            
             const dist = camera.position.distanceTo(e.mesh.position);
             if(dist < 50) { 
                 const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
@@ -521,7 +527,6 @@ function sprayWall() {
                     e.onFire = true;
                     e.fireTimer = 1.5;
                     
-                    // Repel effect for shadow css
                     if (e.type === 'SMILING_SHADOW') {
                         document.getElementById('entity-eyes-smile').style.opacity = 0;
                     }
@@ -542,7 +547,7 @@ function sprayWall() {
     }
 }
 
-// ─── ITEMS: ALMOND WATER & MEDKITS ──────────────────────────────────────────
+// ─── ITEMS ─────────────────────────────────────────────────────────────────
 const itemData = []; 
 
 function makeBottle() {
@@ -622,12 +627,11 @@ exitGroup.position.set((exitGridX-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2,0,(exitGridZ
 scene.add(exitGroup);
 const exitBox=new THREE.Box3().setFromObject(exitGroup);
 
-// ─── LIGHTING ──────────────────────────────────────────────────────────────
+// ─── LIGHTING & STATE ──────────────────────────────────────────────────────
 scene.add(new THREE.AmbientLight(0xfffdbb, 0.4));
 const playerLight=new THREE.PointLight(0xfffdbb,0.6,60);
 scene.add(playerLight);
 
-// ─── CAMERA / STATE ────────────────────────────────────────────────────────
 let yaw=Math.PI/4, pitch=0;
 let gameStarted=false, isPaused=false;
 
@@ -638,13 +642,11 @@ camera.position.set(
 camera.rotation.order='YXZ';
 camera.rotation.y=yaw;
 
-// ─── TIMER ─────────────────────────────────────────────────────────────────
 const timerEl=document.getElementById('timer');
 let elapsed=0, lastTF=0;
 function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 
-// ─── AUDIO ─────────────────────────────────────────────────────────────────
 let audioCtx, masterGain, isMuted=false;
 function initAudio(){
     if(audioCtx) return;
@@ -661,7 +663,7 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('mute-btn').innerText=isMuted?'🔇':'🔊';
 });
 
-// ─── UI REFS & FLOW ───────────────────────────────────────────────────────
+// ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
 const startScreen  = document.getElementById('start-screen');
 const paintAdPrompt = document.getElementById('paint-ad-prompt');
 const pauseScreen  = document.getElementById('pause-screen');
@@ -676,7 +678,6 @@ const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 
-// --- REWARD AD INTEGRATION ---
 function showRewardAd(onSuccess) {
     window.onRewardEarned = onSuccess;
     try {
@@ -684,30 +685,18 @@ function showRewardAd(onSuccess) {
             try { Android.showRewardAd(); return; } 
             catch (err1) {
                 try { Android.showRewardedAd(); return; } 
-                catch (err2) { console.log("Android bridge error:", err1); }
+                catch (err2) { console.log("Android error:", err1); }
             }
         }
-        if (typeof window !== 'undefined' && window.AdMob) {
-            window.AdMob.showRewardVideoAd().then(() => {
-                window.AdMob.addListener('rewardedVideoUserDidEarnReward', () => onSuccess());
-            });
-            return; 
-        }
-        if (typeof admob !== 'undefined' && admob.rewardvideo) {
-            admob.rewardvideo.show().then(() => {
-                document.addEventListener('admob.rewardvideo.events.REWARD', () => onSuccess(), {once: true});
-            });
-            return;
-        }
-    } catch (e) { console.log("Native Ad SDK error:", e); }
+    } catch (e) { console.log("Native Ad error:", e); }
 
-    // Simulated Test Ad
+    // Fallback Simulated Ad
     const adOverlay = document.createElement('div');
     adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
-    adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">TEST REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK ad playback...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">3</p>';
+    adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK connection...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">2</p>';
     document.body.appendChild(adOverlay);
 
-    let timeLeft = 3;
+    let timeLeft = 2;
     const timerInt = setInterval(() => {
         timeLeft--;
         if(timeLeft > 0) {
@@ -777,7 +766,6 @@ function showWinScreen(){
 function showDeathScreen(title, lore){
     isDead=true; isPaused=true;
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-    
     document.getElementById('death-title').innerText = title;
     document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
     reviveScreen.style.display='flex';
@@ -793,13 +781,11 @@ function pauseGame(){
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
 window.addEventListener('blur', pauseGame);
 
-// ─── STATUS & LOGIC ────────────────────────────────────────────────────────
 function updateStatusBars(){
     const hPct = Math.max(0, health/STAT_MAX*100);
     healthBar.style.width = hPct+'%';
     const wPct = Math.max(0, hydration/STAT_MAX*100);
     hydrationBar.style.width = wPct+'%';
-    
     const danger = Math.max(0, 1-(wPct/30));
     vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
     vignetteEl.style.opacity=danger>0?1:0;
@@ -819,7 +805,9 @@ function checkItemPickups(){
     for(let i=0; i<itemData.length; i++){
         let b = itemData[i];
         if(b.collected) continue;
-        if(Math.sqrt((px-b.wx)**2 + (pz-b.wz)**2) < ITEM_PICKUP_DIST){
+        
+        // Fast Optimization: Manhattan distance check first
+        if (Math.abs(px - b.wx) < ITEM_PICKUP_DIST && Math.abs(pz - b.wz) < ITEM_PICKUP_DIST) {
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
                 hydration=Math.min(STAT_MAX, hydration+HYD_PER_BOTTLE);
@@ -868,17 +856,12 @@ function handlePointerMove(id,x,y){
         camera.rotation.set(pitch,yaw,0); rightStart={x,y};
     }
 }
-
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
     else if(id===rightTouchId){ 
         if(Date.now()-touchStartTime<200) {
-            if (Date.now() - lastTapTime < 400) {
-                sprayWall();
-                lastTapTime = 0;
-            } else {
-                lastTapTime = Date.now();
-            }
+            if (Date.now() - lastTapTime < 400) { sprayWall(); lastTapTime = 0; }
+            else { lastTapTime = Date.now(); }
         }
         rightTouchId=null; 
     }
@@ -906,7 +889,6 @@ document.addEventListener('keydown',e=>{
             else { lastKeyTime = Date.now(); }
             break;
         case 'Escape': pauseGame(); break;
-        case 'KeyT': camera.position.set(exitGroup.position.x, PLAYER_HEIGHT, exitGroup.position.z+40); break;
     }
 });
 document.addEventListener('keyup',e=>{
@@ -918,7 +900,7 @@ document.addEventListener('keyup',e=>{
     }
 });
 
-// ─── PHYSICS & AI LOOP ─────────────────────────────────────────────────────
+// ─── PHYSICS & GAME LOOP ───────────────────────────────────────────────────
 const playerCollider = new THREE.Box3();
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -973,7 +955,6 @@ function animate() {
 
         updateTimer(time);
 
-        // Survival Drain
         hydration -= HYDRATION_DRAIN * delta;
         if(hydration <= 0) showDeathScreen("DEHYDRATED.", "Your body has given out.");
         updateStatusBars();
@@ -981,32 +962,32 @@ function animate() {
 
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
-        // Particles
         for(let i=fireParticles.length-1; i>=0; i--) {
             let p = fireParticles[i]; p.life -= delta;
             if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); }
             else { p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); p.mesh.material.opacity = p.life/0.4; }
         }
 
-        // Ghost Scare Logic
         ghostTimer -= delta;
         if(ghostTimer <= 0 && !activeGhost) {
             activeGhost = spawnGhost();
-            ghostTimer = 240 + Math.random() * 120; // reset 4-6 mins
+            ghostTimer = 240 + Math.random() * 120;
         }
         if(activeGhost) {
             activeGhost.life -= delta;
             const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
-            activeGhost.mesh.position.add(dir.multiplyScalar(400 * delta)); // very fast
+            activeGhost.mesh.position.add(dir.multiplyScalar(400 * delta));
             activeGhost.mesh.position.y = WALL_HEIGHT/2 + Math.sin(time/50)*2;
             if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 15) {
                 scene.remove(activeGhost.mesh); activeGhost = null;
             }
         }
 
-        // Entities AI & Glitching
         let tookDamage = false;
         let closestShadowDist = 9999;
+        
+        const px = camera.position.x;
+        const pz = camera.position.z;
 
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
@@ -1019,15 +1000,18 @@ function animate() {
                 continue;
             }
 
-            const dist = camera.position.distanceTo(e.mesh.position);
+            // High Performance Distance Check: Skip entities more than 250 units away
+            let dx = px - e.mesh.position.x;
+            let dz = pz - e.mesh.position.z;
+            if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; 
+
+            const dist = Math.sqrt(dx*dx + dz*dz);
             
             if(e.type === 'SMILING_SHADOW' && dist < closestShadowDist) {
                 closestShadowDist = dist;
             }
 
             if(dist < 200) { 
-                
-                // Noclip glitch mechanic - 0.5% chance per frame when close
                 if(!e.isGlitching && Math.random() < 0.005) { 
                     e.isGlitching = true;
                     e.glitchTimer = 1.0; 
@@ -1037,8 +1021,8 @@ function animate() {
                     if(e.glitchTimer <= 0) e.isGlitching = false;
                 }
 
-                let speed = e.type === 'SMILING_SHADOW' ? 60 : 90; // Shadows are slower
-                if(dist < 100 && e.stamina > 0 && e.type === 'WIRY_FRAME') { // Only wiry frame sprints
+                let speed = e.type === 'SMILING_SHADOW' ? 60 : 90;
+                if(dist < 100 && e.stamina > 0 && e.type === 'WIRY_FRAME') {
                     speed = 250;
                     e.stamina -= delta;
                 } else if(e.stamina <= 0) {
@@ -1058,7 +1042,6 @@ function animate() {
                 let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
                 let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
                 
-                // If glitching, ignore collision
                 if(e.isGlitching || !checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
                 if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
@@ -1067,7 +1050,6 @@ function animate() {
             }
         }
 
-        // Update CSS Overlay for Smiling Shadow
         let shadowOverlay = document.getElementById('entity-eyes-smile');
         if (closestShadowDist < 60) {
             let scale = Math.max(1, 40 / closestShadowDist);
@@ -1081,11 +1063,9 @@ function animate() {
         dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
         if(tookDamage) updateStatusBars();
 
-        // Player Light
         playerLight.position.copy(camera.position);
         playerLight.intensity = Math.random() > 0.95 ? 0.3 : 0.6;
 
-        // Player Movement
         velocity.x -= velocity.x * 10.0 * delta; 
         velocity.z -= velocity.z * 10.0 * delta;
 
