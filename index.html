@@ -54,23 +54,17 @@
         .win-flavor { font-size:1.05em; color:#aaffaa; margin-bottom:4px; }
         .win-hint { font-size:1em; color:#00cc00; margin-top:28px; opacity:0.8; text-shadow:0 0 5px #00ff00; }
 
-        #timer {
-            position:absolute; top:15px; left:50%; transform:translateX(-50%);
-            color:#fff; font-size:24px; font-weight:bold; z-index:30;
-            text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
+        /* TOP HUD ARRANGEMENT */
+        #top-hud {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 25px; z-index: 30; pointer-events: none; width: 95%; max-width: 800px;
         }
-        #spray-counter {
-            position:absolute; top:45px; left:50%; transform:translateX(-50%);
-            color:#ff8844; font-size:17px; font-weight:bold; z-index:30;
-            text-shadow:2px 2px 4px #000; pointer-events:none; display:none;
-        }
-
-        /* HYDRATION & HEALTH BARS (MOVED TO TOP) */
-        #status-wrap {
-            position: absolute; top: 75px; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: row; align-items: center; gap: 20px;
-            z-index: 30; pointer-events: none;
-        }
+        .hud-element { text-shadow: 2px 2px 4px #000; }
+        
+        #timer { color: #fff; font-size: 22px; font-weight: bold; }
+        #spray-counter { color: #ff8844; font-size: 20px; font-weight: bold; }
+        
         .status-container { display: flex; flex-direction: column; align-items: center; }
         .status-label {
             font-size: 13px; margin-bottom: 4px; font-weight: bold;
@@ -161,21 +155,21 @@
 <div id="damage-flash"></div>
 
 <div id="ui-layer">
-    <div id="timer">00:00</div>
-    <div id="spray-counter">SPRAYS: 100</div>
-    <div id="mute-btn" style="display:none;">🔊</div>
-
-    <div id="status-wrap">
-        <div class="status-container">
+    <!-- TOP HUD CONTAINER -->
+    <div id="top-hud">
+        <div id="timer" class="hud-element">00:00</div>
+        <div id="spray-counter" class="hud-element">SPRAYS: 100</div>
+        <div class="status-container hud-element">
             <div class="status-label" style="color:#ff6666;">HEALTH</div>
             <div class="status-bar-bg"><div id="health-bar" class="status-bar-fill"></div></div>
         </div>
-        <div class="status-container">
+        <div class="status-container hud-element">
             <div class="status-label" style="color:#88ccff;">HYDRATION</div>
             <div class="status-bar-bg"><div id="hydration-bar" class="status-bar-fill"></div></div>
         </div>
     </div>
 
+    <div id="mute-btn" style="display:none;">🔊</div>
     <div id="pickup-flash">💧 Almond Water +25</div>
 
     <!-- START SCREEN -->
@@ -259,11 +253,12 @@ const SPAWN_GRID_Z    = MAP_SIZE/2;
 const SPAWN_CLEAR_R   = 3;
 const EXIT_MIN_DIST   = 80;
 
-// SURVIVAL STATS
+// SURVIVAL STATS & ITEMS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
 const BOTTLE_COUNT       = 1500;  
 const JELLY_COUNT        = 1000;  
+const PAINT_COUNT        = 300;   // Very sparse drops of spray paint  
 const ITEM_PICKUP_DIST   = 25;    
 
 // ENTITY AI
@@ -513,13 +508,12 @@ function stopAction() {
     isFiring = false;
 }
 
-// ─── ITEMS: ALMOND WATER & MOTH JELLY ──────────────────────────────────────
+// ─── ITEMS: ALMOND WATER, MOTH JELLY & PAINT CANS ──────────────────────────
 const itemData = []; 
 
 function makeBottle() {
     const group = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(1.1, 1.3, 4.5, 7);
-    // Dark brown/amber basic material to glow slightly and look like Almond Water
     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
     const body = new THREE.Mesh(bodyGeo, bodyMat); body.position.y = 2.25; group.add(body);
     const neckGeo = new THREE.CylinderGeometry(0.55, 1.0, 1.5, 7);
@@ -544,8 +538,23 @@ function makeMothJelly() {
     return group;
 }
 
+function makePaintCan() {
+    const group = new THREE.Group();
+    const bodyGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.5, 8);
+    const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff3333, transparent: true, opacity: 0.9 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 1.25; group.add(body);
+    const capGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 8);
+    const capMat = new THREE.MeshBasicMaterial({ color: 0xdddddd });
+    const cap = new THREE.Mesh(capGeo, capMat);
+    cap.position.y = 2.75; group.add(cap);
+    return group;
+}
+
 (function placeItems() {
     let placed = 0, attempts = 0;
+    
+    // Almond Water
     while (placed < BOTTLE_COUNT && attempts < BOTTLE_COUNT * 20) {
         attempts++;
         const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
@@ -558,6 +567,8 @@ function makeMothJelly() {
         itemData.push({ group: mesh, wx, wz, type: 'water', collected: false });
         placed++;
     }
+    
+    // Moth Jelly
     placed = 0; attempts = 0;
     while (placed < JELLY_COUNT && attempts < JELLY_COUNT * 20) {
         attempts++;
@@ -569,6 +580,21 @@ function makeMothJelly() {
         const mesh = makeMothJelly(); mesh.scale.setScalar(1.0); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
         scene.add(mesh);
         itemData.push({ group: mesh, wx, wz, type: 'jelly', collected: false });
+        placed++;
+    }
+    
+    // Spray Paint Cans
+    placed = 0; attempts = 0;
+    while (placed < PAINT_COUNT && attempts < PAINT_COUNT * 20) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0 || (Math.abs(gx-SPAWN_GRID_X)<6 && Math.abs(gz-SPAWN_GRID_Z)<6)) continue;
+        const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+        const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*8;
+        const mesh = makePaintCan(); mesh.scale.setScalar(1.2); mesh.position.set(wx, 0, wz); mesh.rotation.y = Math.random()*Math.PI;
+        scene.add(mesh);
+        itemData.push({ group: mesh, wx, wz, type: 'paint', collected: false });
         placed++;
     }
 })();
@@ -610,6 +636,7 @@ camera.rotation.order='YXZ';
 camera.rotation.y=yaw;
 
 const timerEl=document.getElementById('timer');
+const sprayCounterEl=document.getElementById('spray-counter');
 let elapsed=0, lastTF=0;
 function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
@@ -637,8 +664,7 @@ const pauseScreen  = document.getElementById('pause-screen');
 const winScreen    = document.getElementById('win-screen');
 const reviveScreen = document.getElementById('revive-screen');
 const winTimeDisp  = document.getElementById('win-time-display');
-const sprayCounterEl = document.getElementById('spray-counter');
-const statusWrap   = document.getElementById('status-wrap');
+const topHud       = document.getElementById('top-hud');
 const healthBar    = document.getElementById('health-bar');
 const hydrationBar = document.getElementById('hydration-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
@@ -697,7 +723,7 @@ document.getElementById('ad-no').addEventListener('click', e=>{
 
 function startGame(){
     startScreen.style.display='none'; document.getElementById('mute-btn').style.display='flex';
-    timerEl.style.display='block'; sprayCounterEl.style.display='block'; statusWrap.style.display='flex';
+    topHud.style.display='flex';
     initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
     gameStarted=true; lastTF=performance.now(); prevTime=performance.now();
     health=STAT_MAX; hydration=STAT_MAX; updateStatusBars();
@@ -727,7 +753,7 @@ document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropag
 
 function showWinScreen(){
     gameStarted=false; winTimeDisp.innerText=fmtTime(); winScreen.style.display='flex';
-    timerEl.style.display='none'; sprayCounterEl.style.display='none'; statusWrap.style.display='none'; document.getElementById('mute-btn').style.display='none';
+    topHud.style.display='none'; document.getElementById('mute-btn').style.display='none';
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
 }
@@ -796,10 +822,16 @@ function checkItemPickups(){
                 const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
                 hydration = Math.min(STAT_MAX, hydration + val);
                 showPickupFlash(`💧 Almond Water +${val}`, '#88ccff');
-            } else {
+            } else if(b.type === 'jelly') {
                 const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
                 health = Math.min(STAT_MAX, health + val);
                 showPickupFlash(`🧪 Moth Jelly +${val}`, '#aaffcc');
+            } else if(b.type === 'paint') {
+                if(!unlimitedPaint) {
+                    spraysLeft = 100;
+                    sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+                }
+                showPickupFlash(`🎨 Paint Refilled!`, '#ff4444');
             }
             updateStatusBars();
         }
