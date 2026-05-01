@@ -155,7 +155,6 @@
 <div id="damage-flash"></div>
 
 <div id="ui-layer">
-    <!-- TOP HUD CONTAINER -->
     <div id="top-hud">
         <div id="timer" class="hud-element">00:00</div>
         <div id="spray-counter" class="hud-element">SPRAYS: 100</div>
@@ -172,7 +171,6 @@
     <div id="mute-btn" style="display:none;">🔊</div>
     <div id="pickup-flash">💧 Almond Water +25</div>
 
-    <!-- START SCREEN -->
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
         <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">NOCLIP SIM</div>
@@ -185,7 +183,6 @@
         <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
     </div>
 
-    <!-- OUT OF PAINT AD SCREEN -->
     <div id="paint-ad-prompt" style="display:none;">
         <div class="title">OUT OF PAINT!</div>
         <div class="lore">
@@ -198,13 +195,11 @@
         </div>
     </div>
 
-    <!-- PAUSE -->
     <div id="pause-screen" style="display:none;">
         <div class="title">PAUSED</div>
         <div class="hint">Tap anywhere to resume.</div>
     </div>
 
-    <!-- WIN -->
     <div id="win-screen" style="display:none;">
         <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
         <div class="win-flavor">Time spent in the Backrooms:</div>
@@ -212,7 +207,6 @@
         <div class="win-hint">Tap anywhere to try again.</div>
     </div>
 
-    <!-- REVIVE AD SCREEN -->
     <div id="revive-screen" style="display:none;">
         <div class="title" id="death-title" style="color:#ff8844;">DEHYDRATED.</div>
         <div class="lore" id="death-lore" style="color:#ccc;">
@@ -226,7 +220,6 @@
         </div>
     </div>
 
-    <!-- SMILING SHADOW CSS OVERLAY -->
     <div id="entity-eyes-smile">
         <div class="entity-eye" style="left: 0;"><div class="pupil"></div></div>
         <div class="entity-eye" style="right: 0;"><div class="pupil"></div></div>
@@ -257,12 +250,12 @@ const EXIT_MIN_DIST   = 80;
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
 const BOTTLE_COUNT       = 1500;  
-const JELLY_COUNT        = 1000;  
-const PAINT_COUNT        = 300;   // Very sparse drops of spray paint  
+const JELLY_COUNT        = 1500;  
+const PAINT_COUNT        = 500;  
 const ITEM_PICKUP_DIST   = 25;    
 
 // ENTITY AI
-const ENTITY_COUNT       = 250;   
+const ENTITY_COUNT       = 2500;   //
 const ENTITY_MIN_DIST    = 22.0; // Distance where entities "back off" and stop moving forward
 
 let spraysLeft    = 100;
