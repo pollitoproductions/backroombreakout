@@ -127,25 +127,6 @@
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
-
-        /* SMILING SHADOW CSS OVERLAY */
-        #entity-eyes-smile {
-            position: absolute; top: 50%; left: 50%;
-            width: 200px; height: 100px;
-            opacity: 0; pointer-events: none; z-index: 50;
-            transform: translate(-50%, -50%); transition: opacity 0.3s;
-        }
-        .entity-eye {
-            position: absolute; width: 40px; height: 40px;
-            background: black; border-radius: 50%;
-            animation: blink 5s infinite;
-        }
-        .pupil { background: red; width: 10px; height: 10px; border-radius: 50%; margin: 15px; }
-        @keyframes blink {
-            0%, 90% { transform: scaleY(1); } 
-            95% { transform: scaleY(0.1); }  
-            100% { transform: scaleY(1); }   
-        }
     </style>
 </head>
 <body>
@@ -198,7 +179,7 @@
     <div id="paint-ad-prompt" style="display:none;">
         <div class="title">OUT OF PAINT!</div>
         <div class="lore">
-            You are lost in the 3,000 blocks. You have run out of standard issue spray paint to mark your path.
+            You are out of standard issue spray paint. There are very few paint cans scattered across the map.
         </div>
         <div style="color:#88ff88; font-size:1.2em; margin-top:20px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
         <div class="btn-container">
@@ -232,14 +213,6 @@
         </div>
     </div>
 
-    <div id="entity-eyes-smile">
-        <div class="entity-eye" style="left: 0;"><div class="pupil"></div></div>
-        <div class="entity-eye" style="right: 0;"><div class="pupil"></div></div>
-        <svg viewBox="0 0 100 20" style="position: absolute; bottom: -20px; width: 100%;">
-            <path d="M10,10 C30,20 70,20 90,10" stroke="black" stroke-width="4" fill="none"/>
-        </svg>
-    </div>
-
     <div id="crosshair"></div>
     <div id="joystick-base" style="display:none;"><div id="joystick-stick"></div></div>
 </div>
@@ -262,8 +235,8 @@ const EXIT_MIN_DIST   = 80;
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
 const BOTTLE_COUNT       = 1500;  
-const JELLY_COUNT        = 1000;  
-const PAINT_COUNT        = 300;   // Very sparse drops of spray paint  
+const JELLY_COUNT        = 1500;  
+const PAINT_COUNT        = 400;   // Very sparse drops of spray paint  
 const ITEM_PICKUP_DIST   = 25;    
 
 // ENTITY AI
@@ -301,10 +274,43 @@ function createTexture(type) {
     c.width = c.height = 256;
     const ctx = c.getContext('2d');
     if (type === 'wall') {
-        ctx.fillStyle = '#c9b873'; ctx.fillRect(0,0,256,256);
-        ctx.fillStyle = '#a89855';
-        for (let i=0;i<256;i+=16) ctx.fillRect(i,0,2,256);
-        for (let i=0;i<2000;i++) { ctx.fillStyle=`rgba(0,0,0,${Math.random()*.05})`; ctx.fillRect(Math.random()*256,Math.random()*256,2,2); }
+        // Base sickly yellow-beige 70s decay
+        ctx.fillStyle = '#dbce8a'; 
+        ctx.fillRect(0,0,256,256);
+        
+        // Faded vertical stripes
+        ctx.fillStyle = '#c9bb73';
+        for (let i=0;i<256;i+=32) {
+            ctx.fillRect(i, 0, 10, 256);
+            ctx.fillRect(i+16, 0, 2, 256);
+        }
+        
+        // Abstract repeating 70s floral/damask blobs
+        ctx.fillStyle = 'rgba(168, 149, 74, 0.4)';
+        for (let x=16; x<=256; x+=64) {
+            for (let y=16; y<=256; y+=64) {
+                ctx.beginPath();
+                ctx.arc(x, y, 14, 0, Math.PI*2);
+                ctx.arc(x+12, y+12, 10, 0, Math.PI*2);
+                ctx.arc(x-12, y-12, 10, 0, Math.PI*2);
+                ctx.arc(x+12, y-12, 10, 0, Math.PI*2);
+                ctx.arc(x-12, y+12, 10, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        // Grime & Noise overlay
+        for (let i=0;i<6000;i++) { 
+            ctx.fillStyle=`rgba(40, 35, 10, ${Math.random()*.08})`; 
+            ctx.fillRect(Math.random()*256,Math.random()*256, 1.5, 1.5); 
+        }
+
+        // Vignette/Mold corners
+        const grad = ctx.createRadialGradient(128,128,60, 128,128,256);
+        grad.addColorStop(0, 'rgba(80, 90, 40, 0.0)');
+        grad.addColorStop(1, 'rgba(80, 90, 40, 0.25)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,256,256);
     } else if (type === 'floor') {
         ctx.fillStyle = '#5c5432'; ctx.fillRect(0,0,256,256);
         for (let i=0;i<8000;i++) { ctx.fillStyle=`rgba(0,0,0,${Math.random()*.1})`; ctx.fillRect(Math.random()*256,Math.random()*256,3,3); }
@@ -416,18 +422,59 @@ function generateWiryTexture() {
     return new THREE.CanvasTexture(entCanvas);
 }
 
-function generateShadowTexture() {
+function generateShadowTexture(eyesOpen) {
     const sCanvas = document.createElement('canvas'); 
     sCanvas.width=256; sCanvas.height=512;
     const sCtx = sCanvas.getContext('2d');
-    sCtx.fillStyle = 'rgba(0,0,0,0.85)';
-    sCtx.filter = 'blur(12px)';
+    
+    // Shadow Body
+    sCtx.fillStyle = 'rgba(0,0,0,0.9)';
+    sCtx.filter = 'blur(15px)';
     sCtx.beginPath(); sCtx.ellipse(128, 256, 100, 200, 0, 0, Math.PI*2); sCtx.fill();
+    
+    sCtx.filter = 'none';
+
+    // Blinking Eyes Logic
+    if (eyesOpen) {
+        sCtx.fillStyle = '#000000';
+        sCtx.beginPath(); sCtx.arc(90, 180, 22, 0, Math.PI*2); sCtx.fill();
+        sCtx.beginPath(); sCtx.arc(166, 180, 22, 0, Math.PI*2); sCtx.fill();
+        
+        sCtx.fillStyle = '#ff0000';
+        sCtx.beginPath(); sCtx.arc(90, 180, 8, 0, Math.PI*2); sCtx.fill();
+        sCtx.beginPath(); sCtx.arc(166, 180, 8, 0, Math.PI*2); sCtx.fill();
+    } else {
+        sCtx.fillStyle = '#000000';
+        sCtx.fillRect(68, 178, 44, 4);
+        sCtx.fillRect(144, 178, 44, 4);
+    }
+
+    // Wide Eerie Smile
+    sCtx.strokeStyle = '#000000';
+    sCtx.lineWidth = 16;
+    sCtx.lineCap = 'round';
+    sCtx.beginPath();
+    sCtx.moveTo(60, 260);
+    sCtx.quadraticCurveTo(128, 340, 196, 260);
+    sCtx.stroke();
+    
+    // Teeth line
+    sCtx.strokeStyle = '#ffffff';
+    sCtx.lineWidth = 4;
+    sCtx.beginPath();
+    sCtx.moveTo(60, 260);
+    sCtx.quadraticCurveTo(128, 340, 196, 260);
+    sCtx.stroke();
+
     return new THREE.CanvasTexture(sCanvas);
 }
 
 const wiryMat = new THREE.SpriteMaterial({ map: generateWiryTexture(), color: 0xffffff, transparent: true });
-const shadowMat = new THREE.SpriteMaterial({ map: generateShadowTexture(), color: 0x111111, transparent: true });
+
+// We generate two maps for the shadow to allow blinking
+const shadowMapOpen = generateShadowTexture(true);
+const shadowMapClosed = generateShadowTexture(false);
+const shadowMatTemplate = new THREE.SpriteMaterial({ map: shadowMapOpen, color: 0xffffff, transparent: true });
 
 const entities = [];
 (function placeEntities() {
@@ -442,7 +489,7 @@ const entities = [];
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
         const isShadow = Math.random() > 0.5;
-        const sprite = new THREE.Sprite(isShadow ? shadowMat.clone() : wiryMat.clone());
+        const sprite = new THREE.Sprite(isShadow ? shadowMatTemplate.clone() : wiryMat.clone());
         sprite.scale.set(12, 24, 1);
         sprite.position.set(wx, WALL_HEIGHT/2, wz);
         scene.add(sprite);
@@ -456,7 +503,9 @@ const entities = [];
             onFire: false,
             fireTimer: 0,
             isGlitching: false,
-            glitchTimer: 0
+            glitchTimer: 0,
+            blinkTimer: Math.random() * 4,
+            isBlinking: false
         });
         placed++;
     }
@@ -498,7 +547,6 @@ const fireTex = (function(){
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
     if (!unlimitedPaint && spraysLeft <= 0) {
-        pauseGame();
         document.getElementById('paint-ad-prompt').style.display = 'flex';
         return;
     }
@@ -736,17 +784,11 @@ document.getElementById('ad-yes').addEventListener('click', e=>{
     showRewardAd(() => {
         unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; 
         paintAdPrompt.style.display='none';
-        isPaused=false;
-        if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
-        lastTF=performance.now(); prevTime=performance.now();
     });
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
     e.stopPropagation(); 
     paintAdPrompt.style.display='none';
-    isPaused=false;
-    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
-    lastTF=performance.now(); prevTime=performance.now();
 });
 
 function startGame(){
@@ -1055,7 +1097,6 @@ function animate() {
         if (isFiring) {
             if (!unlimitedPaint && spraysLeft <= 0) {
                 isFiring = false;
-                pauseGame();
                 document.getElementById('paint-ad-prompt').style.display = 'flex';
             } else {
                 fireAccumulator += delta;
@@ -1084,9 +1125,6 @@ function animate() {
                             if(dirToEnt.dot(camDir) > 0.85) { 
                                 e.onFire = true;
                                 e.fireTimer = 1.5;
-                                if (e.type === 'SMILING_SHADOW') {
-                                    document.getElementById('entity-eyes-smile').style.opacity = 0;
-                                }
                                 if(masterGain) {
                                     const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
                                     const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
@@ -1126,7 +1164,6 @@ function animate() {
         }
 
         let tookDamage = false;
-        let closestShadowDist = 9999;
         
         const px = camera.position.x;
         const pz = camera.position.z;
@@ -1149,8 +1186,20 @@ function animate() {
 
             const dist = Math.sqrt(dx*dx + dz*dz);
             
-            if(e.type === 'SMILING_SHADOW' && dist < closestShadowDist) {
-                closestShadowDist = dist;
+            // Blinking animation for smiling shadow
+            if (e.type === 'SMILING_SHADOW') {
+                e.blinkTimer -= delta;
+                if (e.blinkTimer <= 0) {
+                    if (e.isBlinking) {
+                        e.isBlinking = false;
+                        e.mesh.material.map = shadowMapOpen;
+                        e.blinkTimer = 2 + Math.random() * 4; // keep eyes open for 2-6 seconds
+                    } else {
+                        e.isBlinking = true;
+                        e.mesh.material.map = shadowMapClosed;
+                        e.blinkTimer = 0.15; // fast blink closed
+                    }
+                }
             }
 
             if(dist < 200) { 
@@ -1193,17 +1242,6 @@ function animate() {
                 e.bob += delta * effectiveSpeed * 0.05;
                 e.mesh.position.y = WALL_HEIGHT/2 + Math.sin(e.bob) * 1.5;
             }
-        }
-
-        let shadowOverlay = document.getElementById('entity-eyes-smile');
-        if (closestShadowDist < 80) {
-            // Less aggressive screen filling
-            let scale = Math.max(1, 60 / Math.max(10, closestShadowDist));
-            let opacity = Math.min(1, 60 / closestShadowDist - 0.5); 
-            shadowOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
-            shadowOverlay.style.opacity = opacity;
-        } else {
-            shadowOverlay.style.opacity = 0;
         }
 
         dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
