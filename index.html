@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Backrooms - Breakout</title>
+    <title>Backrooms Breakout: Noclip Sim</title>
+    <meta name="description" content="3,000 blocks of infinite yellow. One door out. Can you survive the noclip?">
     <style>
         body, html {
             margin: 0; padding: 0;
@@ -18,7 +19,7 @@
         #game-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; }
         #ui-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events:none; }
 
-        #start-screen, #pause-screen, #win-screen, #ad-prompt, #revive-screen {
+        #start-screen, #pause-screen, #win-screen, #paint-ad-prompt, #revive-screen {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background-color: rgba(0,0,0,0.88);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -26,7 +27,7 @@
             pointer-events: auto; cursor: pointer; z-index: 20;
             padding: 20px; box-sizing: border-box;
         }
-        #ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
+        #paint-ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
         #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; }
         #revive-screen { color: #d4d42b; }
 
@@ -133,6 +134,25 @@
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
+
+        /* SMILING SHADOW CSS OVERLAY */
+        #entity-eyes-smile {
+            position: absolute; top: 50%; left: 50%;
+            width: 200px; height: 100px;
+            opacity: 0; pointer-events: none; z-index: 50;
+            transform: translate(-50%, -50%); transition: opacity 0.3s;
+        }
+        .entity-eye {
+            position: absolute; width: 40px; height: 40px;
+            background: black; border-radius: 50%;
+            animation: blink 5s infinite;
+        }
+        .pupil { background: red; width: 10px; height: 10px; border-radius: 50%; margin: 15px; }
+        @keyframes blink {
+            0%, 90% { transform: scaleY(1); } 
+            95% { transform: scaleY(0.1); }  
+            100% { transform: scaleY(1); }   
+        }
     </style>
 </head>
 <body>
@@ -158,45 +178,35 @@
 
     <div id="pickup-flash">💧 Almond Water +30</div>
 
-    <!-- START SCREEN -->
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
-        <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">BREAKOUT</div>
-        <div class="subtitle warn">Double tap on walls beside you to mark them with paint,<br>double tapping farther away will spray flames!</div>
-        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look</div>
-        <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
-    </div>
-
-    <!-- AD / LORE SCREEN -->
-    <div id="ad-prompt" style="display:none;">
-        <div class="title">YOU HAVE NOCLIPPED.</div>
+        <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">NOCLIP SIM</div>
         <div class="lore">
             You have slipped through the fabric of reality into a space roughly the size of
             <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
         </div>
+        <div class="subtitle warn" style="margin-top:20px;">Double tap on walls beside you to mark them with paint,<br>double tapping farther away will spray flames!</div>
+        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look</div>
+        <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
+    </div>
+
+    <div id="paint-ad-prompt" style="display:none;">
+        <div class="title">OUT OF PAINT!</div>
         <div class="lore">
-            <strong style="color:#ff4444;">Watch out for the Wanderers. 1000 of them roam these halls.</strong>
-            They will sprint if they hear you close, but they tire quickly. Use your spray-paint and lighter as a flamethrower to burn them.
+            You are lost in the 3,000 blocks. You have run out of standard issue spray paint to mark your path.
         </div>
-        <div class="lore">
-            Find <strong style="color:#88ccff;">Almond Water</strong> and <strong style="color:#ff6666;">First Aid Kits</strong> to survive. 
-            You must find the <strong style="color:#00ff00;">Exit</strong> to return home.
-        </div>
-        <div style="margin-top:22px; color:#d4d42b; font-size:1.1em;">Standard issue: <strong>100 spray marks.</strong></div>
-        <div style="color:#88ff88; font-size:1em; margin-top:6px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
+        <div style="color:#88ff88; font-size:1.2em; margin-top:20px;">Watch an ad for <strong>unlimited spray paint?</strong></div>
         <div class="btn-container">
-            <button class="choice-btn green" id="ad-yes">▶ WATCH AD (UNLIMITED PAINT)</button>
-            <button class="choice-btn" id="ad-no">NO THANKS (100 SPRAYS)</button>
+            <button class="choice-btn green" id="ad-yes">▶ WATCH AD (UNLIMITED)</button>
+            <button class="choice-btn red" id="ad-no">KEEP WANDERING (NO PAINT)</button>
         </div>
     </div>
 
-    <!-- PAUSE -->
     <div id="pause-screen" style="display:none;">
         <div class="title">PAUSED</div>
         <div class="hint">Tap anywhere to resume.</div>
     </div>
 
-    <!-- WIN -->
     <div id="win-screen" style="display:none;">
         <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
         <div class="win-flavor">Time spent in the Backrooms:</div>
@@ -204,7 +214,6 @@
         <div class="win-hint">Tap anywhere to try again.</div>
     </div>
 
-    <!-- REVIVE AD SCREEN -->
     <div id="revive-screen" style="display:none;">
         <div class="title" id="death-title" style="color:#ff8844;">DEHYDRATED.</div>
         <div class="lore" id="death-lore" style="color:#ccc;">
@@ -218,6 +227,14 @@
         </div>
     </div>
 
+    <div id="entity-eyes-smile">
+        <div class="entity-eye" style="left: 0;"><div class="pupil"></div></div>
+        <div class="entity-eye" style="right: 0;"><div class="pupil"></div></div>
+        <svg viewBox="0 0 100 20" style="position: absolute; bottom: -20px; width: 100%;">
+            <path d="M10,10 C30,20 70,20 90,10" stroke="black" stroke-width="4" fill="none"/>
+        </svg>
+    </div>
+
     <div id="crosshair"></div>
     <div id="joystick-base" style="display:none;"><div id="joystick-stick"></div></div>
 </div>
@@ -225,23 +242,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
-const MAP_SIZE        = 1000;
+const MAP_SIZE        = 3000; // Increased map scale representation internally
 const TILE_SIZE       = 20;
 const WALL_HEIGHT     = 15;
 const PLAYER_HEIGHT   = 8;
 const PLAYER_SIZE     = 3;
 const PLAYER_SPEED    = 180.0;
-const SPAWN_GRID_X    = 500;
-const SPAWN_GRID_Z    = 500;
+const SPAWN_GRID_X    = MAP_SIZE/2;
+const SPAWN_GRID_Z    = MAP_SIZE/2;
 const SPAWN_CLEAR_R   = 3;
 const EXIT_MIN_DIST   = 10;
 
 // SURVIVAL STATS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.28;  
-const HYD_PER_BOTTLE     = 30;
+const HYD_PER_BOTTLE     = 25;    // Reduced from 30
 const HP_PER_MEDKIT      = 25;
-const BOTTLE_COUNT       = 3000;  
+const BOTTLE_COUNT       = 2400;  // Reduced spawn count
 const MEDKIT_COUNT       = 1750;  
 const ITEM_PICKUP_DIST   = 20;    
 
@@ -346,25 +363,22 @@ for (let x=0;x<MAP_SIZE;x++) for (let z=0;z<MAP_SIZE;z++) if(grid[x][z]) {
 }
 scene.add(instancedWalls);
 
-// ─── CANON ENTITY TEXTURE (WANDERER/BACTERIA) ──────────────────────────────
-function generateEntityTexture() {
+// ─── CANON ENTITY TEXTURES (WIRY FRAME & SHADOW) ───────────────────────────
+function generateWiryTexture() {
     const entCanvas = document.createElement('canvas');
     entCanvas.width = 256; entCanvas.height = 512;
     const entCtx = entCanvas.getContext('2d');
     entCtx.clearRect(0,0,256,512);
     entCtx.strokeStyle = 'rgba(0,0,0,0.9)';
-    entCtx.lineWidth = 4;
-    entCtx.lineCap = 'round';
+    entCtx.lineWidth = 4; entCtx.lineCap = 'round';
     
     entCtx.beginPath(); entCtx.moveTo(128, 480); entCtx.lineTo(128, 100);
-    // Spindly, chaotic wireframe limbs
     for(let i=0; i<14; i++) {
         entCtx.moveTo(128, 120 + i*25);
         entCtx.lineTo(128 + (Math.random()-0.5)*200, 160 + i*30);
     }
     entCtx.stroke();
     
-    // Glowing white eyes
     entCtx.fillStyle = '#ffffff';
     entCtx.shadowColor = '#ffffff'; entCtx.shadowBlur = 15;
     entCtx.beginPath(); entCtx.arc(105, 80, 6, 0, Math.PI*2); entCtx.fill();
@@ -372,8 +386,19 @@ function generateEntityTexture() {
     entCtx.shadowBlur = 0;
     return new THREE.CanvasTexture(entCanvas);
 }
-const entityTex = generateEntityTexture();
-const entityMat = new THREE.SpriteMaterial({ map: entityTex, color: 0xffffff, transparent: true });
+
+function generateShadowTexture() {
+    const sCanvas = document.createElement('canvas'); 
+    sCanvas.width=256; sCanvas.height=512;
+    const sCtx = sCanvas.getContext('2d');
+    sCtx.fillStyle = 'rgba(0,0,0,0.85)';
+    sCtx.filter = 'blur(12px)';
+    sCtx.beginPath(); sCtx.ellipse(128, 256, 100, 200, 0, 0, Math.PI*2); sCtx.fill();
+    return new THREE.CanvasTexture(sCanvas);
+}
+
+const wiryMat = new THREE.SpriteMaterial({ map: generateWiryTexture(), color: 0xffffff, transparent: true });
+const shadowMat = new THREE.SpriteMaterial({ map: generateShadowTexture(), color: 0x111111, transparent: true });
 
 const entities = [];
 (function placeEntities() {
@@ -387,18 +412,22 @@ const entities = [];
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
-        const sprite = new THREE.Sprite(entityMat.clone());
+        const isShadow = Math.random() > 0.5;
+        const sprite = new THREE.Sprite(isShadow ? shadowMat.clone() : wiryMat.clone());
         sprite.scale.set(12, 24, 1);
         sprite.position.set(wx, WALL_HEIGHT/2, wz);
         scene.add(sprite);
 
         entities.push({
             mesh: sprite,
+            type: isShadow ? 'SMILING_SHADOW' : 'WIRY_FRAME',
             stamina: 3.0,
             staminaCooldown: 0,
             bob: Math.random() * Math.PI * 2,
             onFire: false,
-            fireTimer: 0
+            fireTimer: 0,
+            isGlitching: false,
+            glitchTimer: 0
         });
         placed++;
     }
@@ -440,14 +469,21 @@ const fireTex = (function(){
 
 function sprayWall() {
     if (!gameStarted||isPaused||isDead) return;
-    if (!unlimitedPaint && spraysLeft<=0) return;
-    if (Date.now()-lastSprayTime<300) return; // FIX: Prevent double usage
+    
+    // Out of Paint Trigger
+    if (!unlimitedPaint && spraysLeft <= 0) {
+        pauseGame();
+        document.getElementById('paint-ad-prompt').style.display = 'flex';
+        return;
+    }
+
+    if (Date.now()-lastSprayTime<300) return; 
     lastSprayTime=Date.now();
 
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
 
-    // If near a wall, just paint it
+    // If near a wall, paint it
     if (hits.length > 0 && hits[0].distance < 15) {
         const hit = hits[0];
         const g = new THREE.PlaneGeometry(6,6);
@@ -484,6 +520,12 @@ function sprayWall() {
                 if(dirToEnt.dot(camDir) > 0.85) { 
                     e.onFire = true;
                     e.fireTimer = 1.5;
+                    
+                    // Repel effect for shadow css
+                    if (e.type === 'SMILING_SHADOW') {
+                        document.getElementById('entity-eyes-smile').style.opacity = 0;
+                    }
+
                     if(masterGain) {
                         const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
                         const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
@@ -621,7 +663,7 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
 
 // ─── UI REFS & FLOW ───────────────────────────────────────────────────────
 const startScreen  = document.getElementById('start-screen');
-const adPrompt     = document.getElementById('ad-prompt');
+const paintAdPrompt = document.getElementById('paint-ad-prompt');
 const pauseScreen  = document.getElementById('pause-screen');
 const winScreen    = document.getElementById('win-screen');
 const reviveScreen = document.getElementById('revive-screen');
@@ -636,49 +678,30 @@ const pickupFlash  = document.getElementById('pickup-flash');
 
 // --- REWARD AD INTEGRATION ---
 function showRewardAd(onSuccess) {
-    // 1. Expose callback to the global window so your Native Android Code can trigger the reward!
-    // From Android Kotlin/Java, you must call: webView.evaluateJavascript("window.onRewardEarned()", null)
     window.onRewardEarned = onSuccess;
-
     try {
-        // 2. Android Native Bridge (Standard Webview)
         if (typeof Android !== 'undefined' && Android !== null) {
-            // DO NOT use typeof === 'function' here! Android interfaces register as an 'object' in the WebView.
-            // We just attempt to call it directly.
-            try {
-                Android.showRewardAd();
-                return; // Successfully sent to Android Native!
-            } catch (err1) {
-                try {
-                    Android.showRewardedAd();
-                    return; // Fallback native name
-                } catch (err2) {
-                    console.log("Android bridge found, but method call failed:", err1);
-                }
+            try { Android.showRewardAd(); return; } 
+            catch (err1) {
+                try { Android.showRewardedAd(); return; } 
+                catch (err2) { console.log("Android bridge error:", err1); }
             }
         }
-
-        // 3. Capacitor AdMob Plugin Check
         if (typeof window !== 'undefined' && window.AdMob) {
             window.AdMob.showRewardVideoAd().then(() => {
                 window.AdMob.addListener('rewardedVideoUserDidEarnReward', () => onSuccess());
             });
             return; 
         }
-        
-        // 4. Cordova AdMob Plugin Check
         if (typeof admob !== 'undefined' && admob.rewardvideo) {
             admob.rewardvideo.show().then(() => {
                 document.addEventListener('admob.rewardvideo.events.REWARD', () => onSuccess(), {once: true});
             });
             return;
         }
+    } catch (e) { console.log("Native Ad SDK error:", e); }
 
-    } catch (e) {
-        console.log("Native Ad SDK error:", e);
-    }
-
-    // Simulated Test Ad Overlay for Browser Testing (Fallback)
+    // Simulated Test Ad
     const adOverlay = document.createElement('div');
     adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
     adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">TEST REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK ad playback...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">3</p>';
@@ -692,25 +715,33 @@ function showRewardAd(onSuccess) {
         } else {
             clearInterval(timerInt);
             document.body.removeChild(adOverlay);
-            onSuccess(); // Grant the reward
+            onSuccess();
         }
     }, 1000);
 }
 
-startScreen.addEventListener('click', ()=>{ startScreen.style.display='none'; adPrompt.style.display='flex'; });
+startScreen.addEventListener('click', startGame);
 
 document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
     showRewardAd(() => {
-        unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; startGame();
+        unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; 
+        paintAdPrompt.style.display='none';
+        isPaused=false;
+        if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+        lastTF=performance.now(); prevTime=performance.now();
     });
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
-    e.stopPropagation(); unlimitedPaint=false; spraysLeft=100; sprayCounterEl.innerText=`SPRAYS: ${spraysLeft}`; startGame();
+    e.stopPropagation(); 
+    paintAdPrompt.style.display='none';
+    isPaused=false;
+    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+    lastTF=performance.now(); prevTime=performance.now();
 });
 
 function startGame(){
-    adPrompt.style.display='none'; document.getElementById('mute-btn').style.display='flex';
+    startScreen.style.display='none'; document.getElementById('mute-btn').style.display='flex';
     timerEl.style.display='block'; sprayCounterEl.style.display='block'; statusWrap.style.display='flex';
     initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
     gameStarted=true; lastTF=performance.now(); prevTime=performance.now();
@@ -754,7 +785,8 @@ function showDeathScreen(title, lore){
 
 function pauseGame(){
     if(!gameStarted||isPaused||isDead) return;
-    isPaused=true; pauseScreen.style.display='flex';
+    isPaused=true; 
+    if(paintAdPrompt.style.display !== 'flex') pauseScreen.style.display='flex';
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
 }
@@ -791,10 +823,10 @@ function checkItemPickups(){
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
                 hydration=Math.min(STAT_MAX, hydration+HYD_PER_BOTTLE);
-                showPickupFlash('💧 Almond Water +30', '#88ccff');
+                showPickupFlash(`💧 Almond Water +${HYD_PER_BOTTLE}`, '#88ccff');
             } else {
                 health=Math.min(STAT_MAX, health+HP_PER_MEDKIT);
-                showPickupFlash('✚ Medkit +25', '#ff6666');
+                showPickupFlash(`✚ Medkit +${HP_PER_MEDKIT}`, '#ff6666');
             }
             updateStatusBars();
         }
@@ -903,9 +935,8 @@ function checkCollision(targetPosition) {
     return false;
 }
 
-// Entity collision requires sliding against walls 
 function checkEntityCollision(targetPosition) {
-    const hs = 2.0; // Entities have slightly smaller collision bounds
+    const hs = 2.0; 
     const corners = [ {x:targetPosition.x-hs, z:targetPosition.z-hs}, {x:targetPosition.x+hs, z:targetPosition.z-hs}, {x:targetPosition.x-hs, z:targetPosition.z+hs}, {x:targetPosition.x+hs, z:targetPosition.z+hs} ];
     for (let c of corners) {
         const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
@@ -917,10 +948,10 @@ function checkEntityCollision(targetPosition) {
 
 function spawnGhost() {
     const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-    const sprite = new THREE.Sprite(entityMat.clone());
+    const sprite = new THREE.Sprite(wiryMat.clone());
     sprite.material.color.setHex(0x555555);
     sprite.scale.set(16, 32, 1);
-    sprite.position.copy(camera.position).add(camDir.multiplyScalar(150)); // spawn 150 units ahead
+    sprite.position.copy(camera.position).add(camDir.multiplyScalar(150)); 
     sprite.position.y = WALL_HEIGHT/2;
     scene.add(sprite);
     
@@ -973,10 +1004,13 @@ function animate() {
             }
         }
 
-        // Entities AI (Sliding + Min Distance)
+        // Entities AI & Glitching
         let tookDamage = false;
+        let closestShadowDist = 9999;
+
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
+            
             if(e.onFire) {
                 e.fireTimer -= delta;
                 e.mesh.material.color.setHex(0xffaa00);
@@ -986,38 +1020,62 @@ function animate() {
             }
 
             const dist = camera.position.distanceTo(e.mesh.position);
-            if(dist < 200) { // 10 Tiles detection
-                let speed = 90; // Walk speed
-                if(dist < 100 && e.stamina > 0) { // 5 Tiles sprint
+            
+            if(e.type === 'SMILING_SHADOW' && dist < closestShadowDist) {
+                closestShadowDist = dist;
+            }
+
+            if(dist < 200) { 
+                
+                // Noclip glitch mechanic - 0.5% chance per frame when close
+                if(!e.isGlitching && Math.random() < 0.005) { 
+                    e.isGlitching = true;
+                    e.glitchTimer = 1.0; 
+                }
+                if(e.isGlitching) {
+                    e.glitchTimer -= delta;
+                    if(e.glitchTimer <= 0) e.isGlitching = false;
+                }
+
+                let speed = e.type === 'SMILING_SHADOW' ? 60 : 90; // Shadows are slower
+                if(dist < 100 && e.stamina > 0 && e.type === 'WIRY_FRAME') { // Only wiry frame sprints
                     speed = 250;
                     e.stamina -= delta;
                 } else if(e.stamina <= 0) {
                     e.staminaCooldown -= delta;
-                    if(e.staminaCooldown <= 0) { e.stamina = 3.0; e.staminaCooldown = 5.0; } // Reset after 5s breath
+                    if(e.staminaCooldown <= 0) { e.stamina = 3.0; e.staminaCooldown = 5.0; }
                 }
 
                 if(dist < 15) {
-                    health -= 10 * delta; // 10% per second
+                    health -= 10 * delta; 
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("SLAIN.", "You were caught by a Wanderer.");
                 }
 
-                // Move Entity
                 const dir = camera.position.clone().sub(e.mesh.position).normalize(); dir.y=0;
-                
-                // Do not step closer if within ENTITY_MIN_DIST (prevents clipping through camera)
                 const effectiveSpeed = dist < ENTITY_MIN_DIST ? 0 : speed;
                 
                 let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
                 let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
                 
-                // Entity Wall Collision (Sliding)
-                if(!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
-                if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
+                // If glitching, ignore collision
+                if(e.isGlitching || !checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
+                if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
                 e.bob += delta * effectiveSpeed * 0.05;
                 e.mesh.position.y = WALL_HEIGHT/2 + Math.sin(e.bob) * 1.5;
             }
+        }
+
+        // Update CSS Overlay for Smiling Shadow
+        let shadowOverlay = document.getElementById('entity-eyes-smile');
+        if (closestShadowDist < 60) {
+            let scale = Math.max(1, 40 / closestShadowDist);
+            let opacity = Math.min(1, 40 / closestShadowDist - 0.4); 
+            shadowOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            shadowOverlay.style.opacity = opacity;
+        } else {
+            shadowOverlay.style.opacity = 0;
         }
 
         dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
