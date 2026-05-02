@@ -450,6 +450,18 @@ function generateWiryFrames(count) {
         }
         ctx.stroke();
 
+        // Glowing eerie eyes (Make them large and noticeable for visibility)
+        ctx.fillStyle = '#ff3300';
+        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(115, 55, 8, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(141, 55, 8, 0, Math.PI*2); ctx.fill();
+        
+        // Glowing heart/core (Ensures visibility in dark zones)
+        ctx.fillStyle = '#ffaa00';
+        ctx.shadowColor = '#ff5500'; ctx.shadowBlur = 30;
+        ctx.beginPath(); ctx.arc(128, 160, 15, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+
         // Thick, muscular-looking spindly limbs
         const drawThickLimb = (x1,y1, x2,y2, x3,y3, thickness) => {
             for(let i=0; i<8; i++) { 
@@ -578,7 +590,8 @@ const entities = [];
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
-        const isShadow = Math.random() > 0.5;
+        // Strict 50/50 balance instead of random to guarantee bodybuilder spawns
+        const isShadow = (placed % 2 === 0);
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : wiryMats[0]);
         // Made Wiry Frame wider to accommodate the Bodybuilder silhouette
         sprite.scale.set(16, 14, 1); 
@@ -1268,23 +1281,30 @@ function animate() {
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
         // --- DARK ZONE LIGHTING LOGIC ---
-        // Dynamically adjust ambient lighting and fog based on position to create dark, scary patches
-        const pgx = Math.floor((camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
-        const pgz = Math.floor((camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        // Smoothly calculate continuous position through the dark zone noise field
+        const cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
+        const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         
-        let inDarkZone = false;
-        if (pgx >= 0 && pgx < MAP_SIZE && pgz >= 0 && pgz < MAP_SIZE) {
-            inDarkZone = darkZones[pgx + pgz*MAP_SIZE] === 1;
-        }
+        // Same formula used for the grid, but continuous
+        const darkSignal = Math.sin(cx/8) + Math.sin(cz/8) + Math.sin((cx+cz)/11);
+        
+        // Map signal (0.4 to 1.25) to a darkness factor (0.0 to 1.0)
+        let darknessFactor = (darkSignal - 0.4) / (1.25 - 0.4);
+        darknessFactor = Math.max(0, Math.min(1, darknessFactor));
+        
+        // Smooth easing curve
+        darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
 
-        // Ambient and Fog Targets
-        const ambientTarget = inDarkZone ? 0.05 : 0.45;
-        const fogFarTarget = inDarkZone ? 35 : 180;
-        const fogColorTarget = new THREE.Color(inDarkZone ? 0x050505 : 0x3a3a10);
+        const ambientTarget = 0.45 - (darknessFactor * 0.40); // Fades from 0.45 down to 0.05
+        const fogFarTarget = 180 - (darknessFactor * 145);   // Fades from 180 down to 35
+        
+        const fogBase = new THREE.Color(0x3a3a10);
+        const fogDark = new THREE.Color(0x050505);
+        const fogColorTarget = fogBase.lerp(fogDark, darknessFactor);
 
-        ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 2;
-        scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 2;
-        scene.fog.color.lerp(fogColorTarget, delta * 2);
+        ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 4;
+        scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
+        scene.fog.color.lerp(fogColorTarget, delta * 4);
 
 
         // Continuous Flamethrower Process (Spray can flame)
