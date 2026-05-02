@@ -129,6 +129,25 @@
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
+
+        /* SMILING SHADOW CSS OVERLAY */
+        #entity-eyes-smile {
+            position: absolute; top: 50%; left: 50%;
+            width: 200px; height: 100px;
+            opacity: 0; pointer-events: none; z-index: 50;
+            transform: translate(-50%, -50%); transition: opacity 0.3s;
+        }
+        .entity-eye {
+            position: absolute; width: 40px; height: 40px;
+            background: black; border-radius: 50%;
+            animation: blink 5s infinite;
+        }
+        .pupil { background: red; width: 10px; height: 10px; border-radius: 50%; margin: 15px; }
+        @keyframes blink {
+            0%, 90% { transform: scaleY(1); } 
+            95% { transform: scaleY(0.1); }  
+            100% { transform: scaleY(1); }   
+        }
     </style>
 </head>
 <body>
@@ -274,6 +293,8 @@ let health      = STAT_MAX;
 let isDead      = false;
 let revivesLeft = 3; // Maximum of 3 revives per game
 let throbTimer  = 0; // For heartbeat sound and vibration
+
+let lastSpotScreechTime = 0; // Global cooldown for entity spotting screech
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -445,10 +466,20 @@ function generateShadowTexture(eyesOpen) {
     sCanvas.width=256; sCanvas.height=512;
     const sCtx = sCanvas.getContext('2d');
     
-    // Shadow Body
+    // Jagged Shadow Body
     sCtx.fillStyle = 'rgba(0,0,0,0.9)';
-    sCtx.filter = 'blur(15px)';
-    sCtx.beginPath(); sCtx.ellipse(128, 256, 100, 200, 0, 0, Math.PI*2); sCtx.fill();
+    sCtx.filter = 'blur(6px)';
+    sCtx.beginPath();
+    for(let a=0; a<Math.PI*2; a+=0.1) {
+        let r = 90 + Math.random()*25;
+        let ry = 180 + Math.random()*40;
+        let px = 128 + r * Math.cos(a);
+        let py = 256 + ry * Math.sin(a);
+        if (a===0) sCtx.moveTo(px,py);
+        else sCtx.lineTo(px,py);
+    }
+    sCtx.closePath();
+    sCtx.fill();
     
     sCtx.filter = 'none';
 
@@ -467,22 +498,43 @@ function generateShadowTexture(eyesOpen) {
         sCtx.fillRect(144, 178, 44, 4);
     }
 
-    // Wide Eerie Smile
+    // Wide Eerie Smile with Sharp Teeth
     sCtx.strokeStyle = '#000000';
-    sCtx.lineWidth = 16;
+    sCtx.lineWidth = 26;
     sCtx.lineCap = 'round';
     sCtx.beginPath();
-    sCtx.moveTo(60, 260);
-    sCtx.quadraticCurveTo(128, 340, 196, 260);
+    sCtx.moveTo(50, 260);
+    sCtx.quadraticCurveTo(128, 360, 206, 260);
     sCtx.stroke();
     
-    // Teeth line
-    sCtx.strokeStyle = '#ffffff';
-    sCtx.lineWidth = 4;
-    sCtx.beginPath();
-    sCtx.moveTo(60, 260);
-    sCtx.quadraticCurveTo(128, 340, 196, 260);
-    sCtx.stroke();
+    // Sharp White Teeth
+    sCtx.fillStyle = '#ffffff';
+    for (let t=0.05; t<0.95; t+=0.06) {
+        let x1 = Math.pow(1-t, 2)*50 + 2*(1-t)*t*128 + Math.pow(t, 2)*206;
+        let y1 = Math.pow(1-t, 2)*260 + 2*(1-t)*t*360 + Math.pow(t, 2)*260;
+        
+        let th = t + 0.03;
+        let x2 = Math.pow(1-th, 2)*50 + 2*(1-th)*th*128 + Math.pow(th, 2)*206;
+        let y2 = Math.pow(1-th, 2)*260 + 2*(1-th)*th*360 + Math.pow(th, 2)*260;
+        
+        let th2 = t + 0.06;
+        let x3 = Math.pow(1-th2, 2)*50 + 2*(1-th2)*th2*128 + Math.pow(th2, 2)*206;
+        let y3 = Math.pow(1-th2, 2)*260 + 2*(1-th2)*th2*360 + Math.pow(th2, 2)*260;
+
+        // Top tooth
+        sCtx.beginPath();
+        sCtx.moveTo(x1, y1 - 8);
+        sCtx.lineTo(x2, y2 + 10 + Math.random()*6); 
+        sCtx.lineTo(x3, y3 - 8);
+        sCtx.fill();
+        
+        // Bottom tooth
+        sCtx.beginPath();
+        sCtx.moveTo(x1, y1 + 8);
+        sCtx.lineTo(x2, y2 - 10 - Math.random()*6); 
+        sCtx.lineTo(x3, y3 + 8);
+        sCtx.fill();
+    }
 
     return new THREE.CanvasTexture(sCanvas);
 }
@@ -508,8 +560,8 @@ const entities = [];
         
         const isShadow = Math.random() > 0.5;
         const sprite = new THREE.Sprite(isShadow ? shadowMatTemplate.clone() : wiryMat.clone());
-        sprite.scale.set(10, 14, 1); // Reduced height so they don't clip into the ceiling (WALL_HEIGHT is 15)
-        sprite.position.set(wx, 7.5, wz); // WALL_HEIGHT / 2
+        sprite.scale.set(10, 14, 1); 
+        sprite.position.set(wx, 7.5, wz); 
         scene.add(sprite);
 
         entities.push({
@@ -523,7 +575,8 @@ const entities = [];
             isGlitching: false,
             glitchTimer: 0,
             blinkTimer: Math.random() * 4,
-            isBlinking: false
+            isBlinking: false,
+            hasSpotted: false
         });
         placed++;
     }
@@ -753,31 +806,42 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
 });
 
+// A harsh, grindy downward sweep for spotting and burning entities
 function playScreech() {
     if(!masterGain || audioCtx.state !== 'running') return;
+    
     const osc = audioCtx.createOscillator();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(2500, audioCtx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.2);
     
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(1800, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 1.2);
+    
+    // High-frequency LFO shreds the pitches for a "falcon/grinding" effect
     const lfo = audioCtx.createOscillator();
     lfo.type = 'square';
-    lfo.frequency.value = 40; 
+    lfo.frequency.value = 55; 
     const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 1000;
+    lfoGain.gain.value = 800;
     lfo.connect(lfoGain);
     lfoGain.connect(osc.frequency);
+    lfoGain.connect(osc2.frequency);
     
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.6, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
     
     osc.connect(g);
+    osc2.connect(g);
     g.connect(masterGain);
     
-    lfo.start(); osc.start();
-    lfo.stop(audioCtx.currentTime + 1.2); osc.stop(audioCtx.currentTime + 1.2);
+    lfo.start(); osc.start(); osc2.start();
+    lfo.stop(audioCtx.currentTime + 1.2); 
+    osc.stop(audioCtx.currentTime + 1.2); 
+    osc2.stop(audioCtx.currentTime + 1.2);
 }
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
@@ -842,11 +906,19 @@ document.getElementById('ad-yes').addEventListener('click', e=>{
     showRewardAd(() => {
         unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; 
         paintAdPrompt.style.display='none';
+        
+        // PAUSE THE GAME upon returning so player doesn't instantly take damage
+        isPaused = true;
+        document.getElementById('pause-screen').style.display='flex';
     });
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
     e.stopPropagation(); 
     paintAdPrompt.style.display='none';
+    
+    // PAUSE THE GAME upon returning
+    isPaused = true;
+    document.getElementById('pause-screen').style.display='flex';
 });
 
 function startGame(){
@@ -903,13 +975,17 @@ function showDeathScreen(title, lore){
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     document.getElementById('death-title').innerText = title;
     
+    // Calculate distance to the exit
+    const distToExit = Math.floor(camera.position.distanceTo(exitGroup.position));
+    const distLore = `<br><br><span style="color:#00ff00;">You died ${distToExit} meters from the exit.</span>`;
+    
     if (revivesLeft > 0) {
-        document.getElementById('death-lore').innerHTML = lore + "<br>But wait — there may be one more chance...";
+        document.getElementById('death-lore').innerHTML = lore + distLore + "<br><br>But wait — there may be one more chance...";
         document.getElementById('revive-offer').innerText = `Watch an ad to revive FULLY? (${revivesLeft} left)`;
         document.getElementById('revive-yes').style.display = 'inline-block';
         document.getElementById('revive-no').innerText = 'ACCEPT FATE (QUIT)';
     } else {
-        document.getElementById('death-lore').innerHTML = lore + "<br>You have no revives left.";
+        document.getElementById('death-lore').innerHTML = lore + distLore + "<br><br>You have no revives left.";
         document.getElementById('revive-offer').innerText = "";
         document.getElementById('revive-yes').style.display = 'none';
         document.getElementById('revive-no').innerText = 'RESTART';
@@ -1287,6 +1363,16 @@ function animate() {
             }
 
             if(dist < 200) { 
+                // SPOT PLAYER MECHANIC
+                if (!e.hasSpotted) {
+                    e.hasSpotted = true;
+                    // Global cooldown of 2 seconds for spotting screeches to prevent overlap noise
+                    if (time - lastSpotScreechTime > 2000) {
+                        playScreech();
+                        lastSpotScreechTime = time;
+                    }
+                }
+
                 if(!e.isGlitching && Math.random() < 0.005) { 
                     e.isGlitching = true;
                     e.glitchTimer = 1.0; 
