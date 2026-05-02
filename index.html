@@ -937,6 +937,13 @@ function showRewardAd(onSuccess) {
 
 document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
+    
+    // INSTANTLY PAUSE GAME WHILE AD PLAYS to prevent dying behind the overlay
+    isPaused = true;
+    stopAction();
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
+
     showRewardAd(() => {
         unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; 
         paintAdPrompt.style.display='none';
@@ -952,6 +959,9 @@ document.getElementById('ad-no').addEventListener('click', e=>{
     
     // PAUSE THE GAME upon returning
     isPaused = true;
+    stopAction();
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
     document.getElementById('pause-screen').style.display='flex';
 });
 
