@@ -33,9 +33,11 @@
 
         .title { font-size: 2.4em; margin-bottom: 14px; text-shadow: 0 0 10px #d4d42b; }
         .subtitle { font-size: 1.05em; color: #ddd; margin-bottom: 9px; line-height: 1.55; max-width: 540px; }
-        .lore { font-size: 0.95em; color: #aaa; margin-bottom: 12px; max-width: 560px; line-height: 1.6; font-style: italic; }
-        .hint { color: #0f0; margin-top: 18px; text-shadow: 0 0 5px #0f0; font-size: 1.05em; }
+        .lore { font-size: 1.1em; color: #aaa; margin-bottom: 12px; max-width: 560px; line-height: 1.6; font-style: italic; }
+        .hint { color: #0f0; margin-top: 18px; text-shadow: 0 0 5px #0f0; font-size: 1.05em; animation: pulse 1.5s infinite; }
         .warn { color: #ff4444; font-weight: bold; margin-bottom: 8px; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         .btn-container { display:flex; gap:20px; margin-top:28px; flex-wrap:wrap; justify-content:center; }
         .choice-btn {
@@ -162,18 +164,33 @@
     <div id="start-screen">
         <div class="title">BACKROOMS</div>
         <div style="font-size:1.4em;color:#888;margin-bottom:20px;letter-spacing:4px;">NOCLIP SIM</div>
-        <div class="lore">
-            You were spraying a political message on an oppressive government's capitol building in the dead of night.
+        
+        <div id="page-0" class="start-page">
+            <div class="lore">
+                You were spraying a political message on an oppressive government's capitol building in the dead of night.
+            </div>
+            <div class="hint">Tap anywhere to continue...</div>
         </div>
-        <div class="lore">
-            Leaning against the wall to hide from a patrol, you fell through the solid concrete and noclipped into a space roughly the size of <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
+        
+        <div id="page-1" class="start-page" style="display:none;">
+            <div class="lore">
+                Leaning against the wall to hide from a patrol, you fell through the solid concrete and noclipped into a space roughly the size of <strong style="color:#d4d42b;">3,000 city blocks</strong> of endless, buzzing office hallways.
+            </div>
+            <div class="hint">Tap anywhere to continue...</div>
         </div>
-        <div class="lore">
-            You have nothing but the clothes on your back, your can of paint, and a lighter in your pocket.
+        
+        <div id="page-2" class="start-page" style="display:none;">
+            <div class="lore">
+                You have nothing but the clothes on your back, your can of paint, and a lighter in your pocket.
+            </div>
+            <div class="hint">Tap anywhere to continue...</div>
         </div>
-        <div class="subtitle warn" style="margin-top:20px;">Hold Space/E (or double-tap & hold) to use your lighter and paint as a continuous Flamethrower!</div>
-        <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look & Fire</div>
-        <div class="hint">Find the Green Exit. Tap anywhere to start.</div>
+        
+        <div id="page-3" class="start-page" style="display:none;">
+            <div class="subtitle warn" style="margin-bottom: 15px;">Hold Space/E (or double-tap & hold) to use your lighter and paint as a continuous Flamethrower!</div>
+            <div class="subtitle">Left side → Move &nbsp;|&nbsp; Right side → Look & Fire</div>
+            <div class="hint" style="margin-top: 25px; color:#00ff00;">Find the Green Exit. Tap anywhere to start!</div>
+        </div>
     </div>
 
     <div id="paint-ad-prompt" style="display:none;">
@@ -256,6 +273,7 @@ let hydration   = STAT_MAX;
 let health      = STAT_MAX;
 let isDead      = false;
 let revivesLeft = 3; // Maximum of 3 revives per game
+let throbTimer  = 0; // For heartbeat sound and vibration
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -490,8 +508,8 @@ const entities = [];
         
         const isShadow = Math.random() > 0.5;
         const sprite = new THREE.Sprite(isShadow ? shadowMatTemplate.clone() : wiryMat.clone());
-        sprite.scale.set(12, 24, 1);
-        sprite.position.set(wx, WALL_HEIGHT/2, wz);
+        sprite.scale.set(10, 14, 1); // Reduced height so they don't clip into the ceiling (WALL_HEIGHT is 15)
+        sprite.position.set(wx, 7.5, wz); // WALL_HEIGHT / 2
         scene.add(sprite);
 
         entities.push({
@@ -721,6 +739,8 @@ function initAudio(){
     if(audioCtx) return;
     const AC=window.AudioContext||window.webkitAudioContext;
     audioCtx=new AC(); masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);
+    
+    // Ambient hums
     const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(masterGain); o1.start();
     const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(masterGain); o2.start();
     const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.03; o3.connect(g3); g3.connect(masterGain); o3.start();
@@ -732,6 +752,33 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('speaker-waves').style.display = isMuted ? 'none' : 'block';
     document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
 });
+
+function playScreech() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(2500, audioCtx.currentTime + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.2);
+    
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 40; 
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 1000;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.6, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
+    
+    osc.connect(g);
+    g.connect(masterGain);
+    
+    lfo.start(); osc.start();
+    lfo.stop(audioCtx.currentTime + 1.2); osc.stop(audioCtx.currentTime + 1.2);
+}
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
 const startScreen  = document.getElementById('start-screen');
@@ -746,6 +793,19 @@ const hydrationBar = document.getElementById('hydration-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
+
+// Paginated Lore UI Logic
+let currentPage = 0;
+startScreen.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('page-' + currentPage).style.display = 'none';
+    currentPage++;
+    if(currentPage > 3) {
+        startGame();
+    } else {
+        document.getElementById('page-' + currentPage).style.display = 'block';
+    }
+});
 
 function showRewardAd(onSuccess) {
     window.onRewardEarned = onSuccess;
@@ -776,8 +836,6 @@ function showRewardAd(onSuccess) {
         }
     }, 1000);
 }
-
-startScreen.addEventListener('click', startGame);
 
 document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
@@ -1063,16 +1121,12 @@ function spawnGhost() {
     const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
     const sprite = new THREE.Sprite(wiryMat.clone());
     sprite.material.color.setHex(0x555555);
-    sprite.scale.set(16, 32, 1);
+    sprite.scale.set(10, 14, 1);
     sprite.position.copy(camera.position).add(camDir.multiplyScalar(150)); 
-    sprite.position.y = WALL_HEIGHT/2;
+    sprite.position.y = 7.5; // WALL_HEIGHT / 2
     scene.add(sprite);
     
-    if(masterGain) {
-        const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime+0.5);
-        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.8, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.0);
-        osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.0);
-    }
+    playScreech();
     return { mesh: sprite, life: 1.5 };
 }
 
@@ -1087,6 +1141,29 @@ function animate() {
         updateTimer(time);
 
         hydration -= HYDRATION_DRAIN * delta;
+        
+        // Low Health / Hydration Heartbeat & Haptics
+        if ((health <= 30 || hydration <= 30) && !isDead) {
+            throbTimer -= delta;
+            if (throbTimer <= 0) {
+                if(masterGain && audioCtx.state === 'running') {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(70, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.4);
+                    const g = audioCtx.createGain();
+                    g.gain.setValueAtTime(0.8, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.connect(g); g.connect(masterGain);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                }
+                if (navigator.vibrate) navigator.vibrate([80, 50, 80]); // double pulse
+                throbTimer = 1.0; 
+            }
+        } else {
+            throbTimer = 0;
+        }
+
         if(hydration <= 0) showDeathScreen("DEHYDRATED.", "Your body has given out.");
         updateStatusBars();
         checkItemPickups();
@@ -1125,11 +1202,7 @@ function animate() {
                             if(dirToEnt.dot(camDir) > 0.85) { 
                                 e.onFire = true;
                                 e.fireTimer = 1.5;
-                                if(masterGain) {
-                                    const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+1.5);
-                                    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+1.5);
-                                    osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime+1.5);
-                                }
+                                playScreech(); // Play the new screech sound
                             }
                         }
                     }
@@ -1157,7 +1230,7 @@ function animate() {
             activeGhost.life -= delta;
             const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
             activeGhost.mesh.position.add(dir.multiplyScalar(400 * delta));
-            activeGhost.mesh.position.y = WALL_HEIGHT/2 + Math.sin(time/50)*2;
+            activeGhost.mesh.position.y = 7.5 + Math.sin(time/50)*1.5;
             if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 15) {
                 scene.remove(activeGhost.mesh); activeGhost = null;
             }
@@ -1222,10 +1295,10 @@ function animate() {
                     if(e.staminaCooldown <= 0) { e.stamina = 3.0; e.staminaCooldown = 5.0; }
                 }
 
-                // Entities now stop advancing at ENTITY_MIN_DIST (22 units)
-                // but if they get within 25 units (because of glitch or you walking into them) they hurt you
+                // Damage application
                 if(dist < 25) {
                     health -= 10 * delta; 
+                    if (!tookDamage && navigator.vibrate) navigator.vibrate(50); // Sharp haptic feedback for taking damage
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("SLAIN.", "You were caught by a Wanderer.");
                 }
@@ -1240,7 +1313,7 @@ function animate() {
                 if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
                 e.bob += delta * effectiveSpeed * 0.05;
-                e.mesh.position.y = WALL_HEIGHT/2 + Math.sin(e.bob) * 1.5;
+                e.mesh.position.y = 7.5 + Math.sin(e.bob) * 1.5; // Base height centered at WALL_HEIGHT/2
             }
         }
 
