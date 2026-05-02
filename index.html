@@ -282,8 +282,8 @@ const canvas = document.getElementById('game-canvas');
 const scene   = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1a00);
 
-// Fog is manipulated dynamically now
-scene.fog = new THREE.Fog(0x3a3a10, 10, 120);
+// Base fog, smoothly lerped later
+scene.fog = new THREE.Fog(0x3a3a10, 10, 180);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -358,21 +358,18 @@ const wallMat  = new THREE.MeshLambertMaterial({ map: wallTex });
 const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
 const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex });
 
-// ─── FLOOR / CEILING ───────────────────────────────────────────────────────
-const planeGeo = new THREE.PlaneGeometry(MAP_SIZE*TILE_SIZE, MAP_SIZE*TILE_SIZE);
-const floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
-const ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
+// ─── MAP & DARK ZONE GENERATION ───────────────────────────────────────────
+const grid = [];
+const darkZones = new Uint8Array(MAP_SIZE * MAP_SIZE);
+let wallCount = 0;
 
-// ─── EXIT POSITION ─────────────────────────────────────────────────────────
+// EXIT POSITION
 let exitGridX, exitGridZ;
 do {
     exitGridX = Math.floor(Math.random()*(MAP_SIZE-20))+10;
     exitGridZ = Math.floor(Math.random()*(MAP_SIZE-20))+10;
 } while (Math.abs(exitGridX-SPAWN_GRID_X)<EXIT_MIN_DIST && Math.abs(exitGridZ-SPAWN_GRID_Z)<EXIT_MIN_DIST);
 
-// ─── MAP GENERATION ────────────────────────────────────────────────────────
-const grid = [];
-let wallCount = 0;
 for (let x=0;x<MAP_SIZE;x++) {
     grid[x]=[];
     for (let z=0;z<MAP_SIZE;z++) {
@@ -384,19 +381,44 @@ for (let x=0;x<MAP_SIZE;x++) {
         }
         grid[x][z]=w;
         if(w) wallCount++;
+
+        // Calculate dark zones (approx 15-20% of map) using smooth intersecting sine waves
+        if (Math.sin(x/8) + Math.sin(z/8) + Math.sin((x+z)/11) > 1.25) {
+            darkZones[x + z*MAP_SIZE] = 1;
+        }
     }
 }
 
+// Build Instanced Walls with Baked Dark Zones
 const wallGeo = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
 const instancedWalls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
 const dummy = new THREE.Object3D();
+const tempColor = new THREE.Color();
 let idx = 0;
-for (let x=0;x<MAP_SIZE;x++) for (let z=0;z<MAP_SIZE;z++) if(grid[x][z]) {
-    dummy.position.set((x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, WALL_HEIGHT/2, (z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
-    dummy.updateMatrix();
-    instancedWalls.setMatrixAt(idx++, dummy.matrix);
+for (let x=0;x<MAP_SIZE;x++) {
+    for (let z=0;z<MAP_SIZE;z++) {
+        if(grid[x][z]) {
+            dummy.position.set((x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, WALL_HEIGHT/2, (z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
+            dummy.updateMatrix();
+            instancedWalls.setMatrixAt(idx, dummy.matrix);
+            
+            if (darkZones[x + z*MAP_SIZE] === 1) {
+                tempColor.setHex(0x333333); // Heavily darken wall instances in dark zones
+            } else {
+                tempColor.setHex(0xffffff); // Normal brightness
+            }
+            instancedWalls.setColorAt(idx, tempColor);
+            idx++;
+        }
+    }
 }
 scene.add(instancedWalls);
+
+// Single unified plane for massive performance boost
+const planeGeo = new THREE.PlaneGeometry(MAP_SIZE*TILE_SIZE, MAP_SIZE*TILE_SIZE);
+const floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
+const ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
+
 
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
 function generateWiryFrames(count) {
@@ -458,6 +480,7 @@ function generateShadowFrames(count, eyesOpen) {
         
         // Jagged, shifting, prickly shadow body
         ctx.fillStyle = 'rgba(0,0,0,0.95)';
+        ctx.filter = 'blur(6px)';
         ctx.beginPath();
         for(let a=0; a<Math.PI*2; a+=0.04) {
             let r = 80 + Math.random()*50; // High variance for prickles
@@ -619,6 +642,7 @@ const fireTex = (function(){
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
     if (!unlimitedPaint && spraysLeft <= 0) {
+        isFiring = false;
         document.getElementById('paint-ad-prompt').style.display = 'flex';
         return;
     }
@@ -768,9 +792,9 @@ scene.add(exitGroup);
 const exitBox=new THREE.Box3().setFromObject(exitGroup);
 
 // ─── LIGHTING & STATE ──────────────────────────────────────────────────────
-const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.4);
+const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.45);
 scene.add(ambientLight);
-const playerLight=new THREE.PointLight(0xfffdbb,0.6,60);
+const playerLight=new THREE.PointLight(0xfffdbb,0.6,70);
 scene.add(playerLight);
 
 let yaw=Math.PI/4, pitch=0;
@@ -1097,15 +1121,9 @@ function handlePointerMove(id,x,y){
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
     else if(id===rightTouchId){ 
-        if (isRightTouchDoubleTapped) {
-            stopAction();
-            isRightTouchDoubleTapped = false;
-            lastTapTime = 0; // reset
-        } else {
-            if(Date.now()-touchStartTime<200) {
-                lastTapTime = Date.now();
-            }
-        }
+        stopAction();
+        isRightTouchDoubleTapped = false;
+        if(Date.now()-touchStartTime<200) lastTapTime = Date.now();
         rightTouchId=null; 
     }
 }
@@ -1134,14 +1152,10 @@ document.addEventListener('mousemove',e=>{
 });
 window.addEventListener('mouseup',e=>{ 
     if(isMouseDown){ 
-        if (isRightTouchDoubleTapped) {
-            stopAction();
-            isRightTouchDoubleTapped = false;
-            lastTapTime = 0;
-        } else {
-            handlePointerEnd('mouse'); 
-            lastTapTime = Date.now(); 
-        }
+        stopAction();
+        isRightTouchDoubleTapped = false;
+        handlePointerEnd('mouse'); 
+        lastTapTime = Date.now(); 
         isMouseDown=false; 
     } 
 });
@@ -1254,47 +1268,33 @@ function animate() {
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
         // --- DARK ZONE LIGHTING LOGIC ---
-        // Dynamically adjust ambient lighting and fog based on position to create dark, scary 15% patches
+        // Dynamically adjust ambient lighting and fog based on position to create dark, scary patches
         const pgx = Math.floor((camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
         const pgz = Math.floor((camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
         
-        // Organic pseudo-random sine generation to cluster 15-20% darkness
-        const isDark = (Math.sin(pgx/5) + Math.sin(pgz/5) + Math.sin((pgx+pgz)/7) > 1.4); 
-
-        let ambientTarget = 0.4;
-        let fogFarTarget = 120;
-        let fogColorTarget = new THREE.Color(0x3a3a10);
-        let playerLightTarget = 0.6;
-        let playerLightDistTarget = 60;
-        let playerLightColorTarget = new THREE.Color(0xfffdbb);
-
-        if (isDark) {
-            ambientTarget = 0.05; // Pitch black ambient
-            fogFarTarget = 25; // Can't see far
-            fogColorTarget.setHex(0x020200);
-            playerLightTarget = isFiring ? 1.5 : 0.15; // Flamethrower illuminates dark areas!
-            playerLightDistTarget = isFiring ? 60 : 30;
-            playerLightColorTarget.setHex(isFiring ? 0xffaa00 : 0xaa9955);
-        } else {
-            ambientTarget = 0.4;
-            fogFarTarget = 120;
-            fogColorTarget.setHex(0x3a3a10);
-            playerLightTarget = isFiring ? 1.0 : (Math.random() > 0.95 ? 0.3 : 0.6); // Normal flicker
-            playerLightDistTarget = isFiring ? 80 : 60;
-            playerLightColorTarget.setHex(isFiring ? 0xffbb55 : 0xfffdbb);
+        let inDarkZone = false;
+        if (pgx >= 0 && pgx < MAP_SIZE && pgz >= 0 && pgz < MAP_SIZE) {
+            inDarkZone = darkZones[pgx + pgz*MAP_SIZE] === 1;
         }
 
-        // Lerp lighting towards targets for smooth transitions
+        // Ambient and Fog Targets
+        const ambientTarget = inDarkZone ? 0.05 : 0.45;
+        const fogFarTarget = inDarkZone ? 35 : 180;
+        const fogColorTarget = new THREE.Color(inDarkZone ? 0x050505 : 0x3a3a10);
+
         ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 2;
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 2;
         scene.fog.color.lerp(fogColorTarget, delta * 2);
-        playerLight.intensity += (playerLightTarget - playerLight.intensity) * delta * 5;
-        playerLight.distance += (playerLightDistTarget - playerLight.distance) * delta * 5;
-        playerLight.color.lerp(playerLightColorTarget, delta * 5);
 
 
         // Continuous Flamethrower Process (Spray can flame)
         if (isFiring) {
+            
+            // Adjust player light dynamically when firing
+            playerLight.intensity = 1.8 + Math.random() * 0.4;
+            playerLight.distance = 250;
+            playerLight.color.setHex(0xffaa22);
+            
             if (!unlimitedPaint && spraysLeft <= 0) {
                 isFiring = false;
                 document.getElementById('paint-ad-prompt').style.display = 'flex';
@@ -1348,6 +1348,11 @@ function animate() {
                     }
                 }
             }
+        } else {
+            // Standard flicker when not firing
+            playerLight.intensity = Math.random() > 0.95 ? 0.3 : 0.6;
+            playerLight.distance = 70;
+            playerLight.color.setHex(0xfffdbb);
         }
 
         for(let i=fireParticles.length-1; i>=0; i--) {
@@ -1378,6 +1383,7 @@ function animate() {
         }
 
         let tookDamage = false;
+        
         const px = camera.position.x;
         const pz = camera.position.z;
 
