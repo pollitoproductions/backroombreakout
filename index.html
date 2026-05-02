@@ -129,25 +129,6 @@
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
-
-        /* SMILING SHADOW CSS OVERLAY */
-        #entity-eyes-smile {
-            position: absolute; top: 50%; left: 50%;
-            width: 200px; height: 100px;
-            opacity: 0; pointer-events: none; z-index: 50;
-            transform: translate(-50%, -50%); transition: opacity 0.3s;
-        }
-        .entity-eye {
-            position: absolute; width: 40px; height: 40px;
-            background: black; border-radius: 50%;
-            animation: blink 5s infinite;
-        }
-        .pupil { background: red; width: 10px; height: 10px; border-radius: 50%; margin: 15px; }
-        @keyframes blink {
-            0%, 90% { transform: scaleY(1); } 
-            95% { transform: scaleY(0.1); }  
-            100% { transform: scaleY(1); }   
-        }
     </style>
 </head>
 <body>
@@ -975,8 +956,8 @@ function showDeathScreen(title, lore){
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     document.getElementById('death-title').innerText = title;
     
-    // Calculate distance to the exit
-    const distToExit = Math.floor(camera.position.distanceTo(exitGroup.position));
+    // Calculate distance to the exit based on true-to-life 0.25 meter scale
+    const distToExit = Math.floor(camera.position.distanceTo(exitGroup.position) * 0.25);
     const distLore = `<br><br><span style="color:#00ff00;">You died ${distToExit} meters from the exit.</span>`;
     
     if (revivesLeft > 0) {
