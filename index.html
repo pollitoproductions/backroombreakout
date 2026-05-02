@@ -382,8 +382,8 @@ for (let x=0;x<MAP_SIZE;x++) {
         grid[x][z]=w;
         if(w) wallCount++;
 
-        // Calculate dark zones (approx 15-20% of map) using smooth intersecting sine waves
-        if (Math.sin(x/8) + Math.sin(z/8) + Math.sin((x+z)/11) > 1.25) {
+        // Calculate dark zones (smaller pockets, approx 15% of map) using smooth intersecting sine waves
+        if (Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9) > 1.6) {
             darkZones[x + z*MAP_SIZE] = 1;
         }
     }
@@ -403,7 +403,7 @@ for (let x=0;x<MAP_SIZE;x++) {
             instancedWalls.setMatrixAt(idx, dummy.matrix);
             
             if (darkZones[x + z*MAP_SIZE] === 1) {
-                tempColor.setHex(0x333333); // Heavily darken wall instances in dark zones
+                tempColor.setHex(0x666655); // Dimmer walls in dark zones, but not pitch black
             } else {
                 tempColor.setHex(0xffffff); // Normal brightness
             }
@@ -1286,20 +1286,20 @@ function animate() {
         const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         
         // Same formula used for the grid, but continuous
-        const darkSignal = Math.sin(cx/8) + Math.sin(cz/8) + Math.sin((cx+cz)/11);
+        const darkSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
         
-        // Map signal (0.4 to 1.25) to a darkness factor (0.0 to 1.0)
-        let darknessFactor = (darkSignal - 0.4) / (1.25 - 0.4);
+        // Map signal (0.8 to 1.7) to a darkness factor (0.0 to 1.0)
+        let darknessFactor = (darkSignal - 0.8) / (1.7 - 0.8);
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
         
         // Smooth easing curve
         darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
 
-        const ambientTarget = 0.45 - (darknessFactor * 0.40); // Fades from 0.45 down to 0.05
-        const fogFarTarget = 180 - (darknessFactor * 145);   // Fades from 180 down to 35
+        const ambientTarget = 0.45 - (darknessFactor * 0.20); // Fades from 0.45 down to 0.25 (roughly 50% darkness)
+        const fogFarTarget = 180 - (darknessFactor * 90);   // Fades from 180 down to 90 (so you can see light at the end)
         
         const fogBase = new THREE.Color(0x3a3a10);
-        const fogDark = new THREE.Color(0x050505);
+        const fogDark = new THREE.Color(0x1a1a05); // Murky dark yellow instead of pitch black void
         const fogColorTarget = fogBase.lerp(fogDark, darknessFactor);
 
         ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 4;
