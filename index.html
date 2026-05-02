@@ -871,10 +871,21 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         revivesLeft--; // Deduct 1 revive usage
         reviveScreen.style.display='none';
         health=STAT_MAX; hydration=STAT_MAX; // 100% Full restore
-        isDead=false; isPaused=false;
+        
+        // Refill paint on revive if the player doesn't already have unlimited paint
+        if (!unlimitedPaint) {
+            spraysLeft = 100;
+            sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+        }
+        
+        isDead=false;
         updateStatusBars();
-        if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
-        lastTF=performance.now(); prevTime=performance.now();
+        
+        // Pause the game immediately to let the player regroup
+        isPaused=true;
+        document.getElementById('pause-screen').style.display='flex';
+        if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+        moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
     });
 });
 document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
