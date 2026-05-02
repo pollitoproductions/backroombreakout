@@ -382,8 +382,10 @@ for (let x=0;x<MAP_SIZE;x++) {
         grid[x][z]=w;
         if(w) wallCount++;
 
-        // Calculate dark zones (smaller pockets, approx 15% of map) using smooth intersecting sine waves
-        if (Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9) > 1.6) {
+        // Calculate dark zones (approx 25% of map) using smooth intersecting sine waves
+        // Ensure the player spawns in a lit area
+        const distFromSpawn = Math.hypot(x - SPAWN_GRID_X, z - SPAWN_GRID_Z);
+        if (Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9) > 0.8 && distFromSpawn > 15) {
             darkZones[x + z*MAP_SIZE] = 1;
         }
     }
@@ -1284,16 +1286,21 @@ function animate() {
         // Smoothly calculate continuous position through the dark zone noise field
         const cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
+        const distFromSpawn = Math.hypot(cx - SPAWN_GRID_X, cz - SPAWN_GRID_Z);
         
         // Same formula used for the grid, but continuous
         const darkSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
         
-        // Map signal (0.8 to 1.7) to a darkness factor (0.0 to 1.0)
-        let darknessFactor = (darkSignal - 0.8) / (1.7 - 0.8);
+        // Map signal (0.3 to 1.2) to a darkness factor (0.0 to 1.0) for ~25% coverage
+        let darknessFactor = (darkSignal - 0.3) / (1.2 - 0.3);
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
         
         // Smooth easing curve
         darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
+        
+        // Force the area around the spawn to be perfectly lit
+        const spawnMask = Math.min(1, Math.max(0, (distFromSpawn - 10) / 10));
+        darknessFactor *= spawnMask;
 
         const ambientTarget = 0.45 - (darknessFactor * 0.20); // Fades from 0.45 down to 0.25 (roughly 50% darkness)
         const fogFarTarget = 180 - (darknessFactor * 90);   // Fades from 180 down to 90 (so you can see light at the end)
