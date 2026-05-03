@@ -74,7 +74,7 @@
             padding: 12px 20px; font-size: 1.05em; cursor: pointer;
             border: 2px solid #d4d42b; background: rgba(0,0,0,0.6); color: #d4d42b;
             font-family: monospace; transition: all 0.2s; border-radius: 6px;
-            letter-spacing: 1px; width: 100%; max-width: 320px; box-sizing: border-box;
+            letter-spacing: 1px; width: 100%; max-width: 400px; box-sizing: border-box;
         }
         .choice-btn:hover { background: #d4d42b; color: #000; transform: scale(1.02); }
         .choice-btn.green { border-color: #00ff00; color: #00ff00; }
@@ -228,23 +228,23 @@
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff4444; margin-bottom: 12px; width: 100%; box-sizing: border-box;">
                     <strong style="color:#ff4444; font-size: 1.1em;">WEAPON:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Double-tap and hold</strong> the right side to ignite your paint into a continuous Flamethrower to burn Entities.</span>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Double-tap and hold</strong> the right side to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it! Entities can damage you from further away than your flame reaches, so you must charge in on the attacker!</span>
                 </div>
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #88ccff; width: 100%; box-sizing: border-box;">
                     <strong style="color:#88ccff; font-size: 1.1em;">NAVIGATION:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Tap once</strong> on the right side near a wall to spray a paint mark so you don't get lost.</span>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Double-tap</strong> a wall on the right side to spray a paint mark so you don't get lost.</span>
                 </div>
                 
                 <div class="hint">Tap anywhere to continue...</div>
             </div>
 
             <div id="page-4" class="start-page" style="display:none;">
-                <div class="hint" style="margin-top: 15px; margin-bottom: 10px; color:#00ff00;">Select Difficulty to Start:</div>
+                <div class="hint" style="margin-top: 15px; margin-bottom: 10px; color:#00ff00;">Choose Your Sanity:</div>
                 <div class="btn-container" style="flex-direction: column; align-items: center; gap: 10px; margin-top: 0; width: 100%;">
-                    <button class="choice-btn green" id="btn-easy">EASY (1 mi&sup2; / 2.5 km&sup2;, 10 Exits)</button>
-                    <button class="choice-btn" style="border-color:#d4d42b; color:#d4d42b;" id="btn-med">MEDIUM (5 mi&sup2; / 12.5 km&sup2;, 5 Exits)</button>
-                    <button class="choice-btn red" id="btn-hard">HARD (10 mi&sup2; / 25 km&sup2;, 1 Exit)</button>
+                    <button class="choice-btn green" id="btn-easy">SANE (1 mi&sup2; / 2.5 km&sup2;, 10 Exits)</button>
+                    <button class="choice-btn" style="border-color:#d4d42b; color:#d4d42b;" id="btn-med">QUESTIONABLE (5 mi&sup2; / 12.5 km&sup2;, 5 Exits)</button>
+                    <button class="choice-btn red" id="btn-hard">INSANE (10 mi&sup2; / 25 km&sup2;, 1 Exit)</button>
                 </div>
             </div>
         </div>
@@ -271,7 +271,8 @@
         <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
         <div class="win-flavor">Time spent in the Backrooms:</div>
         <div class="win-time" id="win-time-display">00:00</div>
-        <div class="win-hint">Tap anywhere to try again.</div>
+        <div class="win-flavor" id="win-sanity-display" style="margin-top: 10px; font-weight: bold; color: #d4d42b;">Sanity: SANE</div>
+        <div class="win-hint" style="margin-top: 30px;">Tap anywhere to try again.</div>
     </div>
 
     <div id="revive-screen" style="display:none;">
@@ -294,6 +295,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ─── CONFIG (DYNAMIC NOW) ──────────────────────────────────────────────────
+let currentSanity     = 'SANE';
 let MAP_SIZE          = 1000; 
 let SPAWN_GRID_X      = 500;
 let SPAWN_GRID_Z      = 500;
@@ -331,6 +333,7 @@ let entities = [];
 
 let spraysLeft    = 100;
 let unlimitedPaint = false;
+let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
 let lastTapTime    = 0;
 let lastSprayTime  = 0;
@@ -402,7 +405,6 @@ const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex });
 
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
-    // Wrap textures based on new MAP_SIZE
     floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
     ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
 
@@ -708,9 +710,17 @@ const fireTex = (function(){
 
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
+    
+    // Ad Prompt Check
     if (!unlimitedPaint && spraysLeft <= 0) {
         isFiring = false;
-        document.getElementById('paint-ad-prompt').style.display = 'flex';
+        if (!hasSeenPaintAdThisRound) {
+            hasSeenPaintAdThisRound = true;
+            document.getElementById('paint-ad-prompt').style.display = 'flex';
+            isPaused = true;
+            if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+            moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
+        }
         return;
     }
 
@@ -925,12 +935,15 @@ document.getElementById('btn-hard').addEventListener('click', e => selectDifficu
 function selectDifficulty(level, e) {
     e.stopPropagation();
     if (level === 'easy') {
+        currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 250;
         BOTTLE_COUNT = 150; JELLY_COUNT = 150; PAINT_COUNT = 40;
     } else if (level === 'medium') {
+        currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 1250;
         BOTTLE_COUNT = 750; JELLY_COUNT = 750; PAINT_COUNT = 200;
     } else {
+        currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 2500;
         BOTTLE_COUNT = 1500; JELLY_COUNT = 1500; PAINT_COUNT = 400;
     }
@@ -1022,6 +1035,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         if (!unlimitedPaint) {
             spraysLeft = 100;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+            hasSeenPaintAdThisRound = false;
         }
         
         isDead=false;
@@ -1036,7 +1050,9 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
 document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
 
 function showWinScreen(){
-    gameStarted=false; winTimeDisp.innerText=fmtTime(); winScreen.style.display='flex';
+    gameStarted=false; winTimeDisp.innerText=fmtTime(); 
+    document.getElementById('win-sanity-display').innerText = "Sanity: " + currentSanity;
+    winScreen.style.display='flex';
     topHud.style.display='none'; document.getElementById('mute-btn').style.display='none';
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
@@ -1114,17 +1130,18 @@ function checkItemPickups(){
         if (Math.abs(px - b.wx) < ITEM_PICKUP_DIST && Math.abs(pz - b.wz) < ITEM_PICKUP_DIST) {
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
-                const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
+                const val = Math.floor(Math.random() * 16) + 15; 
                 hydration = Math.min(STAT_MAX, hydration + val);
                 showPickupFlash(`Almond Water +${val}`, '#88ccff');
             } else if(b.type === 'jelly') {
-                const val = Math.floor(Math.random() * 16) + 15; // Random 15-30
+                const val = Math.floor(Math.random() * 16) + 15; 
                 health = Math.min(STAT_MAX, health + val);
                 showPickupFlash(`Moth Jelly +${val}`, '#aaffcc');
             } else if(b.type === 'paint') {
                 if(!unlimitedPaint) {
                     spraysLeft = 100;
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
+                    hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
                 showPickupFlash(`Paint Refilled!`, '#ff4444');
             }
@@ -1375,7 +1392,13 @@ function animate() {
             
             if (!unlimitedPaint && spraysLeft <= 0) {
                 isFiring = false;
-                document.getElementById('paint-ad-prompt').style.display = 'flex';
+                if (!hasSeenPaintAdThisRound) {
+                    hasSeenPaintAdThisRound = true;
+                    document.getElementById('paint-ad-prompt').style.display = 'flex';
+                    isPaused = true;
+                    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+                    moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
+                }
             } else {
                 fireAccumulator += delta;
                 if (fireAccumulator >= 0.1) { // Fires 10 times a second
