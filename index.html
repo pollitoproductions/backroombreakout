@@ -170,7 +170,7 @@
 <div id="ui-layer">
     <div id="top-hud">
         <div id="timer" class="hud-element">00:00</div>
-        <div id="spray-counter" class="hud-element">SPRAYS: 100</div>
+        <div id="spray-counter" class="hud-element">SPRAYS: 500</div>
         <div class="status-container hud-element">
             <div class="status-label" style="color:#ff6666;">HEALTH</div>
             <div class="status-bar-bg"><div id="health-bar" class="status-bar-fill"></div></div>
@@ -331,7 +331,7 @@ let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
 
-let spraysLeft    = 100;
+let spraysLeft    = 500;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
@@ -1033,7 +1033,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         health=STAT_MAX; hydration=STAT_MAX; // 100% Full restore
         
         if (!unlimitedPaint) {
-            spraysLeft = 100;
+            spraysLeft = 500;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
             hasSeenPaintAdThisRound = false;
         }
@@ -1139,7 +1139,7 @@ function checkItemPickups(){
                 showPickupFlash(`Moth Jelly +${val}`, '#aaffcc');
             } else if(b.type === 'paint') {
                 if(!unlimitedPaint) {
-                    spraysLeft = 100;
+                    spraysLeft = 500;
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
                     hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
