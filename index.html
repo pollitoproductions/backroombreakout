@@ -324,7 +324,7 @@ const ENTITY_MIN_DIST    = 22.0;
 
 // Mutable Level Variables
 let grid = [];
-let darkZones;
+let lightZones; 
 let exitBoxes = [];
 let exitGroups = [];
 let instancedWalls, floor, ceil;
@@ -354,13 +354,17 @@ let headBobAmount = 0;
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
 const scene   = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a00);
-scene.fog = new THREE.Fog(0x3a3a10, 10, 180);
+scene.background = new THREE.Color(0x050505);
+scene.fog = new THREE.Fog(0x202005, 10, 150);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+// CINEMATIC TONE MAPPING
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1; // Brings out deep contrast and hot flames
 
 // ─── TEXTURES ──────────────────────────────────────────────────────────────
 function createTexture(type) {
@@ -402,9 +406,10 @@ const wallTex  = createTexture('wall');
 const floorTex = createTexture('floor');
 const ceilTex  = createTexture('ceiling');
 
-const wallMat  = new THREE.MeshLambertMaterial({ map: wallTex });
-const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
-const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex });
+// CHANGED TO PHONG MATERIALS FOR PER-PIXEL LIGHTING
+const wallMat  = new THREE.MeshPhongMaterial({ map: wallTex });
+const floorMat = new THREE.MeshPhongMaterial({ map: floorTex });
+const ceilMat  = new THREE.MeshPhongMaterial({ map: ceilTex });
 
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
@@ -426,7 +431,7 @@ function buildWorld() {
     }
 
     grid = [];
-    darkZones = new Uint8Array(MAP_SIZE * MAP_SIZE);
+    lightZones = new Uint8Array(MAP_SIZE * MAP_SIZE);
     let wallCount = 0;
 
     for (let x=0; x<MAP_SIZE; x++) {
@@ -444,8 +449,13 @@ function buildWorld() {
             if(w) wallCount++;
 
             const distFromSpawn = Math.hypot(x - SPAWN_GRID_X, z - SPAWN_GRID_Z);
-            if (Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9) > 0.8 && distFromSpawn > 15) {
-                darkZones[x + z*MAP_SIZE] = 1;
+            const lightSignal = Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9);
+            
+            // 0 = normal (dimmed), 1 = dark (~25%), 2 = bright (~25%)
+            if (lightSignal > 0.6 && distFromSpawn > 15) {
+                lightZones[x + z*MAP_SIZE] = 1;
+            } else if (lightSignal < -0.6) {
+                lightZones[x + z*MAP_SIZE] = 2;
             }
         }
     }
@@ -463,8 +473,10 @@ function buildWorld() {
                 dummy.updateMatrix();
                 instancedWalls.setMatrixAt(idx, dummy.matrix);
                 
-                if (darkZones[x + z*MAP_SIZE] === 1) tempColor.setHex(0x666655);
-                else tempColor.setHex(0xffffff);
+                // Color walls based on light zones to bake in sharp contrasts
+                if (lightZones[x + z*MAP_SIZE] === 1) tempColor.setHex(0x555544); // Dark
+                else if (lightZones[x + z*MAP_SIZE] === 2) tempColor.setHex(0xffffe6); // Bright White-Yellow
+                else tempColor.setHex(0xaaaa99); // Normal is slightly dimmed to emphasize point lights
                 
                 instancedWalls.setColorAt(idx, tempColor);
                 idx++;
@@ -475,7 +487,7 @@ function buildWorld() {
 
     for (let eg of exitsGrid) {
         const exitGroup = new THREE.Group();
-        const doorM = new THREE.Mesh(new THREE.BoxGeometry(8,12,1), new THREE.MeshLambertMaterial({color:0x4a3600}));
+        const doorM = new THREE.Mesh(new THREE.BoxGeometry(8,12,1), new THREE.MeshPhongMaterial({color:0x4a3600}));
         doorM.position.y=6; exitGroup.add(doorM);
         const sign = new THREE.Mesh(new THREE.BoxGeometry(6,2,1.2), new THREE.MeshBasicMaterial({color:0x00ff00}));
         sign.position.y=13; exitGroup.add(sign);
@@ -492,7 +504,7 @@ function buildWorld() {
         const sb=new THREE.Mesh(new THREE.PlaneGeometry(5.8,1.9),new THREE.MeshBasicMaterial({map:exitTex2}));
         sb.position.set(0,13,-0.7); sb.rotation.y=Math.PI; exitGroup.add(sb);
         
-        const exitLight=new THREE.PointLight(0x00ff00,1,50); exitLight.position.y=13; exitGroup.add(exitLight);
+        const exitLight=new THREE.PointLight(0x00ff00,1.5,50); exitLight.position.y=13; exitGroup.add(exitLight);
         exitGroup.position.set((eg.x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2,0,(eg.z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
         scene.add(exitGroup);
         
@@ -762,13 +774,13 @@ function stopAction() {
 function makeBottle() {
     const group = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(1.1, 1.3, 4.5, 7);
-    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
+    const bodyMat = new THREE.MeshPhongMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
     const body = new THREE.Mesh(bodyGeo, bodyMat); body.position.y = 2.25; group.add(body);
     const neckGeo = new THREE.CylinderGeometry(0.55, 1.0, 1.5, 7);
-    const neckMat = new THREE.MeshBasicMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
+    const neckMat = new THREE.MeshPhongMaterial({ color: 0x8b5a2b, transparent: true, opacity: 0.95 });
     const neck = new THREE.Mesh(neckGeo, neckMat); neck.position.y = 5.25; group.add(neck);
     const capGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 7);
-    const capMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const capMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
     const cap = new THREE.Mesh(capGeo, capMat); cap.position.y = 6.3; group.add(cap);
     return group;
 }
@@ -776,11 +788,11 @@ function makeBottle() {
 function makeMothJelly() {
     const group = new THREE.Group();
     const jarGeo = new THREE.CylinderGeometry(1.5, 1.5, 3.5, 8);
-    const jarMat = new THREE.MeshBasicMaterial({ color: 0x88ffcc, transparent: true, opacity: 0.9 });
+    const jarMat = new THREE.MeshPhongMaterial({ color: 0x88ffcc, transparent: true, opacity: 0.9 });
     const jar = new THREE.Mesh(jarGeo, jarMat);
     jar.position.y = 1.75; group.add(jar);
     const lidGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.5, 8);
-    const lidMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const lidMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
     const lid = new THREE.Mesh(lidGeo, lidMat);
     lid.position.y = 3.75; group.add(lid);
     return group;
@@ -789,11 +801,11 @@ function makeMothJelly() {
 function makePaintCan() {
     const group = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.5, 8);
-    const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff3333, transparent: true, opacity: 0.9 });
+    const bodyMat = new THREE.MeshPhongMaterial({ color: 0xff3333, transparent: true, opacity: 0.9 });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = 1.25; group.add(body);
     const capGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 8);
-    const capMat = new THREE.MeshBasicMaterial({ color: 0xdddddd });
+    const capMat = new THREE.MeshPhongMaterial({ color: 0xdddddd });
     const cap = new THREE.Mesh(capGeo, capMat);
     cap.position.y = 2.75; group.add(cap);
     return group;
@@ -844,9 +856,9 @@ function placeItems() {
 }
 
 // ─── LIGHTING & STATE ──────────────────────────────────────────────────────
-const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.45);
+const ambientLight = new THREE.AmbientLight(0xfffdbb, 0.35); // Base ambient
 scene.add(ambientLight);
-const playerLight=new THREE.PointLight(0xfffdbb,0.6,70);
+const playerLight=new THREE.PointLight(0xfffdbb,0.6,80); 
 scene.add(playerLight);
 
 let yaw=Math.PI/4, pitch=0;
@@ -1353,32 +1365,43 @@ function animate() {
 
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
-        // --- DARK ZONE LIGHTING LOGIC ---
-        // Smoothly calculate continuous position through the dark zone noise field
+        // --- DARK AND BRIGHT ZONE LIGHTING LOGIC ---
+        // Smoothly calculate continuous position through the noise field
         const cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const distFromSpawn = Math.hypot(cx - SPAWN_GRID_X, cz - SPAWN_GRID_Z);
         
-        // Same formula used for the grid, but continuous
-        const darkSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
+        // Continuous organic noise
+        const lightSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
         
-        // Map signal (0.3 to 1.2) to a darkness factor (0.0 to 1.0) for ~25% coverage
-        let darknessFactor = (darkSignal - 0.3) / (1.2 - 0.3);
+        // Map factors with deadzones to isolate them
+        let darknessFactor = (lightSignal - 0.6) / (1.2 - 0.6);
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
-        
-        // Smooth easing curve
-        darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
-        
-        // Force the area around the spawn to be perfectly lit
         const spawnMask = Math.min(1, Math.max(0, (distFromSpawn - 10) / 10));
         darknessFactor *= spawnMask;
 
-        const ambientTarget = 0.45 - (darknessFactor * 0.20); // Fades from 0.45 down to 0.25 (roughly 50% darkness)
-        const fogFarTarget = 180 - (darknessFactor * 90);   // Fades from 180 down to 90 (so you can see light at the end)
-        
-        const fogBase = new THREE.Color(0x3a3a10);
-        const fogDark = new THREE.Color(0x1a1a05); // Murky dark yellow instead of pitch black void
-        const fogColorTarget = fogBase.lerp(fogDark, darknessFactor);
+        let brightnessFactor = (lightSignal - (-0.6)) / (-1.2 - (-0.6));
+        brightnessFactor = Math.max(0, Math.min(1, brightnessFactor));
+
+        // Smooth easing curves for transitions
+        darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
+        brightnessFactor = brightnessFactor * brightnessFactor * (3 - 2 * brightnessFactor);
+
+        // Sinister Normal Lighting Base (Sharper Contrast)
+        let ambientTarget = 0.35; 
+        let fogFarTarget = 160;
+        let fogColorTarget = new THREE.Color(0x202005);
+
+        // Apply Modifiers
+        if (darknessFactor > 0) {
+            ambientTarget = 0.35 - (darknessFactor * 0.15); // Drops to ~50% visibility
+            fogFarTarget = 160 - (darknessFactor * 70);    
+            fogColorTarget.lerp(new THREE.Color(0x1a1a05), darknessFactor); // Murky brown-black
+        } else if (brightnessFactor > 0) {
+            ambientTarget = 0.35 + (brightnessFactor * 0.65); // Bright overexposure
+            fogFarTarget = 160 + (brightnessFactor * 140);    // Deep visibility
+            fogColorTarget.lerp(new THREE.Color(0xdadab0), brightnessFactor); // Sickly washed out glow
+        }
 
         ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 4;
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
@@ -1389,8 +1412,8 @@ function animate() {
         if (isFiring) {
             
             // Adjust player light dynamically when firing
-            playerLight.intensity = 1.8 + Math.random() * 0.4;
-            playerLight.distance = 250;
+            playerLight.intensity = 2.5 + Math.random() * 0.5;
+            playerLight.distance = 300;
             playerLight.color.setHex(0xffaa22);
             
             if (!unlimitedPaint && spraysLeft <= 0) {
@@ -1454,8 +1477,8 @@ function animate() {
             }
         } else {
             // Standard flicker when not firing
-            playerLight.intensity = Math.random() > 0.95 ? 0.3 : 0.6;
-            playerLight.distance = 70;
+            playerLight.intensity = Math.random() > 0.95 ? 0.5 : 1.0;
+            playerLight.distance = 90;
             playerLight.color.setHex(0xfffdbb);
         }
 
