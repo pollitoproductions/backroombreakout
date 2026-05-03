@@ -348,6 +348,9 @@ let revivesLeft = 3;
 let throbTimer  = 0; 
 let lastSpotScreechTime = 0; 
 
+let headBobTimer = 0;
+let headBobAmount = 0;
+
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
 const scene   = new THREE.Scene();
@@ -1192,7 +1195,7 @@ function handlePointerMove(id,x,y){
     } else if(id===rightTouchId){
         yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
         pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
-        camera.rotation.set(pitch,yaw,0); rightStart={x,y};
+        camera.rotation.set(pitch,yaw,camera.rotation.z); rightStart={x,y};
     }
 }
 function handlePointerEnd(id){
@@ -1641,7 +1644,18 @@ function animate() {
         let targetZ = camera.position.clone(); targetZ.z += velocity.z * delta;
         if (!checkCollision(targetZ)) camera.position.z = targetZ.z; else velocity.z = 0;
 
-        camera.position.y = PLAYER_HEIGHT;
+        // --- HEAD BOB LOGIC ---
+        const currentSpeed = Math.hypot(velocity.x, velocity.z);
+        if (currentSpeed > 10) {
+            headBobTimer += delta * 12;
+            headBobAmount += (1.0 - headBobAmount) * delta * 5;
+        } else {
+            headBobAmount += (0.0 - headBobAmount) * delta * 5;
+            if (headBobAmount < 0.01) headBobTimer = 0; // Reset smoothly
+        }
+        camera.position.y = PLAYER_HEIGHT + (Math.sin(headBobTimer) * 0.6 * headBobAmount);
+        camera.rotation.z = Math.cos(headBobTimer / 2) * 0.035 * headBobAmount;
+
     } else {
         prevTime = performance.now();
     }
