@@ -406,7 +406,7 @@ const wallTex  = createTexture('wall');
 const floorTex = createTexture('floor');
 const ceilTex  = createTexture('ceiling');
 
-// CHANGED TO PHONG MATERIALS FOR PER-PIXEL LIGHTING
+// PHONG MATERIALS FOR PER-PIXEL LIGHTING
 const wallMat  = new THREE.MeshPhongMaterial({ map: wallTex });
 const floorMat = new THREE.MeshPhongMaterial({ map: floorTex });
 const ceilMat  = new THREE.MeshPhongMaterial({ map: ceilTex });
@@ -521,56 +521,89 @@ function buildWorld() {
 }
 
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
-function generateWiryFrames(count) {
+function generateBacteriaFrames(count) {
     let frames = [];
     for(let f=0; f<count; f++) {
         const c = document.createElement('canvas');
         c.width = 256; c.height = 512;
         const ctx = c.getContext('2d');
-        ctx.strokeStyle = 'rgba(10,10,10,0.95)';
-        ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-
+        
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 10;
+        
+        // Twisted Torso (Plant-like, bulky, wiry)
+        ctx.strokeStyle = '#050505';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        for(let i=0; i<300; i++) {
-            const y = 100 + Math.random()*180;
-            const t = (y - 100) / 180; 
-            const minX = 40 * (1-t) + 90 * t; 
-            const maxX = 216 * (1-t) + 166 * t;
-            const x = minX + Math.random()*(maxX - minX);
+        for(let i=0; i<400; i++) { // Dense center
+            const y = 140 + Math.random()*180;
+            const t = (y - 140) / 180; 
+            const width = 45 + Math.sin(t * Math.PI) * 55; 
+            const x = 128 + (Math.random()-0.5) * width;
             ctx.moveTo(x, y);
-            ctx.lineTo(x + (Math.random()-0.5)*15, y + (Math.random()-0.5)*15);
+            // "Plant-like" twisting vines
+            ctx.quadraticCurveTo(x + (Math.random()-0.5)*40, y + 20, x + (Math.random()-0.5)*20, y + 40);
         }
         ctx.stroke();
 
-        ctx.beginPath();
-        for(let i=0; i<80; i++) { ctx.arc(128 + (Math.random()-0.5)*20, 60 + (Math.random()-0.5)*20, 2+Math.random()*12, 0, Math.PI*2); }
-        ctx.stroke();
-
-        ctx.fillStyle = '#ff3300';
-        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 20;
-        ctx.beginPath(); ctx.arc(115, 55, 8, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(141, 55, 8, 0, Math.PI*2); ctx.fill();
-        
-        ctx.fillStyle = '#ffaa00';
-        ctx.shadowColor = '#ff5500'; ctx.shadowBlur = 30;
-        ctx.beginPath(); ctx.arc(128, 160, 15, 0, Math.PI*2); ctx.fill();
-        ctx.shadowBlur = 0;
-
-        const drawThickLimb = (x1,y1, x2,y2, x3,y3, thickness) => {
-            for(let i=0; i<8; i++) { 
+        // Long, thin, wiry limbs
+        ctx.lineWidth = 1.5;
+        const drawWiryLimb = (startX, startY, endX, endY, strands) => {
+            for(let s=0; s<strands; s++) {
                 ctx.beginPath();
-                ctx.moveTo(x1+(Math.random()-0.5)*thickness, y1+(Math.random()-0.5)*thickness);
-                ctx.lineTo(x2+(Math.random()-0.5)*thickness, y2+(Math.random()-0.5)*thickness);
-                ctx.lineTo(x3+(Math.random()-0.5)*thickness, y3+(Math.random()-0.5)*thickness);
+                ctx.moveTo(startX, startY);
+                for(let i=1; i<=8; i++) {
+                    const t = i/8;
+                    const nextX = startX + (endX-startX)*t + (Math.random()-0.5)*20;
+                    const nextY = startY + (endY-startY)*t + (Math.random()-0.5)*20;
+                    ctx.lineTo(nextX, nextY);
+                }
                 ctx.stroke();
             }
         };
+        drawWiryLimb(90, 160, 20, 360, 8); // L Arm
+        drawWiryLimb(166, 160, 236, 360, 8); // R Arm
+        drawWiryLimb(110, 300, 70, 510, 12); // L Leg
+        drawWiryLimb(146, 300, 186, 510, 12); // R Leg
 
-        drawThickLimb(50,110, 20,200, 30,300, 20);   // Left Arm
-        drawThickLimb(206,110, 236,200, 226,300, 20); // Right Arm
-        drawThickLimb(100,280, 80,400, 90,510, 25);  // Left Leg
-        drawThickLimb(156,280, 176,400, 166,510, 25); // Right Leg
-        
+        // Jagged, metallic bear-trap head
+        ctx.fillStyle = '#1a1a1a';
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        // Left Trap Arch
+        ctx.moveTo(128, 140);
+        ctx.bezierCurveTo(60, 120, 50, 40, 128, 20);
+        // Right Trap Arch
+        ctx.bezierCurveTo(206, 40, 196, 120, 128, 140);
+        ctx.fill();
+        ctx.stroke();
+
+        // Bear-trap teeth
+        ctx.fillStyle = '#888';
+        // Top teeth pointing down
+        for(let i=0; i<6; i++) {
+            const px = 75 + i*21;
+            ctx.beginPath();
+            ctx.moveTo(px, 35 + Math.abs(2.5-i)*5);
+            ctx.lineTo(px-5, 60 + Math.random()*15);
+            ctx.lineTo(px+10, 35 + Math.abs(2.5-i)*5);
+            ctx.fill();
+        }
+        // Bottom teeth pointing up
+        for(let i=0; i<5; i++) {
+            const px = 85 + i*21;
+            ctx.beginPath();
+            ctx.moveTo(px, 120 - Math.abs(2-i)*5);
+            ctx.lineTo(px-5, 80 - Math.random()*15);
+            ctx.lineTo(px+10, 120 - Math.abs(2-i)*5);
+            ctx.fill();
+        }
+
+        // A dark void center in the trap
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(128, 80, 25, 0, Math.PI*2); ctx.fill();
+
         frames.push(new THREE.CanvasTexture(c));
     }
     return frames;
@@ -644,11 +677,11 @@ function generateShadowFrames(count, eyesOpen) {
     return frames;
 }
 
-const wiryFrames = generateWiryFrames(4);
+const bacteriaFrames = generateBacteriaFrames(4);
 const shadowFramesOpen = generateShadowFrames(4, true);
 const shadowFramesClosed = generateShadowFrames(1, false);
 
-const wiryMats = wiryFrames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+const bacteriaMats = bacteriaFrames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatsOpen = shadowFramesOpen.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatClosed = new THREE.SpriteMaterial({ map: shadowFramesClosed[0], color: 0xffffff, transparent: true });
 
@@ -664,14 +697,14 @@ function placeEntities() {
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
         const isShadow = (placed % 2 === 0);
-        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : wiryMats[0]);
+        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMats[0]);
         sprite.scale.set(16, 14, 1); 
         sprite.position.set(wx, 7.5, wz); 
         scene.add(sprite);
 
         entities.push({
             mesh: sprite,
-            type: isShadow ? 'SMILING_SHADOW' : 'WIRY_FRAME',
+            type: isShadow ? 'SMILING_SHADOW' : 'BACTERIA',
             animTimer: 0,
             animFrame: Math.floor(Math.random()*4),
             staminaCooldown: 0,
@@ -683,6 +716,8 @@ function placeEntities() {
             glitchTimer: 0,
             blinkTimer: Math.random() * 4,
             isBlinking: false,
+            mirrorTimer: 0,
+            isMirrored: false,
             hasSpotted: false,
             apparateTimer: Math.random() * 2 
         });
@@ -889,22 +924,19 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
 });
 
-// "Nails on a Chalkboard" harsh, dissonant scraping screech
+// "Nails on a Chalkboard" harsh, dissonant scraping screech for Smiling Shadow
 function playScreech() {
     if(!masterGain || audioCtx.state !== 'running') return;
-    
     const len = 1.2;
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.0, audioCtx.currentTime);
     g.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.1);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
     g.connect(masterGain);
-
     [2400, 2750, 3100].forEach(freq => {
         const osc = audioCtx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        
         const lfo = audioCtx.createOscillator();
         lfo.type = 'square';
         lfo.frequency.value = 45 + Math.random() * 20; 
@@ -912,11 +944,57 @@ function playScreech() {
         lfoGain.gain.value = 300; 
         lfo.connect(lfoGain);
         lfoGain.connect(osc.frequency);
-        
         osc.connect(g);
         lfo.start(); osc.start();
         lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
     });
+}
+
+// Deep, hollow, echoing howl for Bacteria
+function playHowl() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const len = 2.5;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.5);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
+    g.connect(masterGain);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.0);
+    osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + len);
+    
+    // Tremolo effect to mimic a hollow wind/vocal sound
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 6;
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 15;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    
+    osc.connect(g);
+    lfo.start(); osc.start();
+    lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
+}
+
+// Sharp knocking sound for Bacteria while stalking
+function playKnock() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.8, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    g.connect(masterGain);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
+    
+    osc.connect(g);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
@@ -1538,7 +1616,7 @@ function animate() {
                     if (e.isBlinking) e.mesh.material = shadowMatClosed;
                     else e.mesh.material = shadowMatsOpen[e.animFrame];
                 } else {
-                    e.mesh.material = wiryMats[e.animFrame];
+                    e.mesh.material = bacteriaMats[e.animFrame];
                 }
             }
 
@@ -1549,7 +1627,7 @@ function animate() {
 
             const dist = Math.sqrt(dx*dx + dz*dz);
             
-            // Blinking animation for smiling shadow
+            // Entity specific animation and sound logic
             if (e.type === 'SMILING_SHADOW') {
                 e.blinkTimer -= delta;
                 if (e.blinkTimer <= 0) {
@@ -1561,6 +1639,19 @@ function animate() {
                         e.blinkTimer = 0.15; // fast blink closed
                     }
                 }
+            } else if (e.type === 'BACTERIA') {
+                e.mirrorTimer -= delta;
+                if (e.mirrorTimer <= 0) {
+                    e.isMirrored = !e.isMirrored;
+                    // Mirroring the sprite horizontally by flipping the scale
+                    e.mesh.scale.x = e.isMirrored ? -16 : 16;
+                    e.mirrorTimer = 0.05 + Math.random() * 0.15; // Fast jittery flicker
+                }
+                
+                // Occasional knocking sound while stalking
+                if (dist < 150 && Math.random() < 0.002) {
+                    playKnock();
+                }
             }
 
             if(dist < 200) { 
@@ -1569,7 +1660,11 @@ function animate() {
                     e.hasSpotted = true;
                     // Global cooldown of 2 seconds for spotting screeches to prevent overlap noise
                     if (time - lastSpotScreechTime > 2000) {
-                        playScreech();
+                        if (e.type === 'BACTERIA') {
+                            playHowl();
+                        } else {
+                            playScreech();
+                        }
                         lastSpotScreechTime = time;
                     }
                 }
@@ -1586,7 +1681,7 @@ function animate() {
                 let speed = 0;
 
                 // Unique entity behaviors
-                if (e.type === 'WIRY_FRAME') {
+                if (e.type === 'BACTERIA') {
                     if (dist < 120) {
                         // Apparating encounter mode
                         speed = 0; 
