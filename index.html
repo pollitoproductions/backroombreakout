@@ -528,81 +528,91 @@ function generateBacteriaFrames(count) {
         c.width = 256; c.height = 512;
         const ctx = c.getContext('2d');
         
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         
-        // Twisted Torso (Plant-like, bulky, wiry)
-        ctx.strokeStyle = '#050505';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        for(let i=0; i<400; i++) { // Dense center
-            const y = 140 + Math.random()*180;
-            const t = (y - 140) / 180; 
-            const width = 45 + Math.sin(t * Math.PI) * 55; 
-            const x = 128 + (Math.random()-0.5) * width;
-            ctx.moveTo(x, y);
-            // "Plant-like" twisting vines
-            ctx.quadraticCurveTo(x + (Math.random()-0.5)*40, y + 20, x + (Math.random()-0.5)*20, y + 40);
-        }
-        ctx.stroke();
-
-        // Long, thin, wiry limbs
-        ctx.lineWidth = 1.5;
-        const drawWiryLimb = (startX, startY, endX, endY, strands) => {
-            for(let s=0; s<strands; s++) {
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                for(let i=1; i<=8; i++) {
-                    const t = i/8;
-                    const nextX = startX + (endX-startX)*t + (Math.random()-0.5)*20;
-                    const nextY = startY + (endY-startY)*t + (Math.random()-0.5)*20;
-                    ctx.lineTo(nextX, nextY);
-                }
-                ctx.stroke();
+        // Jittery lines helper for extreme scraggly detail
+        const drawJitter = (x1,y1, x2,y2, thick, segs, spread) => {
+            ctx.lineWidth = thick;
+            ctx.strokeStyle = '#050505';
+            ctx.beginPath();
+            ctx.moveTo(x1,y1);
+            for(let i=1; i<=segs; i++) {
+                const t = i/segs;
+                ctx.lineTo(x1+(x2-x1)*t + (Math.random()-0.5)*spread, y1+(y2-y1)*t + (Math.random()-0.5)*spread);
             }
+            ctx.stroke();
         };
-        drawWiryLimb(90, 160, 20, 360, 8); // L Arm
-        drawWiryLimb(166, 160, 236, 360, 8); // R Arm
-        drawWiryLimb(110, 300, 70, 510, 12); // L Leg
-        drawWiryLimb(146, 300, 186, 510, 12); // R Leg
 
-        // Jagged, metallic bear-trap head
-        ctx.fillStyle = '#1a1a1a';
-        ctx.strokeStyle = '#333';
+        // Head (Blocky, wrapped wire look with horizontal loops)
+        let hx = 128 + (Math.random()-0.5)*6;
+        let hy = 60 + (Math.random()-0.5)*6;
+        
+        // Side loops (Megaphone/Trap sides)
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.ellipse(hx - 40, hy + 10, 45, 12, 0, Math.PI/2, Math.PI*1.5); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(hx + 40, hy + 10, 45, 12, 0, -Math.PI/2, Math.PI/2); ctx.stroke();
+
+        // Main head block
+        ctx.fillStyle = '#080808';
+        ctx.fillRect(hx - 40, hy - 45, 80, 80);
+        
+        // Messy wire wrap around head
+        ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
+        for(let i=0; i<40; i++) {
+            ctx.beginPath();
+            ctx.moveTo(hx + (Math.random()-0.5)*90, hy + (Math.random()-0.5)*90);
+            ctx.lineTo(hx + (Math.random()-0.5)*90, hy + (Math.random()-0.5)*90);
+            ctx.stroke();
+        }
+
+        // Torso (Twisted vines dropping to hip)
+        let hipX = 128 + (Math.random()-0.5)*15;
+        let hipY = 270 + (Math.random()-0.5)*10;
+        
+        for(let s=0; s<4; s++) {
+            drawJitter(hx + (Math.random()-0.5)*30, hy + 35, hipX, hipY, 5, 8, 20);
+        }
+
+        // Hip Knot (spiky foliage-like center)
         ctx.beginPath();
-        // Left Trap Arch
-        ctx.moveTo(128, 140);
-        ctx.bezierCurveTo(60, 120, 50, 40, 128, 20);
-        // Right Trap Arch
-        ctx.bezierCurveTo(206, 40, 196, 120, 128, 140);
-        ctx.fill();
+        for(let i=0; i<20; i++) {
+            ctx.moveTo(hipX, hipY);
+            ctx.lineTo(hipX + (Math.random()-0.5)*60, hipY - 40 + Math.random()*80);
+        }
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Bear-trap teeth
-        ctx.fillStyle = '#888';
-        // Top teeth pointing down
-        for(let i=0; i<6; i++) {
-            const px = 75 + i*21;
-            ctx.beginPath();
-            ctx.moveTo(px, 35 + Math.abs(2.5-i)*5);
-            ctx.lineTo(px-5, 60 + Math.random()*15);
-            ctx.lineTo(px+10, 35 + Math.abs(2.5-i)*5);
-            ctx.fill();
-        }
-        // Bottom teeth pointing up
-        for(let i=0; i<5; i++) {
-            const px = 85 + i*21;
-            ctx.beginPath();
-            ctx.moveTo(px, 120 - Math.abs(2-i)*5);
-            ctx.lineTo(px-5, 80 - Math.random()*15);
-            ctx.lineTo(px+10, 120 - Math.abs(2-i)*5);
-            ctx.fill();
+        // Shoulders & Arms (very long, drooping past knees)
+        let lHandX = 40 + (Math.random()-0.5)*15; let lHandY = 470 + (Math.random()-0.5)*15;
+        let rHandX = 216 + (Math.random()-0.5)*15; let rHandY = 470 + (Math.random()-0.5)*15;
+
+        // Left Arm
+        drawJitter(hx - 35, hy + 20, hx - 60, 200, 7, 5, 12);
+        drawJitter(hx - 60, 200, lHandX, lHandY, 6, 6, 12);
+        // Right Arm
+        drawJitter(hx + 35, hy + 20, hx + 60, 200, 7, 5, 12);
+        drawJitter(hx + 60, 200, rHandX, rHandY, 6, 6, 12);
+
+        // Tripod Hands
+        ctx.lineWidth = 3;
+        for(let i=0; i<3; i++) {
+            drawJitter(lHandX, lHandY, lHandX - 15 + i*15, lHandY + 40, 3, 2, 4);
+            drawJitter(rHandX, rHandY, rHandX - 15 + i*15, rHandY + 40, 3, 2, 4);
         }
 
-        // A dark void center in the trap
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.arc(128, 80, 25, 0, Math.PI*2); ctx.fill();
+        // Legs (from hip to floor)
+        let lFootX = 90 + (Math.random()-0.5)*15; let lFootY = 512;
+        let rFootX = 166 + (Math.random()-0.5)*15; let rFootY = 512;
+
+        drawJitter(hipX, hipY, hipX - 25, 400, 7, 5, 15);
+        drawJitter(hipX - 25, 400, lFootX, lFootY, 6, 4, 10);
+        
+        drawJitter(hipX, hipY, hipX + 25, 400, 7, 5, 15);
+        drawJitter(hipX + 25, 400, rFootX, rFootY, 6, 4, 10);
 
         frames.push(new THREE.CanvasTexture(c));
     }
@@ -698,8 +708,14 @@ function placeEntities() {
         
         const isShadow = (placed % 2 === 0);
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMats[0]);
-        sprite.scale.set(16, 14, 1); 
-        sprite.position.set(wx, 7.5, wz); 
+        
+        // Setup tall, imposing aspect ratio for Bacteria
+        let baseScaleX = isShadow ? 14 : 10;
+        let baseScaleY = isShadow ? 14 : 20; 
+        let baseY = isShadow ? 7.5 : 10.0;
+        
+        sprite.scale.set(baseScaleX, baseScaleY, 1); 
+        sprite.position.set(wx, baseY, wz); 
         scene.add(sprite);
 
         entities.push({
@@ -718,6 +734,8 @@ function placeEntities() {
             isBlinking: false,
             mirrorTimer: 0,
             isMirrored: false,
+            baseScaleX: baseScaleX,
+            baseY: baseY,
             hasSpotted: false,
             apparateTimer: Math.random() * 2 
         });
@@ -1644,7 +1662,7 @@ function animate() {
                 if (e.mirrorTimer <= 0) {
                     e.isMirrored = !e.isMirrored;
                     // Mirroring the sprite horizontally by flipping the scale
-                    e.mesh.scale.x = e.isMirrored ? -16 : 16;
+                    e.mesh.scale.x = e.isMirrored ? -e.baseScaleX : e.baseScaleX;
                     e.mirrorTimer = 0.05 + Math.random() * 0.15; // Fast jittery flicker
                 }
                 
@@ -1727,11 +1745,11 @@ function animate() {
                     if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
                     e.bob += delta * effectiveSpeed * 0.05;
-                    e.mesh.position.y = 7.5 + Math.sin(e.bob) * 1.5; // Base height centered at WALL_HEIGHT/2
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * 1.5; 
                 } else {
                     // Bob while standing still/apparating
                     e.bob += delta * 2;
-                    e.mesh.position.y = 7.5 + Math.sin(e.bob) * 0.5;
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * 0.5;
                 }
             }
         }
