@@ -1783,7 +1783,7 @@ function animate() {
                     health -= 18.75 * delta; 
                     if (!tookDamage && navigator.vibrate) navigator.vibrate(50); 
                     tookDamage = true;
-                    if(health <= 0) showDeathScreen("SLAIN.", "You were caught by an Entity.");
+                    if(health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                 }
 
                 if (speed > 0) {
