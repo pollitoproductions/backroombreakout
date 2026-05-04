@@ -227,8 +227,8 @@
                 </div>
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff4444; margin-bottom: 12px; width: 100%; box-sizing: border-box;">
-                    <strong style="color:#ff4444; font-size: 1.1em;">WEAPON:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Double-tap and hold</strong> the right side to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it! Entities can damage you from further away than your flame reaches, so you must charge in on the attacker!</span>
+                    <strong style="color:#ff4444; font-size: 1.1em;">COMBAT:</strong><br>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Double-tap and hold</strong> the right side to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it!</span>
                 </div>
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #88ccff; width: 100%; box-sizing: border-box;">
@@ -319,7 +319,7 @@ let JELLY_COUNT        = 1500;
 let PAINT_COUNT        = 400;     
 
 // ENTITY AI
-let ENTITY_COUNT       = 2500;   
+let ENTITY_COUNT       = 1250;   
 const ENTITY_MIN_DIST    = 22.0;
 
 // Mutable Level Variables
@@ -350,6 +350,7 @@ let lastSpotScreechTime = 0;
 
 let headBobTimer = 0;
 let headBobAmount = 0;
+let lastBobSin = 0;
 
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
@@ -364,7 +365,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1; // Brings out deep contrast and hot flames
+renderer.toneMappingExposure = 1.1;
 
 // ─── TEXTURES ──────────────────────────────────────────────────────────────
 function createTexture(type) {
@@ -451,7 +452,6 @@ function buildWorld() {
             const distFromSpawn = Math.hypot(x - SPAWN_GRID_X, z - SPAWN_GRID_Z);
             const lightSignal = Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9);
             
-            // 0 = normal (dimmed), 1 = dark (~25%), 2 = bright (~25%)
             if (lightSignal > 0.6 && distFromSpawn > 15) {
                 lightZones[x + z*MAP_SIZE] = 1;
             } else if (lightSignal < -0.6) {
@@ -473,10 +473,9 @@ function buildWorld() {
                 dummy.updateMatrix();
                 instancedWalls.setMatrixAt(idx, dummy.matrix);
                 
-                // Color walls based on light zones to bake in sharp contrasts
-                if (lightZones[x + z*MAP_SIZE] === 1) tempColor.setHex(0x555544); // Dark
-                else if (lightZones[x + z*MAP_SIZE] === 2) tempColor.setHex(0xffffe6); // Bright White-Yellow
-                else tempColor.setHex(0xaaaa99); // Normal is slightly dimmed to emphasize point lights
+                if (lightZones[x + z*MAP_SIZE] === 1) tempColor.setHex(0x555544); 
+                else if (lightZones[x + z*MAP_SIZE] === 2) tempColor.setHex(0xffffe6); 
+                else tempColor.setHex(0xaaaa99); 
                 
                 instancedWalls.setColorAt(idx, tempColor);
                 idx++;
@@ -533,7 +532,6 @@ function generateBacteriaFrames(count) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
-        // Jittery lines helper for extreme scraggly detail
         const drawJitter = (x1,y1, x2,y2, thick, segs, spread) => {
             ctx.lineWidth = thick;
             ctx.strokeStyle = '#050505';
@@ -546,20 +544,17 @@ function generateBacteriaFrames(count) {
             ctx.stroke();
         };
 
-        // Head (Blocky, wrapped wire look with horizontal loops)
+        // Head 
         let hx = 128 + (Math.random()-0.5)*6;
         let hy = 60 + (Math.random()-0.5)*6;
         
-        // Side loops (Megaphone/Trap sides)
         ctx.lineWidth = 6;
         ctx.beginPath(); ctx.ellipse(hx - 40, hy + 10, 45, 12, 0, Math.PI/2, Math.PI*1.5); ctx.stroke();
         ctx.beginPath(); ctx.ellipse(hx + 40, hy + 10, 45, 12, 0, -Math.PI/2, Math.PI/2); ctx.stroke();
 
-        // Main head block
         ctx.fillStyle = '#080808';
         ctx.fillRect(hx - 40, hy - 45, 80, 80);
         
-        // Messy wire wrap around head
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
         for(let i=0; i<40; i++) {
@@ -569,7 +564,7 @@ function generateBacteriaFrames(count) {
             ctx.stroke();
         }
 
-        // Torso (Twisted vines dropping to hip)
+        // Torso 
         let hipX = 128 + (Math.random()-0.5)*15;
         let hipY = 270 + (Math.random()-0.5)*10;
         
@@ -577,7 +572,6 @@ function generateBacteriaFrames(count) {
             drawJitter(hx + (Math.random()-0.5)*30, hy + 35, hipX, hipY, 5, 8, 20);
         }
 
-        // Hip Knot (spiky foliage-like center)
         ctx.beginPath();
         for(let i=0; i<20; i++) {
             ctx.moveTo(hipX, hipY);
@@ -586,25 +580,20 @@ function generateBacteriaFrames(count) {
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Shoulders & Arms (very long, drooping past knees)
         let lHandX = 40 + (Math.random()-0.5)*15; let lHandY = 470 + (Math.random()-0.5)*15;
         let rHandX = 216 + (Math.random()-0.5)*15; let rHandY = 470 + (Math.random()-0.5)*15;
 
-        // Left Arm
         drawJitter(hx - 35, hy + 20, hx - 60, 200, 7, 5, 12);
         drawJitter(hx - 60, 200, lHandX, lHandY, 6, 6, 12);
-        // Right Arm
         drawJitter(hx + 35, hy + 20, hx + 60, 200, 7, 5, 12);
         drawJitter(hx + 60, 200, rHandX, rHandY, 6, 6, 12);
 
-        // Tripod Hands
         ctx.lineWidth = 3;
         for(let i=0; i<3; i++) {
             drawJitter(lHandX, lHandY, lHandX - 15 + i*15, lHandY + 40, 3, 2, 4);
             drawJitter(rHandX, rHandY, rHandX - 15 + i*15, rHandY + 40, 3, 2, 4);
         }
 
-        // Legs (from hip to floor)
         let lFootX = 90 + (Math.random()-0.5)*15; let lFootY = 512;
         let rFootX = 166 + (Math.random()-0.5)*15; let rFootY = 512;
 
@@ -709,7 +698,6 @@ function placeEntities() {
         const isShadow = (placed % 2 === 0);
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMats[0]);
         
-        // Setup tall, imposing aspect ratio for Bacteria, constrained to fit ceiling
         let baseScaleX = isShadow ? 14 : 7.25;
         let baseScaleY = isShadow ? 14 : 14.5; 
         let baseY = isShadow ? 7.5 : 7.25;
@@ -725,9 +713,6 @@ function placeEntities() {
             animFrame: Math.floor(Math.random()*4),
             staminaCooldown: 0,
             bob: Math.random() * Math.PI * 2,
-            onFire: false,
-            fireTimer: 0,
-            isBurningMat: false, 
             isGlitching: false,
             glitchTimer: 0,
             blinkTimer: Math.random() * 4,
@@ -779,7 +764,6 @@ const fireTex = (function(){
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
     
-    // Ad Prompt Check
     if (!unlimitedPaint && spraysLeft <= 0) {
         isFiring = false;
         if (!hasSeenPaintAdThisRound) {
@@ -923,17 +907,42 @@ let elapsed=0, lastTF=0;
 function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 
-let audioCtx, masterGain, isMuted=false;
+let audioCtx, masterGain, ambientBuzzGain, flameGain, isMuted=false;
 function initAudio(){
     if(audioCtx) return;
     const AC=window.AudioContext||window.webkitAudioContext;
-    audioCtx=new AC(); masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);
+    audioCtx=new AC(); 
+    masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);
     
-    // Ambient hums
-    const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(masterGain); o1.start();
-    const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(masterGain); o2.start();
-    const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.03; o3.connect(g3); g3.connect(masterGain); o3.start();
+    ambientBuzzGain = audioCtx.createGain();
+    ambientBuzzGain.gain.value = 0.5;
+    ambientBuzzGain.connect(masterGain);
+
+    // Ambient hums connected to dynamic ambientBuzzGain
+    const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(ambientBuzzGain); o1.start();
+    const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(ambientBuzzGain); o2.start();
+    const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.03; o3.connect(g3); g3.connect(ambientBuzzGain); o3.start();
     const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=15; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
+
+    // Propelled Flame Noise Generator
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+    }
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    noiseSrc.loop = true;
+    const flameFilter = audioCtx.createBiquadFilter();
+    flameFilter.type = 'lowpass';
+    flameFilter.frequency.value = 500; // Deep hot air balloon roar
+    flameGain = audioCtx.createGain();
+    flameGain.gain.value = 0; // Starts silent
+    noiseSrc.connect(flameFilter);
+    flameFilter.connect(flameGain);
+    flameGain.connect(masterGain);
+    noiseSrc.start();
 }
 document.getElementById('mute-btn').addEventListener('click',e=>{
     e.stopPropagation(); isMuted=!isMuted;
@@ -942,7 +951,7 @@ document.getElementById('mute-btn').addEventListener('click',e=>{
     document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
 });
 
-// "Nails on a Chalkboard" harsh, dissonant scraping screech for Smiling Shadow
+// Entity Sounds
 function playScreech() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const len = 1.2;
@@ -968,7 +977,6 @@ function playScreech() {
     });
 }
 
-// Deep, hollow, echoing howl for Bacteria
 function playHowl() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const len = 2.5;
@@ -977,14 +985,11 @@ function playHowl() {
     g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.5);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
     g.connect(masterGain);
-
     const osc = audioCtx.createOscillator();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(150, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.0);
     osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + len);
-    
-    // Tremolo effect to mimic a hollow wind/vocal sound
     const lfo = audioCtx.createOscillator();
     lfo.type = 'sine';
     lfo.frequency.value = 6;
@@ -992,27 +997,61 @@ function playHowl() {
     lfoGain.gain.value = 15;
     lfo.connect(lfoGain);
     lfoGain.connect(osc.frequency);
-    
     osc.connect(g);
     lfo.start(); osc.start();
     lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
 }
 
-// Sharp knocking sound for Bacteria while stalking
 function playKnock() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.8, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     g.connect(masterGain);
-
     const osc = audioCtx.createOscillator();
     osc.type = 'square';
     osc.frequency.setValueAtTime(100, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
-    
     osc.connect(g);
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playSkitter() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(600 + Math.random()*400, audioCtx.currentTime);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function playFootstep() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(60, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.1);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playDeathHiss() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.6, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
 }
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
@@ -1047,15 +1086,15 @@ function selectDifficulty(level, e) {
     e.stopPropagation();
     if (level === 'easy') {
         currentSanity = 'SANE';
-        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 250;
+        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 125;
         BOTTLE_COUNT = 150; JELLY_COUNT = 150; PAINT_COUNT = 40;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
-        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 1250;
+        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 625;
         BOTTLE_COUNT = 750; JELLY_COUNT = 750; PAINT_COUNT = 200;
     } else {
         currentSanity = 'INSANE';
-        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 2500;
+        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 1250;
         BOTTLE_COUNT = 1500; JELLY_COUNT = 1500; PAINT_COUNT = 400;
     }
     
@@ -1349,7 +1388,6 @@ window.addEventListener('mouseup',e=>{
     } 
 });
 
-// Remove explicit desktop references from HTML, but keep keybinds functioning invisibly for testing/accessibility
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
     switch(e.code){
@@ -1409,14 +1447,11 @@ function checkEntityCollision(targetPosition) {
 
 function spawnGhost() {
     const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-    
-    // Jump scare now uses the Shadow texture
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: shadowFramesOpen[0], color: 0xffffff, transparent: true }));
-    sprite.scale.set(16, 22, 1); // Extra massive for the jump scare
+    sprite.scale.set(16, 22, 1); 
     sprite.position.copy(camera.position).add(camDir.multiplyScalar(150)); 
     sprite.position.y = 7.5; 
     scene.add(sprite);
-    
     playScreech();
     return { mesh: sprite, life: 1.5 };
 }
@@ -1462,15 +1497,12 @@ function animate() {
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
 
         // --- DARK AND BRIGHT ZONE LIGHTING LOGIC ---
-        // Smoothly calculate continuous position through the noise field
         const cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const distFromSpawn = Math.hypot(cx - SPAWN_GRID_X, cz - SPAWN_GRID_Z);
         
-        // Continuous organic noise
         const lightSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
         
-        // Map factors with deadzones to isolate them
         let darknessFactor = (lightSignal - 0.6) / (1.2 - 0.6);
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
         const spawnMask = Math.min(1, Math.max(0, (distFromSpawn - 10) / 10));
@@ -1479,35 +1511,39 @@ function animate() {
         let brightnessFactor = (lightSignal - (-0.6)) / (-1.2 - (-0.6));
         brightnessFactor = Math.max(0, Math.min(1, brightnessFactor));
 
-        // Smooth easing curves for transitions
         darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
         brightnessFactor = brightnessFactor * brightnessFactor * (3 - 2 * brightnessFactor);
 
-        // Sinister Normal Lighting Base (Sharper Contrast)
         let ambientTarget = 0.35; 
         let fogFarTarget = 160;
         let fogColorTarget = new THREE.Color(0x202005);
+        let buzzVolTarget = 0.5;
 
         // Apply Modifiers
         if (darknessFactor > 0) {
-            ambientTarget = 0.35 - (darknessFactor * 0.15); // Drops to ~50% visibility
+            ambientTarget = 0.35 - (darknessFactor * 0.15); 
             fogFarTarget = 160 - (darknessFactor * 70);    
-            fogColorTarget.lerp(new THREE.Color(0x1a1a05), darknessFactor); // Murky brown-black
+            fogColorTarget.lerp(new THREE.Color(0x1a1a05), darknessFactor); 
+            buzzVolTarget = 0.5 - (darknessFactor * 0.3); // Quieter in dark
         } else if (brightnessFactor > 0) {
-            ambientTarget = 0.35 + (brightnessFactor * 0.65); // Bright overexposure
-            fogFarTarget = 160 + (brightnessFactor * 140);    // Deep visibility
-            fogColorTarget.lerp(new THREE.Color(0xdadab0), brightnessFactor); // Sickly washed out glow
+            ambientTarget = 0.35 + (brightnessFactor * 0.65); 
+            fogFarTarget = 160 + (brightnessFactor * 140);    
+            fogColorTarget.lerp(new THREE.Color(0xdadab0), brightnessFactor); 
+            buzzVolTarget = 0.5 + (brightnessFactor * 0.5); // Louder in bright
         }
 
         ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 4;
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
         scene.fog.color.lerp(fogColorTarget, delta * 4);
-
+        
+        if (ambientBuzzGain && audioCtx && audioCtx.state === 'running') {
+            ambientBuzzGain.gain.setTargetAtTime(buzzVolTarget, audioCtx.currentTime, 0.5);
+        }
 
         // Continuous Flamethrower Process (Spray can flame)
         if (isFiring) {
-            
-            // Adjust player light dynamically when firing
+            if (flameGain && audioCtx && audioCtx.state === 'running') flameGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05);
+
             playerLight.intensity = 2.5 + Math.random() * 0.5;
             playerLight.distance = 300;
             playerLight.color.setHex(0xffaa22);
@@ -1532,35 +1568,42 @@ function animate() {
                         const rightDir = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
                         const downDir = new THREE.Vector3(0,-1,0).applyQuaternion(camera.quaternion);
                         
-                        // Spawn tightly near player like a spray can
                         p.position.copy(camera.position).add(camDir.multiplyScalar(2)).add(rightDir.multiplyScalar(0.5)).add(downDir.multiplyScalar(0.5));
-                        
-                        // Start small
                         p.scale.set(0.5, 0.5, 1);
                         scene.add(p);
                         
-                        // Vel: forward cone
                         fireParticles.push({mesh: p, life: 0.3, vel: camDir.clone().multiplyScalar(35).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
                     }
 
                     const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-                    for(let e of entities) {
-                        if(e.onFire) continue;
+                    
+                    // Check Entity Hits
+                    for (let i = entities.length - 1; i >= 0; i--) {
+                        let e = entities[i];
                         if (Math.abs(camera.position.x - e.mesh.position.x) > 50 || Math.abs(camera.position.z - e.mesh.position.z) > 50) continue; 
-
+                        
                         const dist = camera.position.distanceTo(e.mesh.position);
-                        if(dist < 20) { // Reduced Range for spray can fire
+                        if(dist < 25) { // Match exact range of entity attack
                             const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
                             if(dirToEnt.dot(camDir) > 0.85) { 
-                                e.onFire = true;
-                                e.fireTimer = 1.5;
-                                playScreech(); 
+                                playDeathHiss();
                                 
-                                // Unique material instance for burning to not affect all entities
-                                if (!e.isBurningMat) {
-                                    e.mesh.material = e.mesh.material.clone();
-                                    e.isBurningMat = true;
+                                // Explosive Fireball Death
+                                for(let k=0; k<15; k++) {
+                                    const fp = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
+                                    fp.position.copy(e.mesh.position);
+                                    fp.position.y += (Math.random()-0.5)*15;
+                                    fp.scale.set(6, 6, 1);
+                                    scene.add(fp);
+                                    fireParticles.push({
+                                        mesh: fp, 
+                                        life: 0.4 + Math.random()*0.3, 
+                                        vel: new THREE.Vector3((Math.random()-0.5)*30, Math.random()*20 + 10, (Math.random()-0.5)*30) 
+                                    });
                                 }
+                                
+                                scene.remove(e.mesh);
+                                entities.splice(i, 1);
                             }
                         }
                     }
@@ -1572,7 +1615,7 @@ function animate() {
                 }
             }
         } else {
-            // Standard flicker when not firing
+            if (flameGain && audioCtx && audioCtx.state === 'running') flameGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.1);
             playerLight.intensity = Math.random() > 0.95 ? 0.5 : 1.0;
             playerLight.distance = 90;
             playerLight.color.setHex(0xfffdbb);
@@ -1584,7 +1627,6 @@ function animate() {
             else { 
                 p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); 
                 p.mesh.material.opacity = p.life/0.3; 
-                // Expand aggressively as it flies (flame bloom)
                 p.mesh.scale.x += delta * 15;
                 p.mesh.scale.y += delta * 15;
             }
@@ -1606,83 +1648,63 @@ function animate() {
         }
 
         let tookDamage = false;
-        
         const px = camera.position.x;
         const pz = camera.position.z;
 
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
             
-            // Animation flickering updating
             e.animTimer += delta;
             if (e.animTimer > 0.1) {
                 e.animTimer -= 0.1;
                 e.animFrame = (e.animFrame + 1) % 4;
             }
             
-            if(e.onFire) {
-                e.fireTimer -= delta;
-                e.mesh.material.color.setHex(0xffaa00);
-                e.mesh.scale.y = Math.max(0.1, e.mesh.scale.y - delta * 15);
-                if(e.fireTimer <= 0) { scene.remove(e.mesh); entities.splice(i,1); }
-                continue;
+            if (e.type === 'SMILING_SHADOW') {
+                e.mesh.material = e.isBlinking ? shadowMatClosed : shadowMatsOpen[e.animFrame];
+            } else {
+                e.mesh.material = bacteriaMats[e.animFrame];
             }
 
-            // Update shared materials based on frame
-            if (!e.isBurningMat) {
-                if (e.type === 'SMILING_SHADOW') {
-                    if (e.isBlinking) e.mesh.material = shadowMatClosed;
-                    else e.mesh.material = shadowMatsOpen[e.animFrame];
-                } else {
-                    e.mesh.material = bacteriaMats[e.animFrame];
-                }
-            }
-
-            // High Performance Distance Check
             let dx = px - e.mesh.position.x;
             let dz = pz - e.mesh.position.z;
             if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; 
 
             const dist = Math.sqrt(dx*dx + dz*dz);
             
-            // Entity specific animation and sound logic
             if (e.type === 'SMILING_SHADOW') {
                 e.blinkTimer -= delta;
                 if (e.blinkTimer <= 0) {
                     if (e.isBlinking) {
                         e.isBlinking = false;
-                        e.blinkTimer = 2 + Math.random() * 4; // keep eyes open for 2-6 seconds
+                        e.blinkTimer = 2 + Math.random() * 4; 
                     } else {
                         e.isBlinking = true;
-                        e.blinkTimer = 0.15; // fast blink closed
+                        e.blinkTimer = 0.15; 
                     }
                 }
+                
+                // Occasional skittering sound while stalking
+                if (dist < 150 && Math.random() < 0.002) playSkitter();
+                
             } else if (e.type === 'BACTERIA') {
                 e.mirrorTimer -= delta;
                 if (e.mirrorTimer <= 0) {
                     e.isMirrored = !e.isMirrored;
-                    // Mirroring the sprite horizontally by flipping the scale
                     e.mesh.scale.x = e.isMirrored ? -e.baseScaleX : e.baseScaleX;
-                    e.mirrorTimer = 0.05 + Math.random() * 0.15; // Fast jittery flicker
+                    e.mirrorTimer = 0.05 + Math.random() * 0.15; 
                 }
                 
                 // Occasional knocking sound while stalking
-                if (dist < 150 && Math.random() < 0.002) {
-                    playKnock();
-                }
+                if (dist < 150 && Math.random() < 0.002) playKnock();
             }
 
             if(dist < 200) { 
-                // SPOT PLAYER MECHANIC
                 if (!e.hasSpotted) {
                     e.hasSpotted = true;
-                    // Global cooldown of 2 seconds for spotting screeches to prevent overlap noise
                     if (time - lastSpotScreechTime > 2000) {
-                        if (e.type === 'BACTERIA') {
-                            playHowl();
-                        } else {
-                            playScreech();
-                        }
+                        if (e.type === 'BACTERIA') playHowl();
+                        else playScreech();
                         lastSpotScreechTime = time;
                     }
                 }
@@ -1697,15 +1719,11 @@ function animate() {
                 }
 
                 let speed = 0;
-
-                // Unique entity behaviors
                 if (e.type === 'BACTERIA') {
                     if (dist < 120) {
-                        // Apparating encounter mode
                         speed = 0; 
                         e.apparateTimer -= delta;
                         if (e.apparateTimer <= 0) {
-                            // Teleport 15-40 units closer
                             const jumpDist = Math.min(dist - 15, 15 + Math.random()*25); 
                             const angleOffset = (Math.random() - 0.5) * 2.0; 
                             const moveDir = camera.position.clone().sub(e.mesh.position).normalize();
@@ -1720,16 +1738,16 @@ function animate() {
                             e.apparateTimer = 0.8 + Math.random() * 1.5; 
                         }
                     } else {
-                        speed = 45; // Stalk mode
+                        speed = 45; 
                     }
                 } else if (e.type === 'SMILING_SHADOW') {
-                    speed = 35; // Floating steadily
+                    speed = 35; 
                 }
 
-                // Damage application
+                // Match Flamethrower Range & Increase Deadliness
                 if(dist < 25) {
-                    health -= 10 * delta; 
-                    if (!tookDamage && navigator.vibrate) navigator.vibrate(50); // Sharp haptic feedback for taking damage
+                    health -= 25 * delta; // 2.5x more deadly (shreds health fast)
+                    if (!tookDamage && navigator.vibrate) navigator.vibrate(50); 
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("SLAIN.", "You were caught by an Entity.");
                 }
@@ -1747,7 +1765,6 @@ function animate() {
                     e.bob += delta * effectiveSpeed * 0.05;
                     e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.5 : 1.5); 
                 } else {
-                    // Bob while standing still/apparating
                     e.bob += delta * 2;
                     e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.2 : 0.5);
                 }
@@ -1780,17 +1797,26 @@ function animate() {
         let targetZ = camera.position.clone(); targetZ.z += velocity.z * delta;
         if (!checkCollision(targetZ)) camera.position.z = targetZ.z; else velocity.z = 0;
 
-        // --- HEAD BOB LOGIC ---
+        // --- HEAD BOB & FOOTSTEPS LOGIC ---
         const currentSpeed = Math.hypot(velocity.x, velocity.z);
         if (currentSpeed > 10) {
             headBobTimer += delta * 12;
             headBobAmount += (1.0 - headBobAmount) * delta * 5;
         } else {
             headBobAmount += (0.0 - headBobAmount) * delta * 5;
-            if (headBobAmount < 0.01) headBobTimer = 0; // Reset smoothly
+            if (headBobAmount < 0.01) headBobTimer = 0; 
         }
-        camera.position.y = PLAYER_HEIGHT + (Math.sin(headBobTimer) * 0.6 * headBobAmount);
-        camera.rotation.z = Math.cos(headBobTimer / 2) * 0.035 * headBobAmount;
+        
+        // Reduced Sway Multipliers (0.6 -> 0.4, 0.035 -> 0.02)
+        const bobSin = Math.sin(headBobTimer);
+        camera.position.y = PLAYER_HEIGHT + (bobSin * 0.4 * headBobAmount);
+        camera.rotation.z = Math.cos(headBobTimer / 2) * 0.02 * headBobAmount;
+
+        // Trigger footstep on wave zero-crossings
+        if ((lastBobSin < 0 && bobSin >= 0) || (lastBobSin > 0 && bobSin <= 0)) {
+            if (headBobAmount > 0.1) playFootstep();
+        }
+        lastBobSin = bobSin;
 
     } else {
         prevTime = performance.now();
