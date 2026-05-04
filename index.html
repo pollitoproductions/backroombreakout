@@ -709,10 +709,10 @@ function placeEntities() {
         const isShadow = (placed % 2 === 0);
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMats[0]);
         
-        // Setup tall, imposing aspect ratio for Bacteria
-        let baseScaleX = isShadow ? 14 : 10;
-        let baseScaleY = isShadow ? 14 : 20; 
-        let baseY = isShadow ? 7.5 : 10.0;
+        // Setup tall, imposing aspect ratio for Bacteria, constrained to fit ceiling
+        let baseScaleX = isShadow ? 14 : 7.25;
+        let baseScaleY = isShadow ? 14 : 14.5; 
+        let baseY = isShadow ? 7.5 : 7.25;
         
         sprite.scale.set(baseScaleX, baseScaleY, 1); 
         sprite.position.set(wx, baseY, wz); 
@@ -1745,11 +1745,11 @@ function animate() {
                     if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
                     e.bob += delta * effectiveSpeed * 0.05;
-                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * 1.5; 
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.5 : 1.5); 
                 } else {
                     // Bob while standing still/apparating
                     e.bob += delta * 2;
-                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * 0.5;
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.2 : 0.5);
                 }
             }
         }
