@@ -319,7 +319,7 @@ let JELLY_COUNT        = 1500;
 let PAINT_COUNT        = 400;     
 
 // ENTITY AI
-let ENTITY_COUNT       = 1250;   
+let ENTITY_COUNT       = 1875;   
 const ENTITY_MIN_DIST    = 22.0;
 
 // Mutable Level Variables
@@ -1002,56 +1002,89 @@ function playHowl() {
     lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
 }
 
-function playKnock() {
+// Metallic, growly stuttering sound for stalking entities
+function playMetallicGrowl() {
     if(!masterGain || audioCtx.state !== 'running') return;
+    const len = 0.4 + Math.random() * 0.3;
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.8, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
     g.connect(masterGain);
-    const osc = audioCtx.createOscillator();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
-    osc.connect(g);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+
+    const osc1 = audioCtx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(40 + Math.random()*20, audioCtx.currentTime);
+
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(45 + Math.random()*25, audioCtx.currentTime);
+
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 15 + Math.random() * 10;
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 30;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc1.frequency);
+    lfoGain.connect(osc2.frequency);
+
+    osc1.connect(g);
+    osc2.connect(g);
+    lfo.start(); osc1.start(); osc2.start();
+    lfo.stop(audioCtx.currentTime + len); osc1.stop(audioCtx.currentTime + len); osc2.stop(audioCtx.currentTime + len);
 }
 
-function playSkitter() {
-    if(!masterGain || audioCtx.state !== 'running') return;
-    const osc = audioCtx.createOscillator();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(600 + Math.random()*400, audioCtx.currentTime);
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-    osc.connect(g); g.connect(masterGain);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-}
-
+// Low frequency sine wave for muffled damp carpet footsteps
 function playFootstep() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const osc = audioCtx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.1);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(45, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(15, audioCtx.currentTime + 0.1);
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     osc.connect(g); g.connect(masterGain);
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
-function playDeathHiss() {
+// Satisfying hollow poof / vanish sound when entities burn up
+function playPoof() {
     if(!masterGain || audioCtx.state !== 'running') return;
+    const len = 0.6;
+    
+    // Hollow drop
     const osc = audioCtx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + len);
+    
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.6, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
+    
     osc.connect(g); g.connect(masterGain);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    osc.start(); osc.stop(audioCtx.currentTime + len);
+
+    // Burst of filtered noise
+    const bufferSize = audioCtx.sampleRate * len;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.1));
+    }
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + len);
+    
+    noiseSrc.connect(filter);
+    filter.connect(g);
+    noiseSrc.start();
 }
 
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
@@ -1086,15 +1119,15 @@ function selectDifficulty(level, e) {
     e.stopPropagation();
     if (level === 'easy') {
         currentSanity = 'SANE';
-        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 125;
+        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 187;
         BOTTLE_COUNT = 150; JELLY_COUNT = 150; PAINT_COUNT = 40;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
-        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 625;
+        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 937;
         BOTTLE_COUNT = 750; JELLY_COUNT = 750; PAINT_COUNT = 200;
     } else {
         currentSanity = 'INSANE';
-        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 1250;
+        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 1875;
         BOTTLE_COUNT = 1500; JELLY_COUNT = 1500; PAINT_COUNT = 400;
     }
     
@@ -1388,6 +1421,7 @@ window.addEventListener('mouseup',e=>{
     } 
 });
 
+// Remove explicit desktop references from HTML, but keep keybinds functioning invisibly for testing/accessibility
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
     switch(e.code){
@@ -1586,7 +1620,7 @@ function animate() {
                         if(dist < 25) { // Match exact range of entity attack
                             const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
                             if(dirToEnt.dot(camDir) > 0.85) { 
-                                playDeathHiss();
+                                playPoof();
                                 
                                 // Explosive Fireball Death
                                 for(let k=0; k<15; k++) {
@@ -1684,8 +1718,8 @@ function animate() {
                     }
                 }
                 
-                // Occasional skittering sound while stalking
-                if (dist < 150 && Math.random() < 0.002) playSkitter();
+                // Occasional skittering/growl sound while stalking
+                if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
                 
             } else if (e.type === 'BACTERIA') {
                 e.mirrorTimer -= delta;
@@ -1695,8 +1729,8 @@ function animate() {
                     e.mirrorTimer = 0.05 + Math.random() * 0.15; 
                 }
                 
-                // Occasional knocking sound while stalking
-                if (dist < 150 && Math.random() < 0.002) playKnock();
+                // Occasional knocking/growl sound while stalking
+                if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
             }
 
             if(dist < 200) { 
@@ -1721,11 +1755,11 @@ function animate() {
                 let speed = 0;
                 if (e.type === 'BACTERIA') {
                     if (dist < 120) {
-                        speed = 0; 
+                        speed = 20; // Stalk slowly while preparing to apparate
                         e.apparateTimer -= delta;
                         if (e.apparateTimer <= 0) {
-                            const jumpDist = Math.min(dist - 15, 15 + Math.random()*25); 
-                            const angleOffset = (Math.random() - 0.5) * 2.0; 
+                            const jumpDist = Math.min(dist - 15, 20 + Math.random()*30); 
+                            const angleOffset = (Math.random() - 0.5) * 1.5; 
                             const moveDir = camera.position.clone().sub(e.mesh.position).normalize();
                             moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
 
@@ -1735,18 +1769,18 @@ function animate() {
                             if (!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
                             if (!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
-                            e.apparateTimer = 0.8 + Math.random() * 1.5; 
+                            e.apparateTimer = 0.5 + Math.random() * 1.0; 
                         }
                     } else {
-                        speed = 45; 
+                        speed = 75; // Faster stalking
                     }
                 } else if (e.type === 'SMILING_SHADOW') {
-                    speed = 35; 
+                    speed = 60; // Faster stalking
                 }
 
-                // Match Flamethrower Range & Increase Deadliness
+                // Match Flamethrower Range & Adjusted Deadliness
                 if(dist < 25) {
-                    health -= 25 * delta; // 2.5x more deadly (shreds health fast)
+                    health -= 18.75 * delta; 
                     if (!tookDamage && navigator.vibrate) navigator.vibrate(50); 
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("SLAIN.", "You were caught by an Entity.");
