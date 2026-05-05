@@ -1168,23 +1168,25 @@ function playPoof() {
 // Hiss sound for marking walls
 function playSprayHiss() {
     if(!masterGain || audioCtx.state !== 'running') return;
-    const len = 0.3;
+    const len = 0.4;
     const bufferSize = audioCtx.sampleRate * len;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.1));
+        output[i] = (Math.random() * 2 - 1); // Pure white noise
     }
     const noiseSrc = audioCtx.createBufferSource();
     noiseSrc.buffer = noiseBuffer;
     
     const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 2000;
+    filter.type = 'highpass';
+    filter.frequency.value = 3500; // High hiss like aerosol
     
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
+    g.gain.setValueAtTime(0, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.02); // quick nozzle press
+    g.gain.setValueAtTime(0.4, audioCtx.currentTime + len - 0.05); // hold spray
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len); // quick release
     
     noiseSrc.connect(filter);
     filter.connect(g);
