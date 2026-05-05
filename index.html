@@ -24,7 +24,7 @@
             background: radial-gradient(ellipse at center, rgba(50, 45, 15, 0.95) 0%, rgba(5, 5, 0, 1) 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: #d4d42b; text-align: center;
-            pointer-events: auto; cursor: pointer; z-index: 20;
+            pointer-events: auto; cursor: pointer; z-index: 40;
             padding: 15px; box-sizing: border-box;
         }
 
@@ -33,7 +33,7 @@
             background-color: rgba(0,0,0,0.88);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: #d4d42b; text-align: center;
-            pointer-events: auto; cursor: pointer; z-index: 20;
+            pointer-events: auto; cursor: pointer; z-index: 40;
             padding: 20px; box-sizing: border-box;
         }
         #paint-ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
@@ -132,6 +132,10 @@
             background-color:rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.3);
             border-radius:5px; display:flex; align-items:center; justify-content:center;
             cursor:pointer; pointer-events:auto; z-index:30; user-select:none;
+        }
+        @media (max-width: 600px) {
+            #mute-btn { top: 80px; right: 15px; }
+            #top-hud { gap: 10px; top: 10px; }
         }
         
         /* SPRAY BUTTON */
@@ -360,9 +364,11 @@ let spraysLeft    = 250;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
+let lastSprayTime  = 0;
 
 let isFiring = false;
 let fireAccumulator = 0;
+let isSteerFiring = false;
 
 let hydration   = STAT_MAX;
 let health      = STAT_MAX;
@@ -817,14 +823,27 @@ function startAction() {
         return;
     }
 
+    isFiring = true;
+    fireAccumulator = 0.1;
+    touchStartTime = Date.now();
+}
+
+function stopAction() {
+    isFiring = false;
+    if (Date.now() - touchStartTime < 250) {
+        sprayWall();
+    }
+}
+
+function sprayWall() {
+    if (!unlimitedPaint && spraysLeft <= 0) return;
+    if (Date.now()-lastSprayTime<300) return; 
+
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
 
-    // If close to wall, do a single spray paint mark
     if (hits.length > 0 && hits[0].distance < 15) {
-        if (Date.now()-lastSprayTime<300) return; 
         lastSprayTime=Date.now();
-
         const hit = hits[0];
         const g = new THREE.PlaneGeometry(6,6);
         const m = new THREE.MeshBasicMaterial({map:sprayTexture,transparent:true,depthWrite:false,color:0xffffff});
@@ -835,7 +854,6 @@ function startAction() {
         
         playSprayHiss();
 
-        // Spawn Mist Animation
         for(let i=0; i<6; i++) {
             const mist = new THREE.Sprite(new THREE.SpriteMaterial({map: mistTex, transparent: true, opacity: 0.8}));
             mist.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.5));
@@ -852,15 +870,7 @@ function startAction() {
             spraysLeft--;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
         }
-        isFiring = false;
-    } else {
-        isFiring = true;
-        fireAccumulator = 0.1; 
     }
-}
-
-function stopAction() {
-    isFiring = false;
 }
 
 // ─── ITEMS: ALMOND WATER, MOTH JELLY & PAINT CANS ──────────────────────────
@@ -1449,6 +1459,7 @@ function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
         if(rightTouchId===null){ 
             rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); 
             if (targetNode && targetNode.closest('#spray-btn')) {
+                isSteerFiring = true;
                 startAction();
             }
         }
@@ -1471,7 +1482,10 @@ function handlePointerMove(id,x,y){
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
     else if(id===rightTouchId){ 
-        stopAction();
+        if (isSteerFiring) {
+            stopAction();
+            isSteerFiring = false;
+        }
         rightTouchId=null; 
     }
 }
@@ -1479,8 +1493,7 @@ function handlePointerEnd(id){
 document.addEventListener('touchstart',e=>{ 
     if(!gameStarted||isPaused) return; 
     for(let t of e.changedTouches) {
-        const target = document.elementFromPoint(t.clientX, t.clientY);
-        handlePointerStart(t.identifier,t.clientX,t.clientY,false, target);
+        handlePointerStart(t.identifier,t.clientX,t.clientY,false, t.target);
     }
 },{passive:false});
 document.addEventListener('touchmove',e=>{ if(!gameStarted||isPaused) return; e.preventDefault(); for(let t of e.changedTouches) handlePointerMove(t.identifier,t.clientX,t.clientY); },{passive:false});
