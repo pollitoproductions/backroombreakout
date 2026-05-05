@@ -1869,11 +1869,15 @@ function animate() {
                             const moveDir = camera.position.clone().sub(e.mesh.position).normalize();
                             moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
 
-                            let nx = e.mesh.position.x + moveDir.x * jumpDist;
-                            let nz = e.mesh.position.z + moveDir.z * jumpDist;
-
-                            if (!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
-                            if (!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
+                            // Step-wise apparition to prevent teleporting through walls
+                            const steps = Math.ceil(jumpDist / 5);
+                            const stepDist = jumpDist / steps;
+                            for (let s = 0; s < steps; s++) {
+                                let nx = e.mesh.position.x + moveDir.x * stepDist;
+                                let nz = e.mesh.position.z + moveDir.z * stepDist;
+                                if (!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
+                                if (!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
+                            }
 
                             e.apparateTimer = 0.5 + Math.random() * 1.0; 
                         }
@@ -1899,8 +1903,9 @@ function animate() {
                     let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
                     let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
                     
-                    if(e.isGlitching || !checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
-                    if(e.isGlitching || !checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
+                    // Removed e.isGlitching bypass so they never walk through walls
+                    if(!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
+                    if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
 
                     e.bob += delta * effectiveSpeed * 0.05;
                     e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.5 : 1.5); 
