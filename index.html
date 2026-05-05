@@ -137,14 +137,14 @@
         /* SPRAY BUTTON */
         #spray-btn {
             position: absolute; bottom: 30px; right: 30px; width: 75px; height: 75px;
-            background-color: rgba(200, 40, 40, 0.4); border: 2px solid rgba(255,255,255,0.3);
+            background-color: rgba(100, 100, 100, 0.3); border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50%; display: none; align-items: center; justify-content: center;
             z-index: 25; pointer-events: auto; user-select: none; touch-action: none;
             transition: transform 0.1s, background-color 0.1s;
         }
         #spray-btn:active {
             transform: scale(0.92);
-            background-color: rgba(255, 60, 60, 0.7);
+            background-color: rgba(150, 150, 150, 0.5);
         }
 
         #crosshair {
@@ -252,12 +252,12 @@
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff4444; margin-bottom: 12px; width: 100%; box-sizing: border-box;">
                     <strong style="color:#ff4444; font-size: 1.1em;">COMBAT:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Hold the Spray Button</strong> (bottom right) to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it! Entities can damage you from further away than your flame reaches, so you must charge in on the attacker!</span>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Hold the Spray Button</strong> (bottom right) to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it!</span>
                 </div>
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #88ccff; width: 100%; box-sizing: border-box;">
                     <strong style="color:#88ccff; font-size: 1.1em;">NAVIGATION:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Tap the Spray Button</strong> quickly near a wall to spray a paint mark so you don't get lost.</span>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Tap the Spray Button</strong> quickly near a wall to spray an 'X' mark for navigation so you don't walk in circles!</span>
                 </div>
                 
                 <div class="hint">Tap anywhere to continue...</div>
@@ -777,6 +777,8 @@ drawStroke(sCtx,25,25,103,103); drawStroke(sCtx,103,25,25,103); drawStroke(sCtx,
 const sprayTexture = new THREE.CanvasTexture(sprayC);
 
 let fireParticles = [];
+let mistParticles = [];
+
 const fireTex = (function(){
     const c = document.createElement('canvas'); c.width=c.height=64;
     const ctx = c.getContext('2d');
@@ -785,6 +787,17 @@ const fireTex = (function(){
     grad.addColorStop(0.2, 'rgba(255,150,0,0.8)');
     grad.addColorStop(0.5, 'rgba(255,50,0,0.5)');
     grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+})();
+
+const mistTex = (function(){
+    const c = document.createElement('canvas'); c.width=c.height=64;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createRadialGradient(32,32,0,32,32,32);
+    grad.addColorStop(0, 'rgba(200,200,200,0.6)');
+    grad.addColorStop(0.5, 'rgba(150,150,150,0.3)');
+    grad.addColorStop(1, 'rgba(100,100,100,0)');
     ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
     return new THREE.CanvasTexture(c);
 })();
@@ -807,7 +820,7 @@ function startAction() {
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
 
-    // If close to wall, do a single spray paint
+    // If close to wall, do a single spray paint mark
     if (hits.length > 0 && hits[0].distance < 15) {
         if (Date.now()-lastSprayTime<300) return; 
         lastSprayTime=Date.now();
@@ -819,6 +832,21 @@ function startAction() {
         mesh.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.05));
         mesh.lookAt(mesh.position.clone().add(hit.face.normal));
         scene.add(mesh);
+        
+        playSprayHiss();
+
+        // Spawn Mist Animation
+        for(let i=0; i<6; i++) {
+            const mist = new THREE.Sprite(new THREE.SpriteMaterial({map: mistTex, transparent: true, opacity: 0.8}));
+            mist.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.5));
+            mist.scale.set(3, 3, 1);
+            scene.add(mist);
+            mistParticles.push({
+                mesh: mist, 
+                life: 0.4 + Math.random()*0.2, 
+                vel: hit.face.normal.clone().multiplyScalar(10).add(new THREE.Vector3((Math.random()-0.5)*15, (Math.random()-0.5)*15, (Math.random()-0.5)*15)) 
+            });
+        }
         
         if (!unlimitedPaint) {
             spraysLeft--;
@@ -1114,6 +1142,33 @@ function playPoof() {
     
     noiseSrc.connect(filter);
     filter.connect(g);
+    noiseSrc.start();
+}
+
+// Hiss sound for marking walls
+function playSprayHiss() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const len = 0.3;
+    const bufferSize = audioCtx.sampleRate * len;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.1));
+    }
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1500;
+    
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.8, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
+    
+    noiseSrc.connect(filter);
+    filter.connect(g);
+    g.connect(masterGain);
     noiseSrc.start();
 }
 
@@ -1666,6 +1721,7 @@ function animate() {
             playerLight.color.setHex(0xfffdbb);
         }
 
+        // Process Mist & Fire particles
         for(let i=fireParticles.length-1; i>=0; i--) {
             let p = fireParticles[i]; p.life -= delta;
             if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); }
@@ -1674,6 +1730,17 @@ function animate() {
                 p.mesh.material.opacity = p.life/0.3; 
                 p.mesh.scale.x += delta * 15;
                 p.mesh.scale.y += delta * 15;
+            }
+        }
+
+        for(let i=mistParticles.length-1; i>=0; i--) {
+            let p = mistParticles[i]; p.life -= delta;
+            if(p.life <= 0) { scene.remove(p.mesh); mistParticles.splice(i,1); }
+            else { 
+                p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); 
+                p.mesh.material.opacity = p.life/0.5; 
+                p.mesh.scale.x += delta * 10;
+                p.mesh.scale.y += delta * 10;
             }
         }
 
