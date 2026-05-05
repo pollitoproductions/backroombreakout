@@ -184,7 +184,7 @@
 <div id="ui-layer">
     <div id="top-hud">
         <div id="timer" class="hud-element">00:00</div>
-        <div id="spray-counter" class="hud-element">SPRAYS: 500</div>
+        <div id="spray-counter" class="hud-element">SPRAYS: 250</div>
         <div class="status-container hud-element">
             <div class="status-label" style="color:#ff6666;">HEALTH</div>
             <div class="status-bar-bg"><div id="health-bar" class="status-bar-fill"></div></div>
@@ -356,10 +356,10 @@ let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
 
-let spraysLeft    = 500;
+let spraysLeft    = 250;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
-let lastSprayTime  = 0;
+let touchStartTime = 0;
 
 let isFiring = false;
 let fireAccumulator = 0;
@@ -1038,22 +1038,32 @@ function playHowl() {
     const len = 2.5;
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.1);
+    g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.2);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
     g.connect(masterGain);
+
     const osc = audioCtx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.0);
-    osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + len);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(45, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(65, audioCtx.currentTime + 0.5);
+    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + len);
+    
     const lfo = audioCtx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 6;
+    lfo.type = 'square';
+    lfo.frequency.value = 25;
     const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 15;
+    lfoGain.gain.value = 40;
     lfo.connect(lfoGain);
     lfoGain.connect(osc.frequency);
-    osc.connect(g);
+    
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
+    filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + len);
+
+    osc.connect(filter);
+    filter.connect(g);
     lfo.start(); osc.start();
     lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
 }
@@ -1159,11 +1169,11 @@ function playSprayHiss() {
     noiseSrc.buffer = noiseBuffer;
     
     const filter = audioCtx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 1500;
+    filter.type = 'bandpass';
+    filter.frequency.value = 2000;
     
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.8, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.3, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
     
     noiseSrc.connect(filter);
@@ -1303,7 +1313,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         health=STAT_MAX; hydration=STAT_MAX; 
         
         if (!unlimitedPaint) {
-            spraysLeft = 500;
+            spraysLeft = 250;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
             hasSeenPaintAdThisRound = false;
         }
@@ -1394,6 +1404,7 @@ function checkItemPickups(){
         let b = itemData[i];
         if(b.collected) continue;
         
+        // Fast Optimization: Manhattan distance check first
         if (Math.abs(px - b.wx) < ITEM_PICKUP_DIST && Math.abs(pz - b.wz) < ITEM_PICKUP_DIST) {
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
@@ -1406,9 +1417,9 @@ function checkItemPickups(){
                 showPickupFlash(`Moth Jelly +${val}`, '#aaffcc');
             } else if(b.type === 'paint') {
                 if(!unlimitedPaint) {
-                    spraysLeft = 500;
+                    spraysLeft = 250;
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
-                    hasSeenPaintAdThisRound = false;
+                    hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
                 showPickupFlash(`Paint Refilled!`, '#ff4444');
             }
@@ -1426,7 +1437,7 @@ const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
 
-function handlePointerStart(id,x,y,isMouse=false){
+function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
     if(!isMouse&&x<window.innerWidth/2){
         if(leftTouchId===null){
@@ -1437,6 +1448,9 @@ function handlePointerStart(id,x,y,isMouse=false){
     } else {
         if(rightTouchId===null){ 
             rightTouchId=id; rightStart={x,y}; touchStartTime=Date.now(); 
+            if (targetNode && targetNode.closest('#spray-btn')) {
+                startAction();
+            }
         }
     }
 }
@@ -1456,28 +1470,28 @@ function handlePointerMove(id,x,y){
 }
 function handlePointerEnd(id){
     if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
-    else if(id===rightTouchId){ rightTouchId=null; }
+    else if(id===rightTouchId){ 
+        stopAction();
+        rightTouchId=null; 
+    }
 }
 
-const handleSprayDown = (e) => { e.preventDefault(); e.stopPropagation(); startAction(); };
-const handleSprayUp = (e) => { e.preventDefault(); e.stopPropagation(); stopAction(); };
-sprayBtn.addEventListener('mousedown', handleSprayDown);
-sprayBtn.addEventListener('touchstart', handleSprayDown, {passive:false});
-sprayBtn.addEventListener('mouseup', handleSprayUp);
-sprayBtn.addEventListener('mouseleave', handleSprayUp);
-sprayBtn.addEventListener('touchend', handleSprayUp);
-sprayBtn.addEventListener('touchcancel', handleSprayUp);
-
-document.addEventListener('touchstart',e=>{ if(!gameStarted||isPaused) return; for(let t of e.changedTouches) handlePointerStart(t.identifier,t.clientX,t.clientY,false); },{passive:false});
+document.addEventListener('touchstart',e=>{ 
+    if(!gameStarted||isPaused) return; 
+    for(let t of e.changedTouches) {
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        handlePointerStart(t.identifier,t.clientX,t.clientY,false, target);
+    }
+},{passive:false});
 document.addEventListener('touchmove',e=>{ if(!gameStarted||isPaused) return; e.preventDefault(); for(let t of e.changedTouches) handlePointerMove(t.identifier,t.clientX,t.clientY); },{passive:false});
 document.addEventListener('touchend',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
 document.addEventListener('touchcancel',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
 
 let isMouseDown=false;
 document.addEventListener('mousedown',e=>{ 
-    if(!gameStarted||isPaused||isDead || e.target.closest('#spray-btn')) return; 
+    if(!gameStarted||isPaused||isDead) return; 
     isMouseDown=true; 
-    if(e.button === 0) handlePointerStart('mouse',e.clientX,e.clientY,true); 
+    if(e.button === 0) handlePointerStart('mouse',e.clientX,e.clientY,true, e.target); 
 });
 document.addEventListener('mousemove',e=>{ 
     if(!gameStarted||isPaused||!isMouseDown) return; 
@@ -1487,6 +1501,7 @@ window.addEventListener('mouseup',e=>{
     if(isMouseDown){ handlePointerEnd('mouse'); isMouseDown=false; } 
 });
 
+// Remove explicit desktop references from HTML, but keep keybinds functioning invisibly for testing/accessibility
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
     switch(e.code){
@@ -1918,11 +1933,11 @@ function animate() {
         }
         
         const bobSin = Math.sin(headBobTimer);
-        camera.position.y = PLAYER_HEIGHT + (bobSin * 0.4 * headBobAmount);
+        camera.position.y = PLAYER_HEIGHT + (bobSin * 0.3 * headBobAmount);
         camera.rotation.z = Math.cos(headBobTimer / 2) * 0.02 * headBobAmount;
 
-        // Trigger footstep on wave zero-crossings
-        if ((lastBobSin < 0 && bobSin >= 0) || (lastBobSin > 0 && bobSin <= 0)) {
+        // Trigger footstep exactly once per wave cycle
+        if (lastBobSin < 0 && bobSin >= 0) {
             if (headBobAmount > 0.1) playFootstep();
         }
         lastBobSin = bobSin;
