@@ -256,7 +256,7 @@
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff4444; margin-bottom: 12px; width: 100%; box-sizing: border-box;">
                     <strong style="color:#ff4444; font-size: 1.1em;">COMBAT:</strong><br>
-                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Hold the Spray Button</strong> (bottom right) to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it!</span>
+                    <span style="color:#ddd; font-size: 0.95em; line-height: 1.3;"><strong>Hold the Spray Button</strong> (bottom right) to ignite your paint into a continuous Flamethrower to burn Entities. Paint is sparse, so conserve it!<br><br><strong style="color:#ffaa00;">Watch your back. They like to creep up behind you.</strong></span>
                 </div>
 
                 <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #88ccff; width: 100%; box-sizing: border-box;">
@@ -441,6 +441,35 @@ const wallMat  = new THREE.MeshPhongMaterial({ map: wallTex });
 const floorMat = new THREE.MeshPhongMaterial({ map: floorTex });
 const ceilMat  = new THREE.MeshPhongMaterial({ map: ceilTex });
 
+const graffitiTex = (function(){
+    const c = document.createElement('canvas'); c.width=1024; c.height=512;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='transparent'; ctx.fillRect(0,0,1024,512);
+    
+    // Aura/overspray
+    for(let i=0; i<3000; i++) {
+        const rx = 512 + (Math.random()-0.5)*800;
+        const ry = 256 + (Math.random()-0.5)*250;
+        ctx.fillStyle = `rgba(180, 20, 20, ${Math.random()*0.15})`;
+        ctx.beginPath(); ctx.arc(rx, ry, Math.random()*6, 0, Math.PI*2); ctx.fill();
+    }
+
+    ctx.fillStyle='rgba(180, 20, 20, 0.9)';
+    ctx.font='bold 110px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor = 'rgba(200,0,0,0.8)'; ctx.shadowBlur = 12;
+    ctx.fillText('FIND THE EXIT', 512, 256);
+    ctx.shadowBlur = 0;
+    
+    // Heavy drips
+    for(let i=0; i<100; i++) {
+        ctx.fillStyle=`rgba(180, 20, 20, ${0.5 + Math.random()*0.4})`;
+        ctx.fillRect(150+Math.random()*720, 280, 2+Math.random()*6, Math.random()*150);
+    }
+    return new THREE.CanvasTexture(c);
+})();
+const graffitiMat = new THREE.MeshLambertMaterial({map: graffitiTex, transparent: true, depthWrite: false, opacity: 0.95});
+
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
     floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
@@ -476,8 +505,32 @@ function buildWorld() {
                 }
             }
             grid[x][z]=w;
-            if(w) wallCount++;
+        }
+    }
 
+    // FORCE starting tunnel directly ahead of spawn to display the giant graffiti
+    grid[SPAWN_GRID_X][SPAWN_GRID_Z] = 0;
+    grid[SPAWN_GRID_X][SPAWN_GRID_Z-1] = 0;
+    grid[SPAWN_GRID_X][SPAWN_GRID_Z-2] = 0;
+    grid[SPAWN_GRID_X][SPAWN_GRID_Z-3] = 0;
+    grid[SPAWN_GRID_X][SPAWN_GRID_Z-4] = 1;
+    // Wall off the sides of the tunnel
+    grid[SPAWN_GRID_X-1][SPAWN_GRID_Z-1] = 1;
+    grid[SPAWN_GRID_X+1][SPAWN_GRID_Z-1] = 1;
+    grid[SPAWN_GRID_X-1][SPAWN_GRID_Z-2] = 1;
+    grid[SPAWN_GRID_X+1][SPAWN_GRID_Z-2] = 1;
+    grid[SPAWN_GRID_X-1][SPAWN_GRID_Z-3] = 1;
+    grid[SPAWN_GRID_X+1][SPAWN_GRID_Z-3] = 1;
+
+    // Recalculate wall count after overrides
+    for (let x=0; x<MAP_SIZE; x++) {
+        for (let z=0; z<MAP_SIZE; z++) {
+            if (grid[x][z]) wallCount++;
+        }
+    }
+
+    for (let x=0; x<MAP_SIZE; x++) {
+        for (let z=0; z<MAP_SIZE; z++) {
             const distFromSpawn = Math.hypot(x - SPAWN_GRID_X, z - SPAWN_GRID_Z);
             const lightSignal = Math.sin(x/6) + Math.sin(z/6) + Math.sin((x+z)/9);
             
@@ -494,6 +547,7 @@ function buildWorld() {
     const dummy = new THREE.Object3D();
     const tempColor = new THREE.Color();
     let idx = 0;
+    let spawnedFirstGraffiti = false;
     
     for (let x=0; x<MAP_SIZE; x++) {
         for (let z=0; z<MAP_SIZE; z++) {
@@ -508,6 +562,25 @@ function buildWorld() {
                 
                 instancedWalls.setColorAt(idx, tempColor);
                 idx++;
+
+                // Placing Graffiti Decals
+                const placeDecal = (nx, nz, rotY) => {
+                    const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), graffitiMat);
+                    gMesh.position.set((x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nx, WALL_HEIGHT/2 + (Math.random()-0.5)*1, (z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nz);
+                    gMesh.rotation.y = rotY;
+                    scene.add(gMesh);
+                };
+
+                const isStartWall = (x === SPAWN_GRID_X && z === SPAWN_GRID_Z - 4);
+                if (isStartWall) {
+                    placeDecal(0, TILE_SIZE/2 + 0.1, 0); // face +Z direction
+                    spawnedFirstGraffiti = true;
+                } else if (spawnedFirstGraffiti && Math.random() < 0.005) { 
+                    if (grid[x-1] && grid[x-1][z] === 0) placeDecal(-TILE_SIZE/2 - 0.1, 0, -Math.PI/2);
+                    else if (grid[x+1] && grid[x+1][z] === 0) placeDecal(TILE_SIZE/2 + 0.1, 0, Math.PI/2);
+                    else if (grid[x][z-1] === 0) placeDecal(0, -TILE_SIZE/2 - 0.1, Math.PI);
+                    else if (grid[x][z+1] === 0) placeDecal(0, TILE_SIZE/2 + 0.1, 0);
+                }
             }
         }
     }
@@ -549,7 +622,7 @@ function buildWorld() {
 }
 
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
-function generateBacteriaFrames(count) {
+function generateBacteriaFrames(count, poseOffset) {
     let frames = [];
     for(let f=0; f<count; f++) {
         const c = document.createElement('canvas');
@@ -564,73 +637,69 @@ function generateBacteriaFrames(count) {
         const drawJitter = (x1,y1, x2,y2, thick, segs, spread) => {
             ctx.lineWidth = thick;
             ctx.strokeStyle = '#050505';
-            ctx.beginPath();
-            ctx.moveTo(x1,y1);
-            for(let i=1; i<=segs; i++) {
-                const t = i/segs;
-                ctx.lineTo(x1+(x2-x1)*t + (Math.random()-0.5)*spread, y1+(y2-y1)*t + (Math.random()-0.5)*spread);
+            // Loop 3 times to create multiple overlapping, squirming lines per limb
+            for (let lines = 0; lines < 3; lines++) {
+                ctx.beginPath();
+                ctx.moveTo(x1,y1);
+                for(let i=1; i<=segs; i++) {
+                    const t = i/segs;
+                    ctx.lineTo(x1+(x2-x1)*t + (Math.random()-0.5)*spread, y1+(y2-y1)*t + (Math.random()-0.5)*spread);
+                }
+                ctx.stroke();
             }
-            ctx.stroke();
         };
 
-        // Head 
-        let hx = 128 + (Math.random()-0.5)*6;
-        let hy = 60 + (Math.random()-0.5)*6;
+        // Determine lean/hunch
+        let bendX = poseOffset * 35; 
+        let bendY = Math.abs(poseOffset) * 20;
+
+        // Head (Less boxy, more elliptical/jagged)
+        let hx = 128 + bendX + (Math.random()-0.5)*6;
+        let hy = 60 + bendY + (Math.random()-0.5)*6;
         
-        ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.ellipse(hx - 40, hy + 10, 45, 12, 0, Math.PI/2, Math.PI*1.5); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(hx + 40, hy + 10, 45, 12, 0, -Math.PI/2, Math.PI/2); ctx.stroke();
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.ellipse(hx - 30, hy + 10, 35, 15, -0.3, Math.PI/2, Math.PI*1.5); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(hx + 30, hy + 10, 35, 15, 0.3, -Math.PI/2, Math.PI/2); ctx.stroke();
 
         ctx.fillStyle = '#080808';
-        ctx.fillRect(hx - 40, hy - 45, 80, 80);
+        ctx.beginPath(); ctx.ellipse(hx, hy - 15, 30, 45, 0, 0, Math.PI*2); ctx.fill();
         
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        for(let i=0; i<40; i++) {
+        ctx.lineWidth = 2;
+        for(let i=0; i<30; i++) {
             ctx.beginPath();
-            ctx.moveTo(hx + (Math.random()-0.5)*90, hy + (Math.random()-0.5)*90);
-            ctx.lineTo(hx + (Math.random()-0.5)*90, hy + (Math.random()-0.5)*90);
+            ctx.moveTo(hx + (Math.random()-0.5)*60, hy + (Math.random()-0.5)*80);
+            ctx.lineTo(hx + (Math.random()-0.5)*60, hy + (Math.random()-0.5)*80);
             ctx.stroke();
         }
 
         // Torso 
-        let hipX = 128 + (Math.random()-0.5)*15;
-        let hipY = 270 + (Math.random()-0.5)*10;
+        let hipX = 128 + (bendX * 0.5) + (Math.random()-0.5)*15;
+        let hipY = 270 + (bendY * 0.5) + (Math.random()-0.5)*10;
         
-        for(let s=0; s<4; s++) {
-            drawJitter(hx + (Math.random()-0.5)*30, hy + 35, hipX, hipY, 5, 8, 20);
-        }
+        drawJitter(hx, hy + 30, hipX, hipY, 3, 8, 25);
 
-        ctx.beginPath();
-        for(let i=0; i<20; i++) {
-            ctx.moveTo(hipX, hipY);
-            ctx.lineTo(hipX + (Math.random()-0.5)*60, hipY - 40 + Math.random()*80);
-        }
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        let lHandX = 40 + bendX + (Math.random()-0.5)*15; let lHandY = 470 + (Math.random()-0.5)*15;
+        let rHandX = 216 + bendX + (Math.random()-0.5)*15; let rHandY = 470 + (Math.random()-0.5)*15;
 
-        let lHandX = 40 + (Math.random()-0.5)*15; let lHandY = 470 + (Math.random()-0.5)*15;
-        let rHandX = 216 + (Math.random()-0.5)*15; let rHandY = 470 + (Math.random()-0.5)*15;
+        drawJitter(hx - 20, hy + 20, hx - 50 + bendX*0.5, 200, 3, 5, 15);
+        drawJitter(hx - 50 + bendX*0.5, 200, lHandX, lHandY, 2.5, 6, 15);
+        drawJitter(hx + 20, hy + 20, hx + 50 + bendX*0.5, 200, 3, 5, 15);
+        drawJitter(hx + 50 + bendX*0.5, 200, rHandX, rHandY, 2.5, 6, 15);
 
-        drawJitter(hx - 35, hy + 20, hx - 60, 200, 7, 5, 12);
-        drawJitter(hx - 60, 200, lHandX, lHandY, 6, 6, 12);
-        drawJitter(hx + 35, hy + 20, hx + 60, 200, 7, 5, 12);
-        drawJitter(hx + 60, 200, rHandX, rHandY, 6, 6, 12);
-
-        ctx.lineWidth = 3;
         for(let i=0; i<3; i++) {
-            drawJitter(lHandX, lHandY, lHandX - 15 + i*15, lHandY + 40, 3, 2, 4);
-            drawJitter(rHandX, rHandY, rHandX - 15 + i*15, rHandY + 40, 3, 2, 4);
+            drawJitter(lHandX, lHandY, lHandX - 15 + i*15, lHandY + 40, 2, 2, 6);
+            drawJitter(rHandX, rHandY, rHandX - 15 + i*15, rHandY + 40, 2, 2, 6);
         }
 
         let lFootX = 90 + (Math.random()-0.5)*15; let lFootY = 512;
         let rFootX = 166 + (Math.random()-0.5)*15; let rFootY = 512;
 
-        drawJitter(hipX, hipY, hipX - 25, 400, 7, 5, 15);
-        drawJitter(hipX - 25, 400, lFootX, lFootY, 6, 4, 10);
+        drawJitter(hipX, hipY, hipX - 25, 400, 3, 5, 20);
+        drawJitter(hipX - 25, 400, lFootX, lFootY, 2.5, 4, 15);
         
-        drawJitter(hipX, hipY, hipX + 25, 400, 7, 5, 15);
-        drawJitter(hipX + 25, 400, rFootX, rFootY, 6, 4, 10);
+        drawJitter(hipX, hipY, hipX + 25, 400, 3, 5, 20);
+        drawJitter(hipX + 25, 400, rFootX, rFootY, 2.5, 4, 15);
 
         frames.push(new THREE.CanvasTexture(c));
     }
@@ -645,8 +714,9 @@ function generateShadowFrames(count, eyesOpen) {
         const ctx = c.getContext('2d');
         
         ctx.shadowColor = 'rgba(0,0,0,1)';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 10; // Restored sharp shadow
         ctx.fillStyle = 'rgba(5,5,5,0.95)';
+        // Removed the heavy blur filter to keep the ghost crisp
         
         ctx.beginPath();
         for(let a=0; a<Math.PI*2; a+=0.04) {
@@ -710,11 +780,17 @@ function generateShadowFrames(count, eyesOpen) {
     return frames;
 }
 
-const bacteriaFrames = generateBacteriaFrames(4);
+const bacteriaFramesCenter = generateBacteriaFrames(4, 0);
+const bacteriaFramesLeft = generateBacteriaFrames(4, -1);
+const bacteriaFramesRight = generateBacteriaFrames(4, 1);
 const shadowFramesOpen = generateShadowFrames(4, true);
 const shadowFramesClosed = generateShadowFrames(1, false);
 
-const bacteriaMats = bacteriaFrames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+const bacteriaMatsCenter = bacteriaFramesCenter.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+const bacteriaMatsLeft = bacteriaFramesLeft.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+const bacteriaMatsRight = bacteriaFramesRight.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+const bacteriaPoses = [bacteriaMatsLeft, bacteriaMatsCenter, bacteriaMatsRight];
+
 const shadowMatsOpen = shadowFramesOpen.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatClosed = new THREE.SpriteMaterial({ map: shadowFramesClosed[0], color: 0xffffff, transparent: true });
 
@@ -730,7 +806,7 @@ function placeEntities() {
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
         const isShadow = (placed % 2 === 0);
-        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMats[0]);
+        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMatsCenter[0]);
         
         let baseScaleX = isShadow ? 14 : 7.25;
         let baseScaleY = isShadow ? 14 : 14.5; 
@@ -745,6 +821,7 @@ function placeEntities() {
             type: isShadow ? 'SMILING_SHADOW' : 'BACTERIA',
             animTimer: 0,
             animFrame: Math.floor(Math.random()*4),
+            currentPose: 1, // Start in center pose
             staminaCooldown: 0,
             bob: Math.random() * Math.PI * 2,
             isGlitching: false,
@@ -964,7 +1041,7 @@ scene.add(ambientLight);
 const playerLight=new THREE.PointLight(0xfffdbb,0.6,80); 
 scene.add(playerLight);
 
-let yaw=Math.PI/4, pitch=0;
+let yaw=0, pitch=0;
 let gameStarted=false, isPaused=false;
 
 const timerEl=document.getElementById('timer');
@@ -1492,6 +1569,15 @@ function handlePointerEnd(id){
     }
 }
 
+const handleSprayDown = (e) => { e.preventDefault(); e.stopPropagation(); startAction(); };
+const handleSprayUp = (e) => { e.preventDefault(); e.stopPropagation(); stopAction(); };
+sprayBtn.addEventListener('mousedown', handleSprayDown);
+sprayBtn.addEventListener('touchstart', handleSprayDown, {passive:false});
+sprayBtn.addEventListener('mouseup', handleSprayUp);
+sprayBtn.addEventListener('mouseleave', handleSprayUp);
+sprayBtn.addEventListener('touchend', handleSprayUp);
+sprayBtn.addEventListener('touchcancel', handleSprayUp);
+
 document.addEventListener('touchstart',e=>{ 
     if(!gameStarted||isPaused) return; 
     for(let t of e.changedTouches) {
@@ -1675,7 +1761,7 @@ function animate() {
         }
 
         // Continuous Flamethrower Process
-        if (isFiring) {
+        if (isFiring && Date.now() - touchStartTime > 200) {
             if (flameGain && audioCtx && audioCtx.state === 'running') flameGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05);
 
             playerLight.intensity = 2.5 + Math.random() * 0.5;
@@ -1813,7 +1899,7 @@ function animate() {
             if (e.type === 'SMILING_SHADOW') {
                 e.mesh.material = e.isBlinking ? shadowMatClosed : shadowMatsOpen[e.animFrame];
             } else {
-                e.mesh.material = bacteriaMats[e.animFrame];
+                e.mesh.material = bacteriaPoses[e.currentPose][e.animFrame];
             }
 
             let dx = px - e.mesh.position.x;
@@ -1841,6 +1927,7 @@ function animate() {
                 if (e.mirrorTimer <= 0) {
                     e.isMirrored = !e.isMirrored;
                     e.mesh.scale.x = e.isMirrored ? -e.baseScaleX : e.baseScaleX;
+                    e.currentPose = Math.floor(Math.random() * 3); // Randomly squirm/change pose while flickering
                     e.mirrorTimer = 0.05 + Math.random() * 0.15; 
                 }
                 
