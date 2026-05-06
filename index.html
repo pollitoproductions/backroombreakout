@@ -1569,19 +1569,10 @@ function handlePointerEnd(id){
     }
 }
 
-const handleSprayDown = (e) => { e.preventDefault(); e.stopPropagation(); startAction(); };
-const handleSprayUp = (e) => { e.preventDefault(); e.stopPropagation(); stopAction(); };
-sprayBtn.addEventListener('mousedown', handleSprayDown);
-sprayBtn.addEventListener('touchstart', handleSprayDown, {passive:false});
-sprayBtn.addEventListener('mouseup', handleSprayUp);
-sprayBtn.addEventListener('mouseleave', handleSprayUp);
-sprayBtn.addEventListener('touchend', handleSprayUp);
-sprayBtn.addEventListener('touchcancel', handleSprayUp);
-
 document.addEventListener('touchstart',e=>{ 
     if(!gameStarted||isPaused) return; 
     for(let t of e.changedTouches) {
-        handlePointerStart(t.identifier,t.clientX,t.clientY,false, t.target);
+        handlePointerStart(t.identifier,t.clientX,t.clientY,false, e.target);
     }
 },{passive:false});
 document.addEventListener('touchmove',e=>{ if(!gameStarted||isPaused) return; e.preventDefault(); for(let t of e.changedTouches) handlePointerMove(t.identifier,t.clientX,t.clientY); },{passive:false});
