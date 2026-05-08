@@ -188,7 +188,7 @@
 <div id="ui-layer">
     <div id="top-hud">
         <div id="timer" class="hud-element">00:00</div>
-        <div id="spray-counter" class="hud-element">SPRAYS: 250</div>
+        <div id="spray-counter" class="hud-element">SPRAYS: 100</div>
         <div class="status-container hud-element">
             <div class="status-label" style="color:#ff6666;">HEALTH</div>
             <div class="status-bar-bg"><div id="health-bar" class="status-bar-fill"></div></div>
@@ -361,7 +361,7 @@ let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
 
-let spraysLeft    = 250;
+let spraysLeft    = 100;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
@@ -471,45 +471,6 @@ const graffitiTex = (function(){
 })();
 const graffitiMat = new THREE.MeshLambertMaterial({map: graffitiTex, transparent: true, depthWrite: false, opacity: 0.95});
 
-const arrowTex = (function(){
-    const c = document.createElement('canvas'); c.width=512; c.height=512;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle='transparent'; ctx.fillRect(0,0,512,512);
-    
-    // Aura/overspray
-    for(let i=0; i<1500; i++) {
-        const rx = 256 + (Math.random()-0.5)*400;
-        const ry = 256 + (Math.random()-0.5)*400;
-        ctx.fillStyle = `rgba(180, 20, 20, ${Math.random()*0.15})`;
-        ctx.beginPath(); ctx.arc(rx, ry, Math.random()*5, 0, Math.PI*2); ctx.fill();
-    }
-
-    ctx.strokeStyle='rgba(180, 20, 20, 0.9)';
-    ctx.shadowColor = 'rgba(200,0,0,0.8)'; ctx.shadowBlur = 12;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    
-    // Draw sketchy arrow pointing RIGHT
-    for(let j=0; j<5; j++) {
-        ctx.lineWidth = 15 + Math.random()*10;
-        ctx.beginPath();
-        ctx.moveTo(120, 256 + (Math.random()-0.5)*15);
-        ctx.lineTo(380, 256 + (Math.random()-0.5)*15);
-        ctx.lineTo(280 + (Math.random()-0.5)*15, 150 + (Math.random()-0.5)*15);
-        ctx.moveTo(380, 256 + (Math.random()-0.5)*15);
-        ctx.lineTo(280 + (Math.random()-0.5)*15, 362 + (Math.random()-0.5)*15);
-        ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    
-    // A few light drips
-    for(let i=0; i<30; i++) {
-        ctx.fillStyle=`rgba(180, 20, 20, ${0.5 + Math.random()*0.4})`;
-        ctx.fillRect(150+Math.random()*200, 256, 2+Math.random()*4, Math.random()*60);
-    }
-    return new THREE.CanvasTexture(c);
-})();
-const arrowMat = new THREE.MeshLambertMaterial({map: arrowTex, transparent: true, depthWrite: false, opacity: 0.95});
-
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
     floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
@@ -604,50 +565,22 @@ function buildWorld() {
                 idx++;
 
                 // Placing Graffiti Decals
-                const placeDecal = (nx, nz, rotY, gridX, gridZ) => {
+                const placeDecal = (nx, nz, rotY) => {
                     const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), graffitiMat);
-                    // Shift text slightly lower to make room for arrow
-                    gMesh.position.set((gridX-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nx, WALL_HEIGHT/2 - 2.5 + (Math.random()-0.5)*1, (gridZ-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nz);
+                    gMesh.position.set((x-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nx, WALL_HEIGHT/2 + (Math.random()-0.5)*1, (z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nz);
                     gMesh.rotation.y = rotY;
                     scene.add(gMesh);
-
-                    // Find absolutely nearest exit relative to this specific graffiti wall
-                    let nearestEx = exitsGrid[0];
-                    let minDist = Infinity;
-                    for(let eg of exitsGrid) {
-                        let d = Math.hypot(eg.x - gridX, eg.z - gridZ);
-                        if(d < minDist) { minDist = d; nearestEx = eg; }
-                    }
-
-                    // Calculate the proper 2D arrow projection for the wall's normal
-                    let dx = nearestEx.x - gridX;
-                    let dz = nearestEx.z - gridZ;
-                    let dir = new THREE.Vector3(dx, 0, dz).normalize();
-                    let right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), rotY);
-                    let normal = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), rotY);
-                    
-                    let xComp = dir.dot(right);
-                    let yComp = -dir.dot(normal); // Arrow 'Up' implies exit is through/forward
-                    let arrowAngle = Math.atan2(yComp, xComp);
-
-                    const aMesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), arrowMat);
-                    aMesh.position.copy(gMesh.position);
-                    aMesh.position.y += 5.5; // Place exactly above text
-                    aMesh.rotation.order = 'YXZ';
-                    aMesh.rotation.y = rotY;
-                    aMesh.rotation.z = arrowAngle; // Aiming towards nearest exit
-                    scene.add(aMesh);
                 };
 
                 const isStartWall = (x === SPAWN_GRID_X && z === SPAWN_GRID_Z - 4);
                 if (isStartWall) {
-                    placeDecal(0, TILE_SIZE/2 + 0.1, 0, x, z); // face +Z direction
+                    placeDecal(0, TILE_SIZE/2 + 0.1, 0); // face +Z direction
                     spawnedFirstGraffiti = true;
-                } else if (spawnedFirstGraffiti && Math.random() < 0.01) { 
-                    if (grid[x-1] && grid[x-1][z] === 0) placeDecal(-TILE_SIZE/2 - 0.1, 0, -Math.PI/2, x, z);
-                    else if (grid[x+1] && grid[x+1][z] === 0) placeDecal(TILE_SIZE/2 + 0.1, 0, Math.PI/2, x, z);
-                    else if (grid[x][z-1] === 0) placeDecal(0, -TILE_SIZE/2 - 0.1, Math.PI, x, z);
-                    else if (grid[x][z+1] === 0) placeDecal(0, TILE_SIZE/2 + 0.1, 0, x, z);
+                } else if (spawnedFirstGraffiti && Math.random() < 0.005) { 
+                    if (grid[x-1] && grid[x-1][z] === 0) placeDecal(-TILE_SIZE/2 - 0.1, 0, -Math.PI/2);
+                    else if (grid[x+1] && grid[x+1][z] === 0) placeDecal(TILE_SIZE/2 + 0.1, 0, Math.PI/2);
+                    else if (grid[x][z-1] === 0) placeDecal(0, -TILE_SIZE/2 - 0.1, Math.PI);
+                    else if (grid[x][z+1] === 0) placeDecal(0, TILE_SIZE/2 + 0.1, 0);
                 }
             }
         }
@@ -1476,7 +1409,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         health=STAT_MAX; hydration=STAT_MAX; 
         
         if (!unlimitedPaint) {
-            spraysLeft = 250;
+            spraysLeft = 100;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
             hasSeenPaintAdThisRound = false;
         }
@@ -1580,7 +1513,7 @@ function checkItemPickups(){
                 showPickupFlash(`Moth Jelly +${val}`, '#aaffcc');
             } else if(b.type === 'paint') {
                 if(!unlimitedPaint) {
-                    spraysLeft = 250;
+                    spraysLeft = 100;
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
                     hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
@@ -1643,15 +1576,6 @@ function handlePointerEnd(id){
         rightTouchId=null; 
     }
 }
-
-const handleSprayDown = (e) => { e.preventDefault(); e.stopPropagation(); startAction(); };
-const handleSprayUp = (e) => { e.preventDefault(); e.stopPropagation(); stopAction(); };
-sprayBtn.addEventListener('mousedown', handleSprayDown);
-sprayBtn.addEventListener('touchstart', handleSprayDown, {passive:false});
-sprayBtn.addEventListener('mouseup', handleSprayUp);
-sprayBtn.addEventListener('mouseleave', handleSprayUp);
-sprayBtn.addEventListener('touchend', handleSprayUp);
-sprayBtn.addEventListener('touchcancel', handleSprayUp);
 
 document.addEventListener('touchstart',e=>{ 
     if(!gameStarted||isPaused) return; 
