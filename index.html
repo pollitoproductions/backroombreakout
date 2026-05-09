@@ -228,10 +228,10 @@
             <!-- PAGE 0 — LORE (condensed, 2 screens) -->
             <div id="page-0" class="start-page">
                 <div class="lore">
-                    As you walk though an industial park at night, you kick a can of spray paint. It clatters and you pick it up. You take two more steps and fall through solid concrete, noclipping into something vast — endless buzzing hallways, moist carpet, no sky, no doors. Just yellow.
+                    You were tagging a government building at 3am. Leaning against the wall to dodge a patrol, you fell through solid concrete and noclipped into something vast — endless buzzing hallways, moist carpet, no sky, no doors. Just yellow.
                 </div>
                 <div class="lore" style="margin-top:0;">
-                    You have that can of spraypaint and a lighter in your pocket. That's everything.
+                    You have a spray can and a lighter in your pocket. That's everything.
                 </div>
                 <div class="hint">Tap anywhere to continue...</div>
             </div>
@@ -1572,7 +1572,11 @@ pauseScreen.addEventListener('click', ()=>{
     lastTF=performance.now(); prevTime=performance.now();
 });
  
-winScreen.addEventListener('click', ()=>location.reload());
+winScreen.addEventListener('click', (e)=>{
+    // Don't reload if tapping the name input, submit button, or submit message
+    if (e.target.closest('#win-leaderboard-section')) return;
+    location.reload();
+});
  
 document.getElementById('revive-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
