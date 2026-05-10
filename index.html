@@ -24,7 +24,7 @@
             background: radial-gradient(ellipse at center, rgba(50, 45, 15, 0.95) 0%, rgba(5, 5, 0, 1) 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: #d4d42b; text-align: center;
-            pointer-events: auto; cursor: pointer; z-index: 40;
+            pointer-events: auto; cursor: default; z-index: 40;
             padding: 15px; box-sizing: border-box;
         }
  
@@ -37,7 +37,7 @@
             padding: 20px; box-sizing: border-box;
         }
         #paint-ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
-        #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; }
+        #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; cursor: default; }
         #revive-screen { color: #d4d42b; }
  
         .liminal-panel {
@@ -86,6 +86,21 @@
         .win-time { font-size: 2.8em; color:#fff; margin:10px 0 18px 0; text-shadow:0 0 10px #fff; letter-spacing:4px; }
         .win-flavor { font-size:1.05em; color:#aaffaa; margin-bottom:4px; }
         .win-hint { font-size:1em; color:#00cc00; margin-top:28px; opacity:0.8; text-shadow:0 0 5px #00ff00; }
+ 
+        #player-name-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #d4d42b;
+            color: #d4d42b;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 1.2em;
+            text-align: center;
+            margin-top: 15px;
+            border-radius: 5px;
+            outline: none;
+            width: 100%;
+            max-width: 250px;
+        }
  
         /* TOP HUD ARRANGEMENT */
         #top-hud {
@@ -339,6 +354,110 @@
 </div>
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+ 
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+ 
+// ─── FIREBASE INIT ────────────────────────────────────────────────────────
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'backrooms-default';
+let db, auth;
+ 
+window.leaderboardData = [];
+window.currentLeaderboardDiff = 'SANE';
+ 
+if (firebaseConfig) {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    
+    const initAuth = async () => {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
+    };
+    initAuth();
+ 
+    onAuthStateChanged(auth, (user) => {
+        if (!user) return;
+        const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboards');
+        onSnapshot(lbRef, (snapshot) => {
+            window.leaderboardData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            // Update immediately if viewing
+            if (document.getElementById('page-3').style.display === 'flex' || document.getElementById('page-3').style.display === 'block') {
+                window.showLeaderboard(window.currentLeaderboardDiff);
+            }
+        }, (error) => {
+            console.error("Leaderboard sync error:", error);
+        });
+    });
+}
+ 
+// ─── UI PAGINATION LOGIC ──────────────────────────────────────────────────
+window.showLeaderboard = function(difficulty) {
+    window.currentLeaderboardDiff = difficulty;
+    const lb = document.getElementById('lb-content');
+    
+    // Filter by difficulty and sort by time (lowest time wins)
+    const filtered = window.leaderboardData.filter(d => d.difficulty === difficulty);
+    filtered.forEach(d => { if(d.time > 100000) d.time = Math.floor(d.time/1000); }); // Fix old ms data
+    filtered.sort((a, b) => a.time - b.time);
+    const top10 = filtered.slice(0, 10);
+    
+    const colors = {'SANE':'#00ff55','QUESTIONABLE':'#d4d42b','INSANE':'#ff4444'};
+    const col = colors[difficulty]||'#aaa';
+
+    if (top10.length === 0) {
+        lb.innerHTML = '<span style="color:#aaa; font-size: 0.9em; text-align:center;">No survivors found yet...</span>';
+    } else {
+        let html = `<table style="width:100%;border-collapse:collapse;font-size:0.88em; max-width: 400px;">`;
+        html += `<tr><th style="color:${col};padding:4px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">#</th><th style="color:${col};padding:4px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">SURVIVOR</th><th style="color:${col};padding:4px 6px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.1);">TIME</th></tr>`;
+        
+        for(let i=0; i<top10.length; i++) {
+            let timeVal = top10[i].time;
+            let m = Math.floor(timeVal / 60);
+            let s = (timeVal % 60).toString().padStart(2, '0');
+            let safeName = top10[i].name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const rowStyle = i===0 ? `color:${col};font-weight:bold;` : 'color:#ccc;';
+
+            html += `<tr>
+                <td style="${rowStyle}padding:5px 6px;">${i+1}</td>
+                <td style="${rowStyle}padding:5px 6px;">${safeName}</td>
+                <td style="${rowStyle}padding:5px 6px;text-align:right;">${m}:${s}</td>
+            </tr>`;
+        }
+        html += '</table>';
+        lb.innerHTML = html;
+    }
+};
+
+window.checkTop10 = function(difficulty, timeSeconds) {
+    const filtered = window.leaderboardData.filter(d => d.difficulty === difficulty);
+    filtered.forEach(d => { if(d.time > 100000) d.time = Math.floor(d.time/1000); });
+    filtered.sort((a, b) => a.time - b.time);
+    if (filtered.length < 10) return true;
+    return timeSeconds < filtered[9].time;
+};
+ 
+// Handle Score Submission
+window.submitScore = async function(difficulty, name, timeSeconds) {
+    if (!db || !auth || !auth.currentUser) throw new Error("Not connected");
+    const safeName = name.replace(/[^a-zA-Z0-9 ]/g, "").trim().substring(0, 12) || 'ANONYMOUS';
+    const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboards');
+    await addDoc(lbRef, {
+        name: safeName,
+        time: timeSeconds, 
+        difficulty: difficulty,
+        timestamp: Date.now()
+    });
+}
+</script>
+
 <script>
 // ─── CONFIG (DYNAMIC NOW) ──────────────────────────────────────────────────
 let currentSanity     = 'SANE';
@@ -792,84 +911,165 @@ function buildWorld() {
 }
  
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
-function generateBacteriaFrames(count, poseOffset) {
+function generateBacteriaFrames(count, poseType) {
     let frames = [];
     for(let f=0; f<count; f++) {
         const c = document.createElement('canvas');
         c.width = 256; c.height = 512;
         const ctx = c.getContext('2d');
         
-        ctx.shadowColor = 'rgba(0,0,0,0.9)';
-        ctx.shadowBlur = 8;
+        ctx.clearRect(0,0,256,512);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        
-        const drawJitter = (x1,y1, x2,y2, thick, segs, spread) => {
-            ctx.lineWidth = thick;
-            ctx.strokeStyle = '#050505';
-            // Loop 3 times to create multiple overlapping, squirming lines per limb
-            for (let lines = 0; lines < 3; lines++) {
+ 
+        // Soft eerie glow so it doesn't vanish into the dark environment
+        ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
+        ctx.shadowBlur = 20;
+
+        // Helper to draw a "3D" looking thick limb
+        const drawLimb = (x1, y1, x2, y2, thickness, segments, spread) => {
+            let pts = [{x:x1,y:y1}];
+            for(let i=1; i<segments; i++) {
+                let t = i/segments;
+                pts.push({
+                    x: x1 + (x2-x1)*t + (Math.random()-0.5)*spread,
+                    y: y1 + (y2-y1)*t + (Math.random()-0.5)*spread
+                });
+            }
+            pts.push({x:x2, y:y2});
+            
+            // Draw outer dark edge
+            ctx.strokeStyle = '#020202';
+            ctx.lineWidth = thickness;
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+ 
+            // Draw internal fleshy/wiry highlights so it is visible in the dark
+            ctx.shadowBlur = 0; // turn off halo for internal cables
+            for(let w=0; w<4; w++) {
+                ctx.strokeStyle = (w % 2 === 0) ? '#2a2a2a' : '#3a3a2a';
+                ctx.lineWidth = thickness * 0.2 + Math.random()*2;
                 ctx.beginPath();
-                ctx.moveTo(x1,y1);
-                for(let i=1; i<=segs; i++) {
-                    const t = i/segs;
-                    ctx.lineTo(x1+(x2-x1)*t + (Math.random()-0.5)*spread, y1+(y2-y1)*t + (Math.random()-0.5)*spread);
+                ctx.moveTo(pts[0].x + (Math.random()-0.5)*thickness*0.6, pts[0].y);
+                for(let i=1; i<pts.length; i++) {
+                    ctx.lineTo(pts[i].x + (Math.random()-0.5)*thickness*0.6, pts[i].y + (Math.random()-0.5)*thickness*0.6);
                 }
                 ctx.stroke();
             }
+
+            // Oily specular highlight
+            ctx.strokeStyle = 'rgba(180, 180, 170, 0.6)'; // Wet, glossy reflection
+            ctx.lineWidth = Math.max(1, thickness * 0.08);
+            ctx.beginPath();
+            let offsetX = thickness * 0.25;
+            let offsetY = -thickness * 0.1;
+            ctx.moveTo(pts[0].x - offsetX, pts[0].y - offsetY);
+            for(let i=1; i<pts.length; i++) {
+                ctx.lineTo(pts[i].x - offsetX + (Math.random()-0.5)*3, pts[i].y - offsetY + (Math.random()-0.5)*3);
+            }
+            ctx.stroke();
+
+            // Restore halo
+            ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
+            ctx.shadowBlur = 20;
         };
  
-        // Determine lean/hunch
-        let bendX = poseOffset * 35; 
-        let bendY = Math.abs(poseOffset) * 20;
+        let bendX = 0;
+        let bendY = 0;
+        let isCrawling = false;
+        let isAsymmetric = false;
+
+        // Apply 7 unique glitch poses
+        if (poseType === 'left') bendX = -30;
+        if (poseType === 'right') bendX = 30;
+        if (poseType === 'extreme_left') { bendX = -70; bendY = 30; }
+        if (poseType === 'extreme_right') { bendX = 70; bendY = 30; }
+        if (poseType === 'crawl') { isCrawling = true; bendY = 110; }
+        if (poseType === 'asymmetric') { bendX = (Math.random()-0.5)*50; isAsymmetric = true; }
  
-        // Head (Less boxy, more elliptical/jagged)
-        let hx = 128 + bendX + (Math.random()-0.5)*6;
-        let hy = 60 + bendY + (Math.random()-0.5)*6;
+        // Drop the torso and head heavily if crawling or twisting
+        let hx = 128 + bendX;
+        let hy = (isCrawling ? 200 : 90) + bendY; 
         
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.ellipse(hx - 30, hy + 10, 35, 15, -0.3, Math.PI/2, Math.PI*1.5); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(hx + 30, hy + 10, 35, 15, 0.3, -Math.PI/2, Math.PI/2); ctx.stroke();
+        let hipX = 128 + bendX * 0.5;
+        let hipY = (isCrawling ? 360 : 270) + bendY * 0.5;
+        
+        // Draw Torso
+        drawLimb(hx, hy + 20, hipX, hipY, 35, 6, 20);
+        // Draw multiple intertwined torso strands to make it beefy
+        drawLimb(hx-10, hy + 30, hipX+10, hipY-20, 20, 5, 25);
+        drawLimb(hx+10, hy + 30, hipX-10, hipY-20, 20, 5, 25);
  
-        ctx.fillStyle = '#080808';
-        ctx.beginPath(); ctx.ellipse(hx, hy - 15, 30, 45, 0, 0, Math.PI*2); ctx.fill();
+        // --- ARMS (Long enough to reach/drag on the floor) ---
+        let lHandX = (isCrawling ? 20 : 50) + bendX + (Math.random()-0.5)*40; 
+        let lHandY = 490 + Math.random()*22; // Floor contact
+        let rHandX = (isCrawling ? 236 : 206) + bendX + (Math.random()-0.5)*40; 
+        let rHandY = 490 + Math.random()*22; // Floor contact
+
+        // If asymmetric, unpredictably throw one arm in the air or bend strangely
+        if (isAsymmetric) {
+            if (Math.random() > 0.5) {
+                lHandY = 150 + Math.random() * 100;
+                lHandX = hx - 80 - Math.random() * 40;
+            } else {
+                rHandY = 150 + Math.random() * 100;
+                rHandX = hx + 80 + Math.random() * 40;
+            }
+        }
+ 
+        // Elbows bend deeply outwards and lower to accommodate massively long arms
+        let lElbowX = hx - (isCrawling ? 80 : 60) + bendX*0.5 - Math.random()*20; 
+        let lElbowY = isCrawling ? 250 : 320 + Math.random()*40;
+        let rElbowX = hx + (isCrawling ? 80 : 60) + bendX*0.5 + Math.random()*20; 
+        let rElbowY = isCrawling ? 250 : 320 + Math.random()*40;
+
+        if (isAsymmetric) {
+            if (lHandY < 300) lElbowY = hy + 40;
+            if (rHandY < 300) rElbowY = hy + 40;
+        }
+ 
+        drawLimb(hx - 20, hy + 40, lElbowX, lElbowY, 22, 4, 15);
+        drawLimb(lElbowX, lElbowY, lHandX, lHandY, 18, 4, 15);
+ 
+        drawLimb(hx + 20, hy + 40, rElbowX, rElbowY, 22, 4, 15);
+        drawLimb(rElbowX, rElbowY, rHandX, rHandY, 18, 4, 15);
+ 
+        // --- LEGS ---
+        let lFootX = 80 + (Math.random()-0.5)*25; let lFootY = 512;
+        let rFootX = 176 + (Math.random()-0.5)*25; let rFootY = 512;
+        let lKneeX = hipX - 35; let lKneeY = 390;
+        let rKneeX = hipX + 35; let rKneeY = 390;
+ 
+        drawLimb(hipX - 10, hipY, lKneeX, lKneeY, 26, 4, 15);
+        drawLimb(lKneeX, lKneeY, lFootX, lFootY, 20, 3, 10);
         
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        for(let i=0; i<30; i++) {
+        drawLimb(hipX + 10, hipY, rKneeX, rKneeY, 26, 4, 15);
+        drawLimb(rKneeX, rKneeY, rFootX, rFootY, 20, 3, 10);
+ 
+        // --- HEAD ---
+        // Head: cluster of spheres
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 10;
+        for(let i=0; i<35; i++) {
+            let ox = hx + (Math.random()-0.5)*50;
+            let oy = hy + (Math.random()-0.5)*50;
+            if (Math.hypot(ox-hx, oy-hy) > 30) continue;
+            let r = 8 + Math.random()*15;
+            
+            // Sphere gradient
+            let grad = ctx.createRadialGradient(ox-r*0.3, oy-r*0.3, r*0.1, ox, oy, r);
+            grad.addColorStop(0, '#555555');
+            grad.addColorStop(0.4, '#222222');
+            grad.addColorStop(1, '#000000');
+            
             ctx.beginPath();
-            ctx.moveTo(hx + (Math.random()-0.5)*60, hy + (Math.random()-0.5)*80);
-            ctx.lineTo(hx + (Math.random()-0.5)*60, hy + (Math.random()-0.5)*80);
-            ctx.stroke();
+            ctx.fillStyle = grad;
+            ctx.arc(ox, oy, r, 0, Math.PI*2);
+            ctx.fill();
         }
- 
-        // Torso 
-        let hipX = 128 + (bendX * 0.5) + (Math.random()-0.5)*15;
-        let hipY = 270 + (bendY * 0.5) + (Math.random()-0.5)*10;
-        
-        drawJitter(hx, hy + 30, hipX, hipY, 3, 8, 25);
- 
-        let lHandX = 40 + bendX + (Math.random()-0.5)*15; let lHandY = 470 + (Math.random()-0.5)*15;
-        let rHandX = 216 + bendX + (Math.random()-0.5)*15; let rHandY = 470 + (Math.random()-0.5)*15;
- 
-        drawJitter(hx - 20, hy + 20, hx - 50 + bendX*0.5, 200, 3, 5, 15);
-        drawJitter(hx - 50 + bendX*0.5, 200, lHandX, lHandY, 2.5, 6, 15);
-        drawJitter(hx + 20, hy + 20, hx + 50 + bendX*0.5, 200, 3, 5, 15);
-        drawJitter(hx + 50 + bendX*0.5, 200, rHandX, rHandY, 2.5, 6, 15);
- 
-        for(let i=0; i<3; i++) {
-            drawJitter(lHandX, lHandY, lHandX - 15 + i*15, lHandY + 40, 2, 2, 6);
-            drawJitter(rHandX, rHandY, rHandX - 15 + i*15, rHandY + 40, 2, 2, 6);
-        }
- 
-        let lFootX = 90 + (Math.random()-0.5)*15; let lFootY = 512;
-        let rFootX = 166 + (Math.random()-0.5)*15; let rFootY = 512;
- 
-        drawJitter(hipX, hipY, hipX - 25, 400, 3, 5, 20);
-        drawJitter(hipX - 25, 400, lFootX, lFootY, 2.5, 4, 15);
-        
-        drawJitter(hipX, hipY, hipX + 25, 400, 3, 5, 20);
-        drawJitter(hipX + 25, 400, rFootX, rFootY, 2.5, 4, 15);
+        ctx.shadowBlur = 0;
  
         frames.push(new THREE.CanvasTexture(c));
     }
@@ -883,82 +1083,124 @@ function generateShadowFrames(count, eyesOpen) {
         c.width = 256; c.height = 512;
         const ctx = c.getContext('2d');
         
-        ctx.shadowColor = 'rgba(0,0,0,1)';
-        ctx.shadowBlur = 10; // Restored sharp shadow
-        ctx.fillStyle = 'rgba(5,5,5,0.95)';
+        // Remove entire black void background
+        ctx.clearRect(0,0,256,512);
+
+        let pts = 16; 
+        let smileCY = 380; // Bottom of the smile (center)
+        let smileW = 160;  // Total width
+        let smileH = 140;  // Height of the curve
         
-        ctx.beginPath();
-        for(let a=0; a<Math.PI*2; a+=0.04) {
-            let r = 80 + Math.random()*50; 
-            let ry = 160 + Math.random()*70;
-            let px = 128 + r * Math.cos(a);
-            let py = 256 + ry * Math.sin(a);
-            if (a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+        // Messy, crude, jagged teeth forming a horseshoe
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(255,255,255,0.4)';
+        ctx.shadowBlur = 8;
+        
+        // Top Row of teeth
+        for(let i=0; i<=pts; i++) {
+            let t = i/pts;
+            let nx = (t - 0.5) * 2; 
+            let x = 128 + nx * (smileW/2);
+            let y = smileCY - (nx * nx) * smileH; 
+            
+            let toothW = 8 + Math.random()*5;
+            let toothH = 15 + Math.random()*15;
+            
+            ctx.beginPath();
+            ctx.moveTo(x - toothW/2, y);
+            ctx.lineTo(x + toothW/2, y);
+            // Hooking downwards
+            ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y + toothH*0.7, x + (Math.random()-0.5)*10, y + toothH);
+            ctx.closePath();
+            ctx.fill();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.fill(); 
+        
+        // Bottom Row of teeth
+        for(let i=0; i<=pts; i++) {
+            let t = i/pts;
+            let nx = (t - 0.5) * 2;
+            let x = 128 + nx * (smileW/2);
+            let gap = 45 * (1 - nx * nx); // Open in the middle, pinched at edges
+            let y = smileCY - (nx * nx) * smileH + gap;
+            
+            let toothW = 8 + Math.random()*5;
+            let toothH = 15 + Math.random()*15;
+            
+            ctx.beginPath();
+            ctx.moveTo(x - toothW/2, y);
+            ctx.lineTo(x + toothW/2, y);
+            // Hooking upwards
+            ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y - toothH*0.7, x + (Math.random()-0.5)*10, y - toothH);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Eyes nestled deep inside the curve of the smile
+        if (eyesOpen) {
+            // Milky, cataracted, mirror-like gradient
+            let eyeGradL = ctx.createRadialGradient(108, 280, 2, 108, 280, 18);
+            eyeGradL.addColorStop(0, '#ffffff');
+            eyeGradL.addColorStop(0.5, '#cccccc');
+            eyeGradL.addColorStop(1, '#555555');
+            
+            let eyeGradR = ctx.createRadialGradient(148, 280, 2, 148, 280, 18);
+            eyeGradR.addColorStop(0, '#ffffff');
+            eyeGradR.addColorStop(0.5, '#cccccc');
+            eyeGradR.addColorStop(1, '#555555');
+
+            ctx.shadowColor = 'rgba(200, 200, 220, 0.4)'; // Ghostly, dead white/grey glow
+            ctx.shadowBlur = 15;
+
+            // Left eye (milky pool)
+            ctx.fillStyle = eyeGradL;
+            ctx.beginPath(); ctx.ellipse(108, 280, 17, 12, -0.1, 0, Math.PI*2); ctx.fill();
+            
+            // Right eye (milky pool)
+            ctx.fillStyle = eyeGradR;
+            ctx.beginPath(); ctx.ellipse(148, 280, 17, 12, 0.1, 0, Math.PI*2); ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            
+            // Add a crisp white specular reflection to give it that "mirror/glass" dead gaze
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath(); ctx.ellipse(103, 276, 5, 2.5, -0.3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(143, 276, 5, 2.5, 0.3, 0, Math.PI*2); ctx.fill();
+        } else {
+            // Closed eyes / blink (matching the dead grey tone)
+            ctx.strokeStyle = '#888888';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(90, 280); ctx.lineTo(126, 285); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(130, 285); ctx.lineTo(166, 280); ctx.stroke();
+        }
  
         ctx.shadowBlur = 0;
- 
-        if (eyesOpen) {
-            ctx.fillStyle = '#ffaa00'; 
-            ctx.shadowColor = '#ff5500'; ctx.shadowBlur = 20;
-            ctx.beginPath(); ctx.ellipse(90, 170, 25, 18, -0.2, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(166, 170, 25, 18, 0.2, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#000000';
-            ctx.beginPath(); ctx.ellipse(90, 170, 4, 16, -0.2, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(166, 170, 4, 16, 0.2, 0, Math.PI*2); ctx.fill();
-        } else {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(68, 168, 44, 4);
-            ctx.fillRect(144, 168, 44, 4);
-        }
- 
-        ctx.fillStyle = '#000000';
-        ctx.beginPath(); ctx.moveTo(40, 260);
-        ctx.quadraticCurveTo(128, 230, 216, 260); 
-        ctx.quadraticCurveTo(128, 380, 40, 260);  
-        ctx.fill();
-        
-        ctx.fillStyle = '#ffffff';
-        for (let t=0.1; t<0.9; t+=0.06) {
-            let x1 = Math.pow(1-t, 2)*40 + 2*(1-t)*t*128 + Math.pow(t, 2)*216;
-            let y1 = Math.pow(1-t, 2)*260 + 2*(1-t)*t*230 + Math.pow(t, 2)*260;
-            let th = t + 0.03;
-            let x2 = Math.pow(1-th, 2)*40 + 2*(1-th)*th*128 + Math.pow(th, 2)*216;
-            let y2 = Math.pow(1-th, 2)*260 + 2*(1-th)*th*230 + Math.pow(th, 2)*260;
-            ctx.beginPath(); ctx.moveTo(x1, y1 - 5);
-            ctx.lineTo((x1+x2)/2, y1 + 25 + Math.random()*20); 
-            ctx.lineTo(x2, y2 - 5); ctx.fill();
-        }
-        for (let t=0.15; t<0.85; t+=0.06) {
-            let x1 = Math.pow(1-t, 2)*40 + 2*(1-t)*t*128 + Math.pow(t, 2)*216;
-            let y1 = Math.pow(1-t, 2)*260 + 2*(1-t)*t*380 + Math.pow(t, 2)*260;
-            let th = t + 0.03;
-            let x2 = Math.pow(1-th, 2)*40 + 2*(1-th)*th*128 + Math.pow(th, 2)*216;
-            let y2 = Math.pow(1-th, 2)*260 + 2*(1-th)*th*380 + Math.pow(th, 2)*260;
-            ctx.beginPath(); ctx.moveTo(x1, y1 + 5);
-            ctx.lineTo((x1+x2)/2, y1 - 25 - Math.random()*20); 
-            ctx.lineTo(x2, y2 + 5); ctx.fill();
-        }
- 
         frames.push(new THREE.CanvasTexture(c));
     }
     return frames;
 }
  
-const bacteriaFramesCenter = generateBacteriaFrames(4, 0);
-const bacteriaFramesLeft = generateBacteriaFrames(4, -1);
-const bacteriaFramesRight = generateBacteriaFrames(4, 1);
+const bacteriaFramesCenter = generateBacteriaFrames(4, 'center');
+const bacteriaFramesLeft = generateBacteriaFrames(4, 'left');
+const bacteriaFramesRight = generateBacteriaFrames(4, 'right');
+const bacteriaFramesCrawl = generateBacteriaFrames(4, 'crawl');
+const bacteriaFramesExtLeft = generateBacteriaFrames(4, 'extreme_left');
+const bacteriaFramesExtRight = generateBacteriaFrames(4, 'extreme_right');
+const bacteriaFramesAsym = generateBacteriaFrames(4, 'asymmetric');
+
 const shadowFramesOpen = generateShadowFrames(4, true);
 const shadowFramesClosed = generateShadowFrames(1, false);
  
-const bacteriaMatsCenter = bacteriaFramesCenter.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
-const bacteriaMatsLeft = bacteriaFramesLeft.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
-const bacteriaMatsRight = bacteriaFramesRight.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
-const bacteriaPoses = [bacteriaMatsLeft, bacteriaMatsCenter, bacteriaMatsRight];
+const mapToMat = (frames) => frames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
+
+const bacteriaPoses = [
+    mapToMat(bacteriaFramesCenter),
+    mapToMat(bacteriaFramesLeft),
+    mapToMat(bacteriaFramesRight),
+    mapToMat(bacteriaFramesCrawl),
+    mapToMat(bacteriaFramesExtLeft),
+    mapToMat(bacteriaFramesExtRight),
+    mapToMat(bacteriaFramesAsym)
+];
  
 const shadowMatsOpen = shadowFramesOpen.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatClosed = new THREE.SpriteMaterial({ map: shadowFramesClosed[0], color: 0xffffff, transparent: true });
@@ -975,7 +1217,7 @@ function placeEntities() {
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
         const isShadow = (placed % 2 === 0);
-        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaMatsCenter[0]);
+        const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaPoses[0][0]);
         
         let baseScaleX = isShadow ? 14 : 7.25;
         let baseScaleY = isShadow ? 14 : 14.5; 
@@ -990,7 +1232,7 @@ function placeEntities() {
             type: isShadow ? 'SMILING_SHADOW' : 'BACTERIA',
             animTimer: 0,
             animFrame: Math.floor(Math.random()*4),
-            currentPose: 1, // Start in center pose
+            currentPose: Math.floor(Math.random() * bacteriaPoses.length), // 7 varied poses
             staminaCooldown: 0,
             bob: Math.random() * Math.PI * 2,
             isGlitching: false,
@@ -1690,7 +1932,7 @@ async function showLeaderboard(difficulty) {
 function showWinScreen(){
     gameStarted=false;
     const timeStr = fmtTime();
-    const ms = elapsed;
+    const timeSeconds = Math.floor(elapsed / 1000);
     winTimeDisp.innerText = timeStr;
     document.getElementById('win-sanity-display').innerText = 'Sanity: ' + currentSanity;
     winScreen.style.display='flex';
@@ -1703,14 +1945,17 @@ function showWinScreen(){
     // Check if qualifies for top 10
     const lbSection = document.getElementById('win-leaderboard-section');
     lbSection.style.display = 'none';
-    checkTop10(currentSanity, ms).then(qualifies => {
-        if (!qualifies) return;
+    
+    if (window.checkTop10 && window.checkTop10(currentSanity, timeSeconds)) {
         lbSection.style.display = 'block';
         const submitBtn = document.getElementById('survivor-submit-btn');
         const submitMsg = document.getElementById('survivor-submit-msg');
         const nameInput = document.getElementById('survivor-name-input');
         submitMsg.innerText = '';
         nameInput.value = '';
+        submitBtn.disabled = false;
+        nameInput.disabled = false;
+        
         submitBtn.onclick = async (e) => {
             e.stopPropagation();
             const name = nameInput.value.trim();
@@ -1719,17 +1964,18 @@ function showWinScreen(){
             submitMsg.style.color = '#aaa';
             submitMsg.innerText = 'Submitting...';
             try {
-                await submitScore(currentSanity, name, ms, timeStr);
+                await window.submitScore(currentSanity, name, timeSeconds);
                 submitMsg.style.color = '#00ff55';
                 submitMsg.innerText = '✓ You are in the survivors log.';
                 nameInput.disabled = true;
+                setTimeout(() => location.reload(), 2000);
             } catch(err) {
                 submitMsg.style.color = '#f44';
                 submitMsg.innerText = 'Failed to connect. Try again.';
                 submitBtn.disabled = false;
             }
         };
-    });
+    }
 }
  
 function showDeathScreen(title, lore){
@@ -2232,7 +2478,8 @@ function animate() {
  
             let dx = px - e.mesh.position.x;
             let dz = pz - e.mesh.position.z;
-            if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; 
+            // Massively expanded the entity culling radius so Smilers don't get lost
+            if (Math.abs(dx) > 400 || Math.abs(dz) > 400) continue; 
  
             const dist = Math.sqrt(dx*dx + dz*dz);
             
@@ -2255,7 +2502,7 @@ function animate() {
                 if (e.mirrorTimer <= 0) {
                     e.isMirrored = !e.isMirrored;
                     e.mesh.scale.x = e.isMirrored ? -e.baseScaleX : e.baseScaleX;
-                    e.currentPose = Math.floor(Math.random() * 3); // Randomly squirm/change pose while flickering
+                    e.currentPose = Math.floor(Math.random() * bacteriaPoses.length); // Aggressive apparating across all 7 poses
                     e.mirrorTimer = 0.05 + Math.random() * 0.15; 
                 }
                 
@@ -2308,7 +2555,7 @@ function animate() {
                         speed = 75; // Faster stalking
                     }
                 } else if (e.type === 'SMILING_SHADOW') {
-                    speed = 45; // Slower pursuit speed
+                    speed = 135; // Much faster pursuit speed! (Player moves at 180)
                 }
  
                 // Match Flamethrower Range & Adjusted Deadliness (-25%)
@@ -2331,7 +2578,9 @@ function animate() {
                     if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
  
                     e.bob += delta * effectiveSpeed * 0.05;
-                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.5 : 1.5); 
+                    // Lower the bob height if in crawling pose
+                    let bobHeight = e.type === 'BACTERIA' ? (e.currentPose === 3 ? 0.2 : 0.5) : 1.5;
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * bobHeight; 
                 } else {
                     e.bob += delta * 2;
                     e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.2 : 0.5);
