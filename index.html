@@ -231,6 +231,21 @@
             pointer-events: none; z-index: 35;
             opacity: 0; transition: opacity 0.3s;
         }
+
+        #autowalk-indicator {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #d4d42b;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 3px #000;
+            pointer-events: none;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +275,8 @@
         </div>
     </div>
     
+    <div id="autowalk-indicator">AUTO-WALK ENGAGED</div>
+
     <!-- SPRINT BUTTON -->
     <div id="sprint-btn">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -311,8 +328,8 @@
                 </div>
  
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #88ff88;width:100%;box-sizing:border-box;">
-                    <strong style="color:#88ff88;">💧 HYDRATION</strong><br>
-                    <span style="color:#ccc;font-size:0.92em;line-height:1.5;">Grab Almond Water to stay alive. Run dry and you're done.</span>
+                    <strong style="color:#88ff88;">🏃‍♂️ AUTO-WALK</strong><br>
+                    <span style="color:#ccc;font-size:0.92em;line-height:1.5;">Pull the movement joystick downwards and hold for 1.5s to engage auto-walk. Move again to cancel.</span>
                 </div>
  
                 <div class="hint" style="margin-top:16px;">Tap anywhere to continue...</div>
@@ -352,7 +369,7 @@
                 
                 <div class="setting-row">
                     <span>LOOK SENSITIVITY</span>
-                    <input type="range" id="sens-slider" min="1" max="4" value="2" step="0.5">
+                    <input type="range" id="sens-slider" min="1" max="10" value="2" step="0.5">
                 </div>
                 
                 <div class="setting-row">
@@ -1297,8 +1314,9 @@ function stopAction() {
 
 function activateSprint() {
     if (!gameStarted || isPaused || isDead) return;
-    if (stamina >= 100 && !isSprinting) {
+    if (stamina >= 100 && !isSSprintTriggered) {
         isSprinting = true;
+        isSSprintTriggered = true;
         document.getElementById('sprint-btn').classList.add('active-sprint');
     }
 }
@@ -1681,6 +1699,7 @@ const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
 const sprintBtn    = document.getElementById('sprint-btn');
+const autowalkIndicator = document.getElementById('autowalk-indicator');
  
 // Paginated Lore UI Logic
 let currentPage = 0;
@@ -1994,6 +2013,7 @@ function showDeathScreen(title, lore){
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     document.getElementById('death-title').innerText = title;
     sprintBtn.style.display='none';
+    autowalkIndicator.style.opacity = '0';
     
     let minDist = Infinity;
     for (let eg of exitGroups) {
@@ -2026,6 +2046,7 @@ function pauseGame(){
     if(paintAdPrompt.style.display !== 'flex') pauseScreen.style.display='flex';
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
+    autowalkIndicator.style.opacity = '0';
 }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
 window.addEventListener('blur', pauseGame);
@@ -2091,6 +2112,10 @@ let leftStart={x:0,y:0},rightStart={x:0,y:0};
 const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
+
+let isSSprintTriggered = false;
+let isAutoWalking = false;
+let autoWalkTimer = 0;
  
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
@@ -2106,6 +2131,10 @@ function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
             leftTouchId=id; leftStart={x,y};
             joyBase.style.display='block'; joyBase.style.left=x+'px'; joyBase.style.top=y+'px';
             joyStick.style.transform='translate(-50%,-50%)'; joyX=joyY=0;
+            if(isAutoWalking) {
+                isAutoWalking = false;
+                autowalkIndicator.style.opacity = '0';
+            }
         }
     } else {
         if(rightTouchId===null){ 
@@ -2125,6 +2154,18 @@ function handlePointerMove(id,x,y){
         const dX=dist*Math.cos(angle),dY=dist*Math.sin(angle);
         joyStick.style.transform=`translate(calc(-50% + ${dX}px),calc(-50% + ${dY}px))`;
         joyX=dX/MAX_JOY; joyY=dY/MAX_JOY;
+
+        if (joyY > 0.8) {
+            autoWalkTimer += 0.016; // Approximation for checking hold time
+            if (autoWalkTimer > 1.5 && !isAutoWalking) {
+                isAutoWalking = true;
+                autowalkIndicator.style.opacity = '1';
+                if(navigator.vibrate) navigator.vibrate(100);
+            }
+        } else {
+            autoWalkTimer = 0;
+        }
+
     } else if(id===rightTouchId){
         yaw-=(x-rightStart.x)*0.005*(lookSensitivity/2); 
         pitch-=(y-rightStart.y)*0.005*(lookSensitivity/2);
@@ -2133,7 +2174,7 @@ function handlePointerMove(id,x,y){
     }
 }
 function handlePointerEnd(id){
-    if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; }
+    if(id===leftTouchId){ leftTouchId=null; joyBase.style.display='none'; joyX=joyY=0; autoWalkTimer = 0;}
     else if(id===rightTouchId){ 
         if (isSteerFiring) {
             stopAction();
@@ -2169,6 +2210,10 @@ window.addEventListener('mouseup',e=>{
  
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
+    if(isAutoWalking) {
+        isAutoWalking = false;
+        autowalkIndicator.style.opacity = '0';
+    }
     switch(e.code){
         case 'KeyW': moveForward=true;  break;
         case 'KeyA': moveLeft=true;     break;
@@ -2288,6 +2333,9 @@ function animate() {
             if (stamina < STAT_MAX) {
                 stamina += (100 / 15) * delta; // Fully recharge 100 over 15 seconds
                 if (stamina > STAT_MAX) stamina = STAT_MAX;
+            }
+            if (isSSprintTriggered && stamina >= STAT_MAX) {
+                isSSprintTriggered = false;
             }
         }
         
@@ -2638,6 +2686,12 @@ function animate() {
  
         let inputX = joyX + (moveRight?1:0) - (moveLeft?1:0);
         let inputY = joyY + (moveBackward?1:0) - (moveForward?1:0); 
+        
+        if (isAutoWalking) {
+            inputY = -1; // Force forward movement
+            inputX = 0;
+        }
+
         const inputMag = Math.hypot(inputX, inputY);
         if (inputMag > 1) { inputX /= inputMag; inputY /= inputMag; }
  
