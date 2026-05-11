@@ -131,6 +131,7 @@
         }
         #health-bar { background: linear-gradient(to right, #880000, #ff4444); }
         #hydration-bar { background: linear-gradient(to right, #2288cc, #88ccff); }
+        #stamina-bar { background: linear-gradient(to right, #00aa00, #55ff55); }
  
         #joystick-base {
             position:absolute; width:100px; height:100px; border-radius:50%;
@@ -142,14 +143,8 @@
             border-radius:50%; background-color:rgba(255,255,255,0.6);
             transform:translate(-50%,-50%); pointer-events:none;
         }
-        #mute-btn {
-            position:absolute; top:20px; right:20px; width:40px; height:40px;
-            background-color:rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.3);
-            border-radius:5px; display:flex; align-items:center; justify-content:center;
-            cursor:pointer; pointer-events:auto; z-index:30; user-select:none;
-        }
+        
         @media (max-width: 600px) {
-            #mute-btn { top: 80px; right: 15px; }
             #top-hud { gap: 10px; top: 10px; }
         }
         
@@ -165,11 +160,39 @@
             transform: scale(0.92);
             background-color: rgba(150, 150, 150, 0.5);
         }
+
+        /* SPRINT BUTTON */
+        #sprint-btn {
+            position: absolute; bottom: 140px; right: 55px; width: 65px; height: 65px;
+            background-color: rgba(100, 100, 100, 0.3); border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            z-index: 25; pointer-events: auto; user-select: none; touch-action: none;
+            transition: transform 0.1s, background-color 0.1s, border-color 0.1s;
+        }
+        #sprint-btn:active {
+            transform: scale(0.92);
+            background-color: rgba(150, 150, 150, 0.5);
+        }
+        #sprint-btn.active-sprint {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-color: #00ff00;
+        }
  
         #crosshair {
             position:absolute; top:50%; left:50%; width:4px; height:4px;
             background-color:rgba(255,255,255,0.5); transform:translate(-50%,-50%);
             border-radius:50%;
+        }
+
+        /* SETTINGS MENU STYLES */
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center; 
+            width: 100%; max-width: 350px; margin-bottom: 20px; 
+            font-size: 1.1em; color: #ddd; letter-spacing: 1px;
+        }
+        input[type=range] {
+            accent-color: #d4d42b;
+            width: 130px;
         }
  
         /* OVERLAYS */
@@ -212,17 +235,20 @@
             <div class="status-label" style="color:#88ccff;">HYDRATION</div>
             <div class="status-bar-bg"><div id="hydration-bar" class="status-bar-fill"></div></div>
         </div>
-    </div>
- 
-    <!-- SPEAKER ICON -->
-    <div id="mute-btn" style="display:none;">
-        <svg id="speaker-icon" viewBox="0 0 24 24" width="22" height="22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path id="speaker-waves" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            <line id="speaker-mute-line" x1="1" y1="1" x2="23" y2="23" style="display:none; stroke: #ff4444; stroke-width: 3;"></line>
-        </svg>
+        <div class="status-container hud-element">
+            <div class="status-label" style="color:#55ff55;">STAMINA</div>
+            <div class="status-bar-bg"><div id="stamina-bar" class="status-bar-fill"></div></div>
+        </div>
     </div>
     
+    <!-- SPRINT BUTTON -->
+    <div id="sprint-btn">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="13 17 18 12 13 7"></polyline>
+            <polyline points="6 17 11 12 6 7"></polyline>
+        </svg>
+    </div>
+
     <!-- SPRAY BUTTON -->
     <div id="spray-btn">
         <svg viewBox="0 0 24 24" width="34" height="34" stroke="white" stroke-width="2" fill="none">
@@ -282,7 +308,8 @@
                     <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
                 </div>
                 <div style="width:100%;height:1px;background:rgba(212,212,43,0.15);margin:18px 0;"></div>
-                <button class="choice-btn" style="border-color:rgba(180,180,180,0.4);color:#aaa;max-width:400px;width:100%;" id="btn-survivors">👁 SURVIVORS</button>
+                <button class="choice-btn" style="border-color:rgba(180,180,180,0.4);color:#aaa;max-width:400px;width:100%; margin-bottom:10px;" id="btn-settings">⚙ SETTINGS</button>
+                <button class="choice-btn" style="border-color:rgba(180,180,180,0.4);color:#aaa;max-width:400px;width:100%;" id="btn-survivors">SURVIVOR LOG</button>
                 <div style="margin-top:20px;font-size:0.82em;color:#555;font-family:monospace;">&copy; Brant Fuller 2026</div>
             </div>
  
@@ -298,6 +325,28 @@
                     <span style="color:#555;font-size:0.9em;">Select a difficulty above</span>
                 </div>
                 <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(2)">← BACK</button>
+            </div>
+
+            <!-- PAGE 4 — SETTINGS -->
+            <div id="page-4" class="start-page" style="display:none;">
+                <div class="subtitle" style="font-size:1.2em;letter-spacing:4px;margin-bottom:24px;color:#aaa;">SETTINGS</div>
+                
+                <div class="setting-row">
+                    <span>LOOK SENSITIVITY</span>
+                    <input type="range" id="sens-slider" min="1" max="4" value="2" step="0.5">
+                </div>
+                
+                <div class="setting-row">
+                    <span>SOUND</span>
+                    <button class="choice-btn" id="setting-mute-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
+                </div>
+
+                <div class="setting-row">
+                    <span>VIBRATION</span>
+                    <button class="choice-btn" id="setting-vib-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
+                </div>
+                
+                <button class="choice-btn" style="margin-top:26px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(2)">← BACK</button>
             </div>
         </div>
     </div>
@@ -383,6 +432,11 @@ let PAINT_COUNT        = 400;
 // ENTITY AI
 let ENTITY_COUNT       = 1875;   
 const ENTITY_MIN_DIST    = 22.0;
+
+// GAME SETTINGS
+let lookSensitivity = 2.0;
+let vibrationEnabled = true;
+let isMuted = false;
  
 // Mutable Level Variables
 let grid = [];
@@ -402,7 +456,9 @@ let lastSprayTime  = 0;
 let isFiring = false;
 let fireAccumulator = 0;
 let isSteerFiring = false;
- 
+
+let isSprinting = false;
+let stamina     = STAT_MAX;
 let hydration   = STAT_MAX;
 let health      = STAT_MAX;
 let isDead      = false;
@@ -1219,6 +1275,14 @@ function stopAction() {
         sprayWall();
     }
 }
+
+function activateSprint() {
+    if (!gameStarted || isPaused || isDead) return;
+    if (stamina >= 100 && !isSprinting) {
+        isSprinting = true;
+        document.getElementById('sprint-btn').classList.add('active-sprint');
+    }
+}
  
 function sprayWall() {
     if (!unlimitedPaint && spraysLeft <= 0) return;
@@ -1365,12 +1429,14 @@ let elapsed=0, lastTF=0;
 function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
  
-let audioCtx, masterGain, ambientBuzzGain, flameGain, isMuted=false;
+let audioCtx, masterGain, ambientBuzzGain, flameGain;
 function initAudio(){
     if(audioCtx) return;
     const AC=window.AudioContext||window.webkitAudioContext;
     audioCtx=new AC(); 
-    masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);
+    masterGain=audioCtx.createGain(); 
+    masterGain.gain.value = isMuted ? 0 : 0.5; // Sync with settings
+    masterGain.connect(audioCtx.destination);
     
     ambientBuzzGain = audioCtx.createGain();
     ambientBuzzGain.gain.value = 0.5;
@@ -1402,12 +1468,6 @@ function initAudio(){
     flameGain.connect(masterGain);
     noiseSrc.start();
 }
-document.getElementById('mute-btn').addEventListener('click',e=>{
-    e.stopPropagation(); isMuted=!isMuted;
-    if(masterGain) masterGain.gain.setTargetAtTime(isMuted?0:0.5,audioCtx.currentTime,0.1);
-    document.getElementById('speaker-waves').style.display = isMuted ? 'none' : 'block';
-    document.getElementById('speaker-mute-line').style.display = isMuted ? 'block' : 'none';
-});
  
 // Entity Sounds
 function playScreech() {
@@ -1596,12 +1656,14 @@ const winTimeDisp  = document.getElementById('win-time-display');
 const topHud       = document.getElementById('top-hud');
 const healthBar    = document.getElementById('health-bar');
 const hydrationBar = document.getElementById('hydration-bar');
+const staminaBar   = document.getElementById('stamina-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
+const sprintBtn    = document.getElementById('sprint-btn');
  
-// Paginated Lore UI Logic — now 3 tap-through pages (0,1 → tap; 2 → buttons only)
+// Paginated Lore UI Logic
 let currentPage = 0;
 function showPage(n) {
     document.getElementById('page-' + currentPage).style.display = 'none';
@@ -1621,6 +1683,32 @@ document.getElementById('btn-survivors').addEventListener('click', e => {
     e.stopPropagation(); 
     showPage(3); 
     showLeaderboard('SANE');
+});
+document.getElementById('btn-settings').addEventListener('click', e => { 
+    e.stopPropagation(); 
+    showPage(4); 
+});
+
+// Settings Events
+document.getElementById('setting-mute-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    isMuted = !isMuted;
+    if (masterGain) masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.5, audioCtx.currentTime, 0.1);
+    e.target.innerText = isMuted ? 'OFF' : 'ON';
+    e.target.style.color = isMuted ? '#ff4444' : '#00ff00';
+    e.target.style.borderColor = isMuted ? '#ff4444' : '#00ff00';
+});
+
+document.getElementById('setting-vib-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    vibrationEnabled = !vibrationEnabled;
+    e.target.innerText = vibrationEnabled ? 'ON' : 'OFF';
+    e.target.style.color = vibrationEnabled ? '#00ff00' : '#ff4444';
+    e.target.style.borderColor = vibrationEnabled ? '#00ff00' : '#ff4444';
+});
+
+document.getElementById('sens-slider').addEventListener('input', e => {
+    lookSensitivity = parseFloat(e.target.value);
 });
  
 function selectDifficulty(level, e) {
@@ -1701,12 +1789,13 @@ document.getElementById('ad-no').addEventListener('click', e=>{
 });
  
 function startGame(){
-    startScreen.style.display='none'; document.getElementById('mute-btn').style.display='flex';
+    startScreen.style.display='none';
     sprayBtn.style.display='flex';
+    sprintBtn.style.display='flex';
     topHud.style.display='flex';
     initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
     gameStarted=true; lastTF=performance.now(); prevTime=performance.now();
-    health=STAT_MAX; hydration=STAT_MAX; updateStatusBars();
+    health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX; updateStatusBars();
 }
  
 pauseScreen.addEventListener('click', ()=>{
@@ -1726,7 +1815,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
     showRewardAd(() => {
         revivesLeft--; 
         reviveScreen.style.display='none';
-        health=STAT_MAX; hydration=STAT_MAX; 
+        health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX;
         
         if (!unlimitedPaint) {
             spraysLeft = 100;
@@ -1838,8 +1927,8 @@ function showWinScreen(){
     document.getElementById('win-sanity-display').innerText = 'Sanity: ' + currentSanity;
     winScreen.style.display='flex';
     topHud.style.display='none';
-    document.getElementById('mute-btn').style.display='none';
     sprayBtn.style.display='none';
+    sprintBtn.style.display='none';
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
  
@@ -1885,6 +1974,7 @@ function showDeathScreen(title, lore){
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     document.getElementById('death-title').innerText = title;
+    sprintBtn.style.display='none';
     
     let minDist = Infinity;
     for (let eg of exitGroups) {
@@ -1926,6 +2016,9 @@ function updateStatusBars(){
     healthBar.style.width = hPct+'%';
     const wPct = Math.max(0, hydration/STAT_MAX*100);
     hydrationBar.style.width = wPct+'%';
+    const sPct = Math.max(0, stamina/STAT_MAX*100);
+    staminaBar.style.width = sPct+'%';
+    
     const danger = Math.max(0, 1-(wPct/30));
     vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
     vignetteEl.style.opacity=danger>0?1:0;
@@ -1982,6 +2075,13 @@ const MAX_JOY=40;
  
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
+    
+    // Sprint logic interception
+    if (targetNode && targetNode.closest('#sprint-btn')) {
+        activateSprint();
+        return; // Don't trigger look/move from sprinting button
+    }
+    
     if(!isMouse&&x<window.innerWidth/2){
         if(leftTouchId===null){
             leftTouchId=id; leftStart={x,y};
@@ -2007,7 +2107,8 @@ function handlePointerMove(id,x,y){
         joyStick.style.transform=`translate(calc(-50% + ${dX}px),calc(-50% + ${dY}px))`;
         joyX=dX/MAX_JOY; joyY=dY/MAX_JOY;
     } else if(id===rightTouchId){
-        yaw-=(x-rightStart.x)*0.005; pitch-=(y-rightStart.y)*0.005;
+        yaw-=(x-rightStart.x)*0.005*(lookSensitivity/2); 
+        pitch-=(y-rightStart.y)*0.005*(lookSensitivity/2);
         pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
         camera.rotation.set(pitch,yaw,camera.rotation.z); rightStart={x,y};
     }
@@ -2060,6 +2161,9 @@ document.addEventListener('keydown',e=>{
         case 'ArrowRight': lookRight=true; break;
         case 'Space': 
             startAction();
+            break;
+        case 'ShiftLeft': case 'ShiftRight':
+            activateSprint();
             break;
         case 'KeyT':
             if (exitGroups.length > 0) {
@@ -2152,6 +2256,21 @@ function animate() {
         updateTimer(time);
  
         hydration -= HYDRATION_DRAIN * delta;
+
+        // Stamina Sprint Drain & Recharge Logic
+        if (isSprinting) {
+            stamina -= 20 * delta; // Fully drain 100 over 5 seconds
+            if (stamina <= 0) {
+                stamina = 0;
+                isSprinting = false;
+                document.getElementById('sprint-btn').classList.remove('active-sprint');
+            }
+        } else {
+            if (stamina < STAT_MAX) {
+                stamina += (100 / 15) * delta; // Fully recharge 100 over 15 seconds
+                if (stamina > STAT_MAX) stamina = STAT_MAX;
+            }
+        }
         
         // Low Health / Hydration Heartbeat & Haptics
         if ((health <= 30 || hydration <= 30) && !isDead) {
@@ -2169,7 +2288,7 @@ function animate() {
                     osc.connect(g); g.connect(masterGain);
                     osc.start(); osc.stop(audioCtx.currentTime + 0.4);
                 }
-                if (navigator.vibrate) navigator.vibrate([80, 50, 80]); // double pulse
+                if (vibrationEnabled && navigator.vibrate) navigator.vibrate([80, 50, 80]); // double pulse
                 throbTimer = 1.0; 
             }
         } else {
@@ -2463,7 +2582,7 @@ function animate() {
                 // Match Flamethrower Range & Adjusted Deadliness (-25%)
                 if(dist < 25) {
                     health -= 14 * delta; 
-                    if (!tookDamage && navigator.vibrate) navigator.vibrate(50); 
+                    if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50); 
                     tookDamage = true;
                     if(health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                 }
@@ -2508,7 +2627,9 @@ function animate() {
             const fV = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
             const sV = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
             dir.copy(sV).multiplyScalar(inputX).add(fV.multiplyScalar(-inputY)).normalize();
-            velocity.add(dir.multiplyScalar(PLAYER_SPEED * Math.min(inputMag, 1) * delta));
+            
+            const currentSpeed = isSprinting ? PLAYER_SPEED * 2.0 : PLAYER_SPEED;
+            velocity.add(dir.multiplyScalar(currentSpeed * Math.min(inputMag, 1) * delta));
         }
  
         let targetX = camera.position.clone(); targetX.x += velocity.x * delta;
@@ -2517,17 +2638,17 @@ function animate() {
         if (!checkCollision(targetZ)) camera.position.z = targetZ.z; else velocity.z = 0;
  
         // Apply Look controls
-        if (lookLeft) yaw += 2.0 * delta;
-        if (lookRight) yaw -= 2.0 * delta;
-        if (lookUp) pitch += 2.0 * delta;
-        if (lookDown) pitch -= 2.0 * delta;
+        if (lookLeft) yaw += 2.0 * delta * (lookSensitivity / 2);
+        if (lookRight) yaw -= 2.0 * delta * (lookSensitivity / 2);
+        if (lookUp) pitch += 2.0 * delta * (lookSensitivity / 2);
+        if (lookDown) pitch -= 2.0 * delta * (lookSensitivity / 2);
         pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
         camera.rotation.set(pitch, yaw, camera.rotation.z);
  
         // --- HEAD BOB & FOOTSTEPS LOGIC ---
-        const currentSpeed = Math.hypot(velocity.x, velocity.z);
-        if (currentSpeed > 10) {
-            headBobTimer += delta * 12;
+        const moveSpeed = Math.hypot(velocity.x, velocity.z);
+        if (moveSpeed > 10) {
+            headBobTimer += delta * (isSprinting ? 20 : 12);
             headBobAmount += (1.0 - headBobAmount) * delta * 5;
         } else {
             headBobAmount += (0.0 - headBobAmount) * delta * 5;
