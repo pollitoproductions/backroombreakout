@@ -355,109 +355,6 @@
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
  
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
- 
-// ─── FIREBASE INIT ────────────────────────────────────────────────────────
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'backrooms-default';
-let db, auth;
- 
-window.leaderboardData = [];
-window.currentLeaderboardDiff = 'SANE';
- 
-if (firebaseConfig) {
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    
-    const initAuth = async () => {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-    };
-    initAuth();
- 
-    onAuthStateChanged(auth, (user) => {
-        if (!user) return;
-        const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboards');
-        onSnapshot(lbRef, (snapshot) => {
-            window.leaderboardData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            // Update immediately if viewing
-            if (document.getElementById('page-3').style.display === 'flex' || document.getElementById('page-3').style.display === 'block') {
-                window.showLeaderboard(window.currentLeaderboardDiff);
-            }
-        }, (error) => {
-            console.error("Leaderboard sync error:", error);
-        });
-    });
-}
- 
-// ─── UI PAGINATION LOGIC ──────────────────────────────────────────────────
-window.showLeaderboard = function(difficulty) {
-    window.currentLeaderboardDiff = difficulty;
-    const lb = document.getElementById('lb-content');
-    
-    // Filter by difficulty and sort by time (lowest time wins)
-    const filtered = window.leaderboardData.filter(d => d.difficulty === difficulty);
-    filtered.forEach(d => { if(d.time > 100000) d.time = Math.floor(d.time/1000); }); // Fix old ms data
-    filtered.sort((a, b) => a.time - b.time);
-    const top10 = filtered.slice(0, 10);
-    
-    const colors = {'SANE':'#00ff55','QUESTIONABLE':'#d4d42b','INSANE':'#ff4444'};
-    const col = colors[difficulty]||'#aaa';
-
-    if (top10.length === 0) {
-        lb.innerHTML = '<span style="color:#aaa; font-size: 0.9em; text-align:center;">No survivors found yet...</span>';
-    } else {
-        let html = `<table style="width:100%;border-collapse:collapse;font-size:0.88em; max-width: 400px;">`;
-        html += `<tr><th style="color:${col};padding:4px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">#</th><th style="color:${col};padding:4px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);">SURVIVOR</th><th style="color:${col};padding:4px 6px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.1);">TIME</th></tr>`;
-        
-        for(let i=0; i<top10.length; i++) {
-            let timeVal = top10[i].time;
-            let m = Math.floor(timeVal / 60);
-            let s = (timeVal % 60).toString().padStart(2, '0');
-            let safeName = top10[i].name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const rowStyle = i===0 ? `color:${col};font-weight:bold;` : 'color:#ccc;';
-
-            html += `<tr>
-                <td style="${rowStyle}padding:5px 6px;">${i+1}</td>
-                <td style="${rowStyle}padding:5px 6px;">${safeName}</td>
-                <td style="${rowStyle}padding:5px 6px;text-align:right;">${m}:${s}</td>
-            </tr>`;
-        }
-        html += '</table>';
-        lb.innerHTML = html;
-    }
-};
-
-window.checkTop10 = function(difficulty, timeSeconds) {
-    const filtered = window.leaderboardData.filter(d => d.difficulty === difficulty);
-    filtered.forEach(d => { if(d.time > 100000) d.time = Math.floor(d.time/1000); });
-    filtered.sort((a, b) => a.time - b.time);
-    if (filtered.length < 10) return true;
-    return timeSeconds < filtered[9].time;
-};
- 
-// Handle Score Submission
-window.submitScore = async function(difficulty, name, timeSeconds) {
-    if (!db || !auth || !auth.currentUser) throw new Error("Not connected");
-    const safeName = name.replace(/[^a-zA-Z0-9 ]/g, "").trim().substring(0, 12) || 'ANONYMOUS';
-    const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboards');
-    await addDoc(lbRef, {
-        name: safeName,
-        time: timeSeconds, 
-        difficulty: difficulty,
-        timestamp: Date.now()
-    });
-}
-</script>
-
 <script>
 // ─── CONFIG (DYNAMIC NOW) ──────────────────────────────────────────────────
 let currentSanity     = 'SANE';
@@ -1720,7 +1617,11 @@ startScreen.addEventListener('click', (e)=>{
 document.getElementById('btn-easy').addEventListener('click', e => selectDifficulty('easy', e));
 document.getElementById('btn-med').addEventListener('click', e => selectDifficulty('medium', e));
 document.getElementById('btn-hard').addEventListener('click', e => selectDifficulty('hard', e));
-document.getElementById('btn-survivors').addEventListener('click', e => { e.stopPropagation(); showPage(3); });
+document.getElementById('btn-survivors').addEventListener('click', e => { 
+    e.stopPropagation(); 
+    showPage(3); 
+    showLeaderboard('SANE');
+});
  
 function selectDifficulty(level, e) {
     e.stopPropagation();
@@ -1932,7 +1833,7 @@ async function showLeaderboard(difficulty) {
 function showWinScreen(){
     gameStarted=false;
     const timeStr = fmtTime();
-    const timeSeconds = Math.floor(elapsed / 1000);
+    const ms = elapsed;
     winTimeDisp.innerText = timeStr;
     document.getElementById('win-sanity-display').innerText = 'Sanity: ' + currentSanity;
     winScreen.style.display='flex';
@@ -1946,7 +1847,8 @@ function showWinScreen(){
     const lbSection = document.getElementById('win-leaderboard-section');
     lbSection.style.display = 'none';
     
-    if (window.checkTop10 && window.checkTop10(currentSanity, timeSeconds)) {
+    checkTop10(currentSanity, ms).then(qualifies => {
+        if (!qualifies) return;
         lbSection.style.display = 'block';
         const submitBtn = document.getElementById('survivor-submit-btn');
         const submitMsg = document.getElementById('survivor-submit-msg');
@@ -1964,7 +1866,7 @@ function showWinScreen(){
             submitMsg.style.color = '#aaa';
             submitMsg.innerText = 'Submitting...';
             try {
-                await window.submitScore(currentSanity, name, timeSeconds);
+                await submitScore(currentSanity, name, ms, timeStr);
                 submitMsg.style.color = '#00ff55';
                 submitMsg.innerText = '✓ You are in the survivors log.';
                 nameInput.disabled = true;
@@ -1975,7 +1877,7 @@ function showWinScreen(){
                 submitBtn.disabled = false;
             }
         };
-    }
+    }).catch(err => console.error(err));
 }
  
 function showDeathScreen(title, lore){
