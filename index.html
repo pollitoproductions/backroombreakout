@@ -155,7 +155,7 @@
             #spray-counter { font-size: 16px; }
             .status-label { font-size: 11px; }
         }
-
+ 
         @media (max-width: 760px) and (orientation: portrait) {
             #top-hud { flex-direction: column; gap: 10px; top: 10px; }
             .hud-text-group, .hud-bar-group { gap: 15px; }
@@ -174,7 +174,7 @@
             transform: scale(0.92);
             background-color: rgba(150, 150, 150, 0.5);
         }
-
+ 
         /* SPRINT BUTTON & RING */
         #sprint-btn {
             position: absolute; bottom: 101px; right: 15px; width: 48px; height: 48px;
@@ -190,7 +190,7 @@
         #sprint-btn.active-sprint {
             background-color: rgba(255, 255, 255, 0.7);
         }
-
+ 
         /* AUTO-WALK BUTTON */
         #autowalk-btn {
             /* Aligned exactly with bottom of spray button: 50px bottom - 24px (half height) = 26px */
@@ -214,7 +214,7 @@
             background-color:rgba(255,255,255,0.5); transform:translate(-50%,-50%);
             border-radius:50%;
         }
-
+ 
         /* SETTINGS MENU STYLES */
         .setting-row {
             display: flex; justify-content: space-between; align-items: center; 
@@ -258,7 +258,7 @@
     <div id="top-hud" style="display:none;">
         <div class="hud-text-group">
             <div id="timer" class="hud-element">00:00</div>
-            <div id="spray-counter" class="hud-element">SPRAYS: 100</div>
+            <div id="spray-counter" class="hud-element">SPRAYS: 50</div>
         </div>
         <div class="hud-bar-group">
             <div class="status-container hud-element">
@@ -284,7 +284,7 @@
             <polyline points="4 17 9 12 4 7"></polyline>
         </svg>
     </div>
-
+ 
     <!-- AUTO-WALK BUTTON -->
     <div id="autowalk-btn">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -294,7 +294,7 @@
             <path d="M8 19l4-6l4 6"></path>
         </svg>
     </div>
-
+ 
     <!-- SPRAY BUTTON -->
     <div id="spray-btn">
         <svg viewBox="0 0 24 24" width="34" height="34" stroke="white" stroke-width="2" fill="none">
@@ -372,7 +372,7 @@
                 </div>
                 <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(2)">← BACK</button>
             </div>
-
+ 
             <!-- PAGE 4 — SETTINGS -->
             <div id="page-4" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.2em;letter-spacing:4px;margin-bottom:24px;color:#aaa;">SETTINGS</div>
@@ -386,7 +386,7 @@
                     <span>SOUND</span>
                     <button class="choice-btn" id="setting-mute-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
                 </div>
-
+ 
                 <div class="setting-row">
                     <span>VIBRATION</span>
                     <button class="choice-btn" id="setting-vib-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
@@ -478,7 +478,7 @@ let PAINT_COUNT        = 400;
 // ENTITY AI
 let ENTITY_COUNT       = 1875;   
 const ENTITY_MIN_DIST    = 22.0;
-
+ 
 // GAME SETTINGS
 let lookSensitivity = 2.0;
 let vibrationEnabled = true;
@@ -493,7 +493,7 @@ let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
  
-let spraysLeft    = 100;
+let spraysLeft    = 50;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
@@ -502,11 +502,11 @@ let lastSprayTime  = 0;
 let isFiring = false;
 let fireAccumulator = 0;
 let isSteerFiring = false;
-
+ 
 let isSprinting = false;
 let isSprintTriggered = false;
 let isAutoWalking = false;
-
+ 
 let stamina     = STAT_MAX;
 let hydration   = STAT_MAX;
 let health      = STAT_MAX;
@@ -927,7 +927,7 @@ function generateBacteriaFrames(count, poseType) {
         // Soft eerie glow so it doesn't vanish into the dark environment
         ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
         ctx.shadowBlur = 20;
-
+ 
         // Helper to draw a "3D" looking thick limb
         const drawLimb = (x1, y1, x2, y2, thickness, segments, spread) => {
             let pts = [{x:x1,y:y1}];
@@ -960,7 +960,7 @@ function generateBacteriaFrames(count, poseType) {
                 }
                 ctx.stroke();
             }
-
+ 
             // Oily specular highlight
             ctx.strokeStyle = 'rgba(180, 180, 170, 0.6)'; // Wet, glossy reflection
             ctx.lineWidth = Math.max(1, thickness * 0.08);
@@ -972,7 +972,7 @@ function generateBacteriaFrames(count, poseType) {
                 ctx.lineTo(pts[i].x - offsetX + (Math.random()-0.5)*3, pts[i].y - offsetY + (Math.random()-0.5)*3);
             }
             ctx.stroke();
-
+ 
             // Restore halo
             ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
             ctx.shadowBlur = 20;
@@ -982,7 +982,7 @@ function generateBacteriaFrames(count, poseType) {
         let bendY = 0;
         let isCrawling = false;
         let isAsymmetric = false;
-
+ 
         // Apply 7 unique glitch poses
         if (poseType === 'left') bendX = -30;
         if (poseType === 'right') bendX = 30;
@@ -1009,7 +1009,7 @@ function generateBacteriaFrames(count, poseType) {
         let lHandY = 490 + Math.random()*22; // Floor contact
         let rHandX = (isCrawling ? 236 : 206) + bendX + (Math.random()-0.5)*40; 
         let rHandY = 490 + Math.random()*22; // Floor contact
-
+ 
         // If asymmetric, unpredictably throw one arm in the air or bend strangely
         if (isAsymmetric) {
             if (Math.random() > 0.5) {
@@ -1026,7 +1026,7 @@ function generateBacteriaFrames(count, poseType) {
         let lElbowY = isCrawling ? 250 : 320 + Math.random()*40;
         let rElbowX = hx + (isCrawling ? 80 : 60) + bendX*0.5 + Math.random()*20; 
         let rElbowY = isCrawling ? 250 : 320 + Math.random()*40;
-
+ 
         if (isAsymmetric) {
             if (lHandY < 300) lElbowY = hy + 40;
             if (rHandY < 300) rElbowY = hy + 40;
@@ -1087,7 +1087,7 @@ function generateShadowFrames(count, eyesOpen) {
         
         // Remove entire black void background
         ctx.clearRect(0,0,256,512);
-
+ 
         let pts = 16; 
         let smileCY = 380; // Bottom of the smile (center)
         let smileW = 160;  // Total width
@@ -1138,7 +1138,7 @@ function generateShadowFrames(count, eyesOpen) {
             ctx.fill();
             ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
         }
-
+ 
         // Eyes nestled deep inside the curve of the smile
         if (eyesOpen) {
             // Milky, cataracted, mirror-like gradient
@@ -1151,10 +1151,10 @@ function generateShadowFrames(count, eyesOpen) {
             eyeGradR.addColorStop(0, '#ffffff');
             eyeGradR.addColorStop(0.5, '#cccccc');
             eyeGradR.addColorStop(1, '#555555');
-
+ 
             ctx.shadowColor = 'rgba(200, 200, 220, 0.4)'; // Ghostly, dead white/grey glow
             ctx.shadowBlur = 15;
-
+ 
             // Left eye (milky pool)
             ctx.fillStyle = eyeGradL;
             ctx.beginPath(); ctx.ellipse(108, 280, 17, 12, -0.1, 0, Math.PI*2); ctx.fill();
@@ -1192,12 +1192,12 @@ const bacteriaFramesCrawl = generateBacteriaFrames(4, 'crawl');
 const bacteriaFramesExtLeft = generateBacteriaFrames(4, 'extreme_left');
 const bacteriaFramesExtRight = generateBacteriaFrames(4, 'extreme_right');
 const bacteriaFramesAsym = generateBacteriaFrames(4, 'asymmetric');
-
+ 
 const shadowFramesOpen = generateShadowFrames(4, true);
 const shadowFramesClosed = generateShadowFrames(1, false);
  
 const mapToMat = (frames) => frames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
-
+ 
 const bacteriaPoses = [
     mapToMat(bacteriaFramesCenter),
     mapToMat(bacteriaFramesLeft),
@@ -1328,7 +1328,7 @@ function stopAction() {
         sprayWall();
     }
 }
-
+ 
 function activateSprint() {
     if (!gameStarted || isPaused || isDead) return;
     if (isSprinting) {
@@ -1340,7 +1340,7 @@ function activateSprint() {
         sprintBtn.classList.add('active-sprint');
     }
 }
-
+ 
 function toggleAutoWalk() {
     if (!gameStarted || isPaused || isDead) return;
     if (isAutoWalking) {
@@ -1734,10 +1734,10 @@ const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
 const sprintBtn    = document.getElementById('sprint-btn');
 const autowalkBtn  = document.getElementById('autowalk-btn');
-
+ 
 sprintBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); }, {passive: false});
 sprintBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); });
-
+ 
 autowalkBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); }, {passive: false});
 autowalkBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); });
  
@@ -1766,7 +1766,7 @@ document.getElementById('btn-settings').addEventListener('click', e => {
     e.stopPropagation(); 
     showPage(4); 
 });
-
+ 
 // Settings Events
 document.getElementById('setting-mute-btn').addEventListener('click', e => {
     e.stopPropagation();
@@ -1776,7 +1776,7 @@ document.getElementById('setting-mute-btn').addEventListener('click', e => {
     e.target.style.color = isMuted ? '#ff4444' : '#00ff00';
     e.target.style.borderColor = isMuted ? '#ff4444' : '#00ff00';
 });
-
+ 
 document.getElementById('setting-vib-btn').addEventListener('click', e => {
     e.stopPropagation();
     vibrationEnabled = !vibrationEnabled;
@@ -1784,7 +1784,7 @@ document.getElementById('setting-vib-btn').addEventListener('click', e => {
     e.target.style.color = vibrationEnabled ? '#00ff00' : '#ff4444';
     e.target.style.borderColor = vibrationEnabled ? '#00ff00' : '#ff4444';
 });
-
+ 
 document.getElementById('sens-slider').addEventListener('input', e => {
     lookSensitivity = parseFloat(e.target.value);
 });
@@ -1897,7 +1897,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX;
         
         if (!unlimitedPaint) {
-            spraysLeft = 100;
+            spraysLeft = 50;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
             hasSeenPaintAdThisRound = false;
         }
@@ -1912,7 +1912,7 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         sprintBtn.classList.remove('active-sprint');
         isAutoWalking = false;
         autowalkBtn.classList.remove('active-autowalk');
-
+ 
         isPaused=true;
         document.getElementById('pause-screen').style.display='flex';
         if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
@@ -2144,7 +2144,7 @@ function checkItemPickups(){
                 showPickupFlash(`Moth Jelly +${val}`, '#aaffcc');
             } else if(b.type === 'paint') {
                 if(!unlimitedPaint) {
-                    spraysLeft = 100;
+                    spraysLeft = 50;
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
                     hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
@@ -2164,7 +2164,7 @@ let leftStart={x:0,y:0},rightStart={x:0,y:0};
 const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
-
+ 
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
     
@@ -2330,7 +2330,7 @@ function spawnGhost() {
     let pX = Math.floor((camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
     let pZ = Math.floor((camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
     const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-
+ 
     // Find a valid empty spawn cell generally in front of the player
     do {
         let offsetX = (Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1); 
@@ -2342,9 +2342,9 @@ function spawnGhost() {
         dist = Math.hypot(gx-pX, gz-pZ);
         attempts++;
     } while ((gx<1 || gx>=MAP_SIZE-1 || gz<1 || gz>=MAP_SIZE-1 || grid[gx][gz]!==0 || dist < 4) && attempts < 100);
-
+ 
     if (attempts >= 100) return null; // Failsafe if completely surrounded by walls
-
+ 
     const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
     const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
     
@@ -2368,7 +2368,7 @@ function animate() {
         updateTimer(time);
  
         hydration -= HYDRATION_DRAIN * delta;
-
+ 
         // Stamina Sprint Drain & Recharge Logic
         if (isSprinting) {
             stamina -= (100 / 7) * delta; // Fully drain 100 over 7 seconds
@@ -2742,7 +2742,7 @@ function animate() {
             inputY = -1; // Force forward movement
             inputX = 0;
         }
-
+ 
         const inputMag = Math.hypot(inputX, inputY);
         if (inputMag > 1) { inputX /= inputMag; inputY /= inputMag; }
  
@@ -2792,7 +2792,7 @@ function animate() {
     } else {
         prevTime = performance.now();
     }
-
+ 
     renderer.render(scene, camera);
 }
  
