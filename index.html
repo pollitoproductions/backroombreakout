@@ -135,7 +135,6 @@
         }
         #health-bar { background: linear-gradient(to right, #880000, #ff4444); }
         #hydration-bar { background: linear-gradient(to right, #2288cc, #88ccff); }
-        #stamina-bar { background: linear-gradient(to right, #00aa00, #55ff55); }
  
         #joystick-base {
             position:absolute; width:100px; height:100px; border-radius:50%;
@@ -160,7 +159,7 @@
         @media (max-width: 760px) and (orientation: portrait) {
             #top-hud { flex-direction: column; gap: 10px; top: 10px; }
             .hud-text-group, .hud-bar-group { gap: 15px; }
-            .status-bar-bg { width: 90px; } /* Fit 3 bars on narrow screens */
+            .status-bar-bg { width: 90px; } 
         }
         
         /* SPRAY BUTTON */
@@ -176,13 +175,13 @@
             background-color: rgba(150, 150, 150, 0.5);
         }
 
-        /* SPRINT BUTTON */
+        /* SPRINT BUTTON & RING */
         #sprint-btn {
             position: absolute; bottom: 101px; right: 15px; width: 48px; height: 48px;
-            background-color: rgba(100, 100, 100, 0.3); border: 2px solid rgba(255,255,255,0.4);
+            background-color: rgba(100, 100, 100, 0.3); 
             border-radius: 50%; display: none; align-items: center; justify-content: center;
             z-index: 25; pointer-events: auto; user-select: none; touch-action: none;
-            transition: transform 0.1s, background-color 0.1s, border-color 0.1s;
+            transition: transform 0.1s, background-color 0.1s;
         }
         #sprint-btn:active {
             transform: scale(0.92);
@@ -190,12 +189,12 @@
         }
         #sprint-btn.active-sprint {
             background-color: rgba(255, 255, 255, 0.7);
-            border-color: #00ff00;
         }
 
         /* AUTO-WALK BUTTON */
         #autowalk-btn {
-            position: absolute; bottom: 50px; right: 15px; width: 48px; height: 48px;
+            /* Aligned exactly with bottom of spray button: 50px bottom - 24px (half height) = 26px */
+            position: absolute; bottom: 26px; right: 15px; width: 48px; height: 48px;
             background-color: rgba(100, 100, 100, 0.3); border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50%; display: none; align-items: center; justify-content: center;
             z-index: 25; pointer-events: auto; user-select: none; touch-action: none;
@@ -270,16 +269,16 @@
                 <div class="status-label" style="color:#88ccff;">HYDRATION</div>
                 <div class="status-bar-bg"><div id="hydration-bar" class="status-bar-fill"></div></div>
             </div>
-            <div class="status-container hud-element">
-                <div class="status-label" style="color:#55ff55;">STAMINA</div>
-                <div class="status-bar-bg"><div id="stamina-bar" class="status-bar-fill"></div></div>
-            </div>
         </div>
     </div>
     
-    <!-- SPRINT BUTTON -->
+    <!-- SPRINT BUTTON WITH RING -->
     <div id="sprint-btn">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 48 48" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; transform: rotate(-90deg);">
+            <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
+            <circle id="sprint-ring" cx="24" cy="24" r="22" fill="none" stroke="#00ff00" stroke-width="3" stroke-dasharray="138.23" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;" />
+        </svg>
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position:relative; z-index:2;">
             <polyline points="13 17 18 12 13 7"></polyline>
             <polyline points="6 17 11 12 6 7"></polyline>
         </svg>
@@ -337,7 +336,7 @@
  
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #88ff88;width:100%;box-sizing:border-box;">
                     <strong style="color:#88ff88;">🏃‍♂️ AUTO-WALK</strong><br>
-                    <span style="color:#ccc;font-size:0.92em;line-height:1.5;">Tap the up-arrow button below the sprint button to engage auto-walk. Move the joystick to cancel.</span>
+                    <span style="color:#ccc;font-size:0.92em;line-height:1.5;">Tap the up-arrow button below the sprint button to engage auto-walk. Move the joystick or press WASD to cancel.</span>
                 </div>
  
                 <div class="hint" style="margin-top:16px;">Tap anywhere to continue...</div>
@@ -1322,9 +1321,8 @@ function stopAction() {
 
 function activateSprint() {
     if (!gameStarted || isPaused || isDead) return;
-    if (stamina >= 100 && !isSSprintTriggered) {
+    if (stamina >= 100 && !isSprinting) {
         isSprinting = true;
-        isSSprintTriggered = true;
         document.getElementById('sprint-btn').classList.add('active-sprint');
     }
 }
@@ -1701,7 +1699,6 @@ const winTimeDisp  = document.getElementById('win-time-display');
 const topHud       = document.getElementById('top-hud');
 const healthBar    = document.getElementById('health-bar');
 const hydrationBar = document.getElementById('hydration-bar');
-const staminaBar   = document.getElementById('stamina-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const pickupFlash  = document.getElementById('pickup-flash');
@@ -2065,8 +2062,11 @@ function updateStatusBars(){
     healthBar.style.width = hPct+'%';
     const wPct = Math.max(0, hydration/STAT_MAX*100);
     hydrationBar.style.width = wPct+'%';
-    const sPct = Math.max(0, stamina/STAT_MAX*100);
-    staminaBar.style.width = sPct+'%';
+    
+    // Update Sprint Ring progress instead of a bar
+    const sPct = Math.max(0, Math.min(1, stamina/STAT_MAX));
+    const ringOffset = 138.23 * (1 - sPct);
+    document.getElementById('sprint-ring').style.strokeDashoffset = ringOffset;
     
     const danger = Math.max(0, 1-(wPct/30));
     vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
@@ -2122,7 +2122,7 @@ const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
 
-let isSSprintTriggered = false;
+let isSprintTriggered = false;
 let isAutoWalking = false;
  
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
@@ -2330,7 +2330,7 @@ function animate() {
 
         // Stamina Sprint Drain & Recharge Logic
         if (isSprinting) {
-            stamina -= 20 * delta; // Fully drain 100 over 5 seconds
+            stamina -= (100 / 7) * delta; // Fully drain 100 over 7 seconds
             if (stamina <= 0) {
                 stamina = 0;
                 isSprinting = false;
@@ -2338,11 +2338,11 @@ function animate() {
             }
         } else {
             if (stamina < STAT_MAX) {
-                stamina += (100 / 15) * delta; // Fully recharge 100 over 15 seconds
+                stamina += (100 / 14) * delta; // Fully recharge 100 over 14 seconds
                 if (stamina > STAT_MAX) stamina = STAT_MAX;
             }
-            if (isSSprintTriggered && stamina >= STAT_MAX) {
-                isSSprintTriggered = false;
+            if (isSprintTriggered && stamina >= STAT_MAX) {
+                isSprintTriggered = false;
             }
         }
         
