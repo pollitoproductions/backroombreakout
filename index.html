@@ -288,12 +288,10 @@
     <!-- AUTO-WALK BUTTON -->
     <div id="autowalk-btn">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="4" r="2"></circle>
-            <path d="M12 6l-1 5"></path>
-            <path d="M11 11l-3 9"></path>
-            <path d="M11 11l4 9"></path>
-            <path d="M12 6l-3 4"></path>
-            <path d="M12 6l4 3l-1 4"></path>
+            <circle cx="12" cy="4" r="2.5"></circle>
+            <path d="M12 7v6"></path>
+            <path d="M7 10l5-3l5 3"></path>
+            <path d="M8 19l4-6l4 6"></path>
         </svg>
     </div>
 
@@ -504,6 +502,10 @@ let lastSprayTime  = 0;
 let isFiring = false;
 let fireAccumulator = 0;
 let isSteerFiring = false;
+
+let isSprinting = false;
+let isSprintTriggered = false;
+let isAutoWalking = false;
 
 let stamina     = STAT_MAX;
 let hydration   = STAT_MAX;
@@ -1113,6 +1115,7 @@ function generateShadowFrames(count, eyesOpen) {
             ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y + toothH*0.7, x + (Math.random()-0.5)*10, y + toothH);
             ctx.closePath();
             ctx.fill();
+            ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
         }
         
         // Bottom Row of teeth
@@ -1133,6 +1136,7 @@ function generateShadowFrames(count, eyesOpen) {
             ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y - toothH*0.7, x + (Math.random()-0.5)*10, y - toothH);
             ctx.closePath();
             ctx.fill();
+            ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
         }
 
         // Eyes nestled deep inside the curve of the smile
@@ -1154,10 +1158,12 @@ function generateShadowFrames(count, eyesOpen) {
             // Left eye (milky pool)
             ctx.fillStyle = eyeGradL;
             ctx.beginPath(); ctx.ellipse(108, 280, 17, 12, -0.1, 0, Math.PI*2); ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; ctx.stroke();
             
             // Right eye (milky pool)
             ctx.fillStyle = eyeGradR;
             ctx.beginPath(); ctx.ellipse(148, 280, 17, 12, 0.1, 0, Math.PI*2); ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; ctx.stroke();
             
             ctx.shadowBlur = 0;
             
@@ -1327,11 +1333,26 @@ function activateSprint() {
     if (!gameStarted || isPaused || isDead) return;
     if (isSprinting) {
         isSprinting = false;
-        document.getElementById('sprint-btn').classList.remove('active-sprint');
+        sprintBtn.classList.remove('active-sprint');
     } else if (stamina > 0) {
         isSprinting = true;
         isSprintTriggered = true;
-        document.getElementById('sprint-btn').classList.add('active-sprint');
+        sprintBtn.classList.add('active-sprint');
+    }
+}
+
+function toggleAutoWalk() {
+    if (!gameStarted || isPaused || isDead) return;
+    if (isAutoWalking) {
+        isAutoWalking = false;
+        autowalkBtn.classList.remove('active-autowalk');
+    } else {
+        if (isSprinting) {
+            isSprinting = false;
+            sprintBtn.classList.remove('active-sprint');
+        }
+        isAutoWalking = true;
+        autowalkBtn.classList.add('active-autowalk');
     }
 }
  
@@ -1713,6 +1734,12 @@ const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
 const sprintBtn    = document.getElementById('sprint-btn');
 const autowalkBtn  = document.getElementById('autowalk-btn');
+
+sprintBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); }, {passive: false});
+sprintBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); });
+
+autowalkBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); }, {passive: false});
+autowalkBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); });
  
 // Paginated Lore UI Logic
 let currentPage = 0;
@@ -2138,29 +2165,8 @@ const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
 
-let isSprintTriggered = false;
-let isSprinting = false;
-let isAutoWalking = false;
- 
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
-    
-    // Sprint logic interception
-    if (targetNode && targetNode.closest('#sprint-btn')) {
-        activateSprint();
-        return; // Don't trigger look/move from sprinting button
-    }
-    
-    // Auto-walk logic interception
-    if (targetNode && targetNode.closest('#autowalk-btn')) {
-        isAutoWalking = !isAutoWalking;
-        if (isAutoWalking) {
-            autowalkBtn.classList.add('active-autowalk');
-        } else {
-            autowalkBtn.classList.remove('active-autowalk');
-        }
-        return;
-    }
     
     if(!isMouse&&x<window.innerWidth/2){
         if(leftTouchId===null){
@@ -2786,7 +2792,7 @@ function animate() {
     } else {
         prevTime = performance.now();
     }
- 
+
     renderer.render(scene, camera);
 }
  
