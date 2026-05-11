@@ -2291,7 +2291,7 @@ function checkCollision(targetPosition) {
 }
  
 function checkEntityCollision(targetPosition) {
-    const hs = 5.0; 
+    const hs = 6.0; // Reduced from 7.5 to 6.0 so the entity doesn't easily wedge itself
     const corners = [ {x:targetPosition.x-hs, z:targetPosition.z-hs}, {x:targetPosition.x+hs, z:targetPosition.z-hs}, {x:targetPosition.x-hs, z:targetPosition.z+hs}, {x:targetPosition.x+hs, z:targetPosition.z+hs} ];
     for (let c of corners) {
         const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
@@ -2302,14 +2302,32 @@ function checkEntityCollision(targetPosition) {
 }
  
 function spawnGhost() {
-    // Pick a random direction, but generally in front of the player
-    const angleOffset = (Math.random() - 0.5) * Math.PI / 2;
-    const spawnDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion).applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
+    let gx, gz, dist;
+    let attempts = 0;
+    let pX = Math.floor((camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+    let pZ = Math.floor((camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+    const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+
+    // Find a valid empty spawn cell generally in front of the player
+    do {
+        let offsetX = (Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1); 
+        let offsetZ = (Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1);
+        
+        gx = Math.floor(pX + fwd.x * 6 + offsetX);
+        gz = Math.floor(pZ + fwd.z * 6 + offsetZ);
+        
+        dist = Math.hypot(gx-pX, gz-pZ);
+        attempts++;
+    } while ((gx<1 || gx>=MAP_SIZE-1 || gz<1 || gz>=MAP_SIZE-1 || grid[gx][gz]!==0 || dist < 4) && attempts < 100);
+
+    if (attempts >= 100) return null; // Failsafe if completely surrounded by walls
+
+    const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
+    const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
     
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: shadowFramesOpen[0], color: 0xffffff, transparent: true }));
     sprite.scale.set(16, 22, 1); 
-    sprite.position.copy(camera.position).add(spawnDir.multiplyScalar(100)); // 100 units away
-    sprite.position.y = 7.5; 
+    sprite.position.set(wx, 7.5, wz);
     scene.add(sprite);
     
     playScreech();
@@ -2536,7 +2554,11 @@ function animate() {
         ghostTimer -= delta;
         if(ghostTimer <= 0 && !activeGhost) {
             activeGhost = spawnGhost();
-            ghostTimer = 120 + Math.random() * 120; // 2 to 4 minutes between scares
+            if(activeGhost) {
+                ghostTimer = 120 + Math.random() * 120; // 2 to 4 minutes between scares
+            } else {
+                ghostTimer = 5; // Retry soon if it couldn't find a spawn point
+            }
         }
         if(activeGhost) {
             activeGhost.life -= delta;
@@ -2634,8 +2656,8 @@ function animate() {
                             const moveDir = camera.position.clone().sub(e.mesh.position).normalize();
                             moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
  
-                            // Step-wise apparition to prevent teleporting through walls
-                            const steps = Math.ceil(jumpDist / 5);
+                            // Much finer step-wise apparition to prevent teleporting/wedging through walls
+                            const steps = Math.ceil(jumpDist / 2);
                             const stepDist = jumpDist / steps;
                             for (let s = 0; s < steps; s++) {
                                 let nx = e.mesh.position.x + moveDir.x * stepDist;
@@ -2668,7 +2690,6 @@ function animate() {
                     let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
                     let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
                     
-                    // Removed e.isGlitching bypass so they never walk through walls
                     if(!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
                     if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
  
