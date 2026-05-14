@@ -472,8 +472,8 @@ const HYDRATION_DRAIN    = 0.28;
 const ITEM_PICKUP_DIST   = 25;    
  
 let BOTTLE_COUNT       = 1500;  
-let JELLY_COUNT        = 1500;  
-let PAINT_COUNT        = 400;     
+let JELLY_COUNT        = 1350;  
+let PAINT_COUNT        = 360;     
  
 // ENTITY AI
 let ENTITY_COUNT       = 1875;   
@@ -1238,7 +1238,7 @@ function placeEntities() {
             type: isShadow ? 'SMILING_SHADOW' : 'BACTERIA',
             animTimer: 0,
             animFrame: Math.floor(Math.random()*4),
-            currentPose: Math.floor(Math.random() * bacteriaPoses.length), // 7 varied poses
+            currentPose: Math.floor(Math.random() * bacteriaPoses.length),
             staminaCooldown: 0,
             bob: Math.random() * Math.PI * 2,
             isGlitching: false,
@@ -1250,14 +1250,33 @@ function placeEntities() {
             baseScaleX: baseScaleX,
             baseY: baseY,
             hasSpotted: false,
-            apparateTimer: Math.random() * 2 
+            apparateTimer: Math.random() * 2,
+            // Behaviour State Machine
+            // Smiler states:  'dormant' | 'observing' | 'stalking' | 'vanished' | 'aggressive'
+            // Bacteria states:'idle' | 'investigating' | 'stalking' | 'hunting' | 'lost' | 'aggressive'
+            state: isShadow ? 'dormant' : 'idle',
+            stateTimer: 4 + Math.random() * 8,
+            interestTimer: 0,
+            lostTimer: 0,
+            lastKnownPlayerX: 0,
+            lastKnownPlayerZ: 0,
+            lightLevel: 1.0,
+            vanishCooldown: 0,
+            hasVanishedOnce: false,
+            erraticTimer: 0,
+            erraticVelX: 0,
+            erraticVelZ: 0,
+            twitchTimer: 0,
+            observeAngle: Math.random() * Math.PI * 2,
         });
         placed++;
     }
 }
  
-let ghostTimer = 60 + Math.random() * 60;
+let ghostTimer = 20 + Math.random() * 30; // First jumpscare within 20-50 seconds
 let activeGhost = null;
+let ambientEventTimer = 45 + Math.random() * 75; // Door slam or wailing every 45-120s
+let ambientEventCount = 0;
  
 // ─── SPRAY PAINT & FLAMETHROWER ───────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
@@ -1543,65 +1562,244 @@ function initAudio(){
  
 // Entity Sounds
 function playScreech() {
+    // Smiler sound: deep resonant chord that rises — terrifying but not ear-splitting
     if(!masterGain || audioCtx.state !== 'running') return;
-    const len = 1.2;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
-    g.connect(masterGain);
-    [2400, 2750, 3100].forEach(freq => {
+    const now = audioCtx.currentTime;
+    const len = 3.5;
+
+    const masterG = audioCtx.createGain();
+    masterG.gain.setValueAtTime(0, now);
+    masterG.gain.linearRampToValueAtTime(0.55, now + 0.18);
+    masterG.gain.setValueAtTime(0.55, now + len - 0.8);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
+    masterG.connect(masterGain);
+
+    // Reverb-like tail using a convolver impulse
+    const revLen = audioCtx.sampleRate * 2.5;
+    const revBuf = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
+    for(let ch=0; ch<2; ch++){
+        const d = revBuf.getChannelData(ch);
+        for(let i=0; i<revLen; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/revLen, 2.2);
+    }
+    const conv = audioCtx.createConvolver();
+    conv.buffer = revBuf;
+    conv.connect(masterG);
+
+    const dry = audioCtx.createGain(); dry.gain.value = 0.6; dry.connect(masterG);
+    const wet = audioCtx.createGain(); wet.gain.value = 0.55; wet.connect(conv);
+
+    // Three sine-based voices — low, mid, unsettling overtone — no harsh highs
+    const voices = [
+        { freq: 110, detune: 0,   type: 'sine',     vol: 0.7  },
+        { freq: 220, detune: 8,   type: 'sine',     vol: 0.45 },
+        { freq: 329, detune: -12, type: 'triangle', vol: 0.25 },
+    ];
+    voices.forEach(v => {
         const osc = audioCtx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        const lfo = audioCtx.createOscillator();
-        lfo.type = 'square';
-        lfo.frequency.value = 45 + Math.random() * 20; 
-        const lfoGain = audioCtx.createGain();
-        lfoGain.gain.value = 300; 
-        lfo.connect(lfoGain);
-        lfoGain.connect(osc.frequency);
-        osc.connect(g);
-        lfo.start(); osc.start();
-        lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
+        osc.type = v.type;
+        osc.frequency.setValueAtTime(v.freq * 0.6, now);
+        osc.frequency.linearRampToValueAtTime(v.freq, now + 0.5);
+        osc.frequency.setValueAtTime(v.freq, now + len - 1.0);
+        osc.frequency.exponentialRampToValueAtTime(v.freq * 0.85, now + len);
+        osc.detune.value = v.detune;
+        const vg = audioCtx.createGain(); vg.gain.value = v.vol;
+        osc.connect(vg); vg.connect(dry); vg.connect(wet);
+        osc.start(now); osc.stop(now + len);
     });
+
+    // Subtle breath-noise underneath — adds presence without harshness
+    const bSize = audioCtx.sampleRate * len;
+    const bBuf = audioCtx.createBuffer(1, bSize, audioCtx.sampleRate);
+    const bData = bBuf.getChannelData(0);
+    for(let i=0; i<bSize; i++) bData[i] = Math.random()*2-1;
+    const bSrc = audioCtx.createBufferSource(); bSrc.buffer = bBuf;
+    const bFilter = audioCtx.createBiquadFilter(); bFilter.type='bandpass'; bFilter.frequency.value=320; bFilter.Q.value=1.2;
+    const bGain = audioCtx.createGain(); bGain.gain.setValueAtTime(0,now); bGain.gain.linearRampToValueAtTime(0.08, now+0.3); bGain.gain.exponentialRampToValueAtTime(0.001, now+len);
+    bSrc.connect(bFilter); bFilter.connect(bGain); bGain.connect(masterG);
+    bSrc.start(now);
 }
  
 function playHowl() {
+    // Bacteria sound: wet biological gurgle-moan — inhuman, organic, deeply unsettling
     if(!masterGain || audioCtx.state !== 'running') return;
-    const len = 2.5;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.2);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
-    g.connect(masterGain);
- 
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(45, audioCtx.currentTime);
-    osc.frequency.linearRampToValueAtTime(65, audioCtx.currentTime + 0.5);
-    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + len);
-    
-    const lfo = audioCtx.createOscillator();
-    lfo.type = 'square';
-    lfo.frequency.value = 25;
-    const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 40;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-    
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(300, audioCtx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
-    filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + len);
- 
-    osc.connect(filter);
-    filter.connect(g);
-    lfo.start(); osc.start();
-    lfo.stop(audioCtx.currentTime + len); osc.stop(audioCtx.currentTime + len);
+    const now = audioCtx.currentTime;
+    const len = 3.8;
+
+    const masterG = audioCtx.createGain();
+    masterG.gain.setValueAtTime(0, now);
+    masterG.gain.linearRampToValueAtTime(0.65, now + 0.35);
+    masterG.gain.setValueAtTime(0.65, now + len - 1.2);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
+    masterG.connect(masterGain);
+
+    // Pitch wobble LFO — gives it that wet, unstable, alive quality
+    const wobble = audioCtx.createOscillator();
+    wobble.type = 'sine';
+    wobble.frequency.value = 3.5 + Math.random() * 2;
+    const wobbleGain = audioCtx.createGain();
+    wobbleGain.gain.value = 18;
+    wobble.connect(wobbleGain);
+    wobble.start(now); wobble.stop(now + len);
+
+    // Secondary flutter LFO — faster irregular breathing
+    const flutter = audioCtx.createOscillator();
+    flutter.type = 'triangle';
+    flutter.frequency.value = 7 + Math.random() * 4;
+    const flutterGain = audioCtx.createGain();
+    flutterGain.gain.value = 9;
+    flutter.connect(flutterGain);
+    flutter.start(now); flutter.stop(now + len);
+
+    // Main moan — low mid-range, clearly non-human throat
+    const osc1 = audioCtx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(78, now);
+    osc1.frequency.linearRampToValueAtTime(95, now + 0.6);
+    osc1.frequency.linearRampToValueAtTime(62, now + len);
+    wobbleGain.connect(osc1.frequency);
+    flutterGain.connect(osc1.frequency);
+
+    // Harmonic layer — adds body and wrongness
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(156, now);
+    osc2.frequency.linearRampToValueAtTime(186, now + 0.6);
+    osc2.frequency.linearRampToValueAtTime(124, now + len);
+    wobbleGain.connect(osc2.frequency);
+
+    // Wet formant filter — makes it sound throat-shaped
+    const formant = audioCtx.createBiquadFilter();
+    formant.type = 'peaking';
+    formant.frequency.setValueAtTime(380, now);
+    formant.frequency.linearRampToValueAtTime(520, now + 1.0);
+    formant.frequency.linearRampToValueAtTime(280, now + len);
+    formant.gain.value = 14;
+    formant.Q.value = 3.5;
+
+    const lowpass = audioCtx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.setValueAtTime(900, now);
+    lowpass.frequency.linearRampToValueAtTime(1400, now + 0.4);
+    lowpass.frequency.linearRampToValueAtTime(600, now + len);
+
+    const g1 = audioCtx.createGain(); g1.gain.value = 0.7;
+    const g2 = audioCtx.createGain(); g2.gain.value = 0.35;
+
+    osc1.connect(g1); osc2.connect(g2);
+    g1.connect(formant); g2.connect(formant);
+    formant.connect(lowpass); lowpass.connect(masterG);
+
+    // Wet noise breath — the biological wet-lung layer
+    const nSize = Math.floor(audioCtx.sampleRate * len);
+    const nBuf = audioCtx.createBuffer(1, nSize, audioCtx.sampleRate);
+    const nData = nBuf.getChannelData(0);
+    for(let i=0; i<nSize; i++) nData[i] = Math.random()*2-1;
+    const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
+    const nFilt = audioCtx.createBiquadFilter(); nFilt.type='bandpass'; nFilt.frequency.value=280; nFilt.Q.value=0.8;
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(0,now); nGain.gain.linearRampToValueAtTime(0.12, now+0.4);
+    nGain.gain.linearRampToValueAtTime(0.06, now+len-0.5); nGain.gain.exponentialRampToValueAtTime(0.001,now+len);
+    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(masterG);
+    nSrc.start(now);
+
+    osc1.start(now); osc1.stop(now+len);
+    osc2.start(now); osc2.stop(now+len);
 }
  
+// Distant door slam — sudden low-frequency thud with reverb tail
+function playDoorSlam() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const now = audioCtx.currentTime;
+
+    const masterG = audioCtx.createGain();
+    masterG.gain.setValueAtTime(0, now);
+    masterG.gain.linearRampToValueAtTime(0.9, now + 0.01); // instant thud
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+    masterG.connect(masterGain);
+
+    // Impact body — sub-bass thump
+    const imp = audioCtx.createOscillator();
+    imp.type = 'sine';
+    imp.frequency.setValueAtTime(95, now);
+    imp.frequency.exponentialRampToValueAtTime(22, now + 0.25);
+    const impG = audioCtx.createGain(); impG.gain.value = 1.0;
+    imp.connect(impG); impG.connect(masterG);
+    imp.start(now); imp.stop(now + 0.3);
+
+    // Rattle/click transient — wood and metal
+    const clickBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+    const cd = clickBuf.getChannelData(0);
+    for(let i=0; i<cd.length; i++) cd[i] = (Math.random()*2-1) * Math.exp(-i/(audioCtx.sampleRate*0.015));
+    const clickSrc = audioCtx.createBufferSource(); clickSrc.buffer = clickBuf;
+    const clickFilt = audioCtx.createBiquadFilter(); clickFilt.type = 'highpass'; clickFilt.frequency.value = 800;
+    const clickG = audioCtx.createGain(); clickG.gain.value = 0.5;
+    clickSrc.connect(clickFilt); clickFilt.connect(clickG); clickG.connect(masterG);
+    clickSrc.start(now);
+
+    // Room reverb tail — makes it feel far away down the corridor
+    const revSize = audioCtx.sampleRate * 2.8;
+    const revBuf = audioCtx.createBuffer(2, revSize, audioCtx.sampleRate);
+    for(let ch=0; ch<2; ch++){
+        const d = revBuf.getChannelData(ch);
+        for(let i=0; i<revSize; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/revSize, 1.4);
+    }
+    const conv = audioCtx.createConvolver(); conv.buffer = revBuf;
+    const revG = audioCtx.createGain(); revG.gain.value = 0.45;
+    conv.connect(revG); revG.connect(masterG);
+    impG.connect(conv); clickG.connect(conv);
+}
+
+// Distant wailing cry — mournful, human-adjacent, fades in from nowhere
+function playWailing() {
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const now = audioCtx.currentTime;
+    const len = 5.5 + Math.random() * 2.0;
+
+    const masterG = audioCtx.createGain();
+    masterG.gain.setValueAtTime(0, now);
+    masterG.gain.linearRampToValueAtTime(0.38, now + 1.2); // slow fade in
+    masterG.gain.setValueAtTime(0.38, now + len - 1.8);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
+    masterG.connect(masterGain);
+
+    // Pitch contour — rises, wavers, falls like crying
+    const basePitch = 220 + Math.random() * 80;
+    const wobble = audioCtx.createOscillator();
+    wobble.type = 'sine';
+    wobble.frequency.value = 4.2 + Math.random() * 2.5;
+    const wobbleG = audioCtx.createGain(); wobbleG.gain.value = 22;
+    wobble.connect(wobbleG);
+    wobble.start(now); wobble.stop(now + len);
+
+    const cry1 = audioCtx.createOscillator();
+    cry1.type = 'sine';
+    cry1.frequency.setValueAtTime(basePitch * 0.75, now);
+    cry1.frequency.linearRampToValueAtTime(basePitch * 1.15, now + len * 0.35);
+    cry1.frequency.linearRampToValueAtTime(basePitch * 0.6, now + len);
+    wobbleG.connect(cry1.frequency);
+
+    const cry2 = audioCtx.createOscillator();
+    cry2.type = 'triangle';
+    cry2.frequency.setValueAtTime(basePitch * 1.48, now);
+    cry2.frequency.linearRampToValueAtTime(basePitch * 1.82, now + len * 0.4);
+    cry2.frequency.linearRampToValueAtTime(basePitch * 1.2, now + len);
+    wobbleG.connect(cry2.frequency);
+
+    // Vocal formant shaping
+    const f1 = audioCtx.createBiquadFilter(); f1.type='peaking'; f1.frequency.value=680; f1.gain.value=10; f1.Q.value=4;
+    const f2 = audioCtx.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=1200; f2.gain.value=6; f2.Q.value=5;
+    const lp = audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200;
+
+    const g1 = audioCtx.createGain(); g1.gain.value = 0.65;
+    const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+    cry1.connect(g1); cry2.connect(g2);
+    g1.connect(f1); g2.connect(f1);
+    f1.connect(f2); f2.connect(lp); lp.connect(masterG);
+
+    cry1.start(now); cry1.stop(now+len);
+    cry2.start(now); cry2.stop(now+len);
+}
+
 // Metallic, growly stuttering sound for stalking entities
 function playMetallicGrowl() {
     if(!masterGain || audioCtx.state !== 'running') return;
@@ -1794,15 +1992,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 187;
-        BOTTLE_COUNT = 450; JELLY_COUNT = 450; PAINT_COUNT = 120;
+        BOTTLE_COUNT = 450; JELLY_COUNT = 405; PAINT_COUNT = 108;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 937;
-        BOTTLE_COUNT = 2250; JELLY_COUNT = 2250; PAINT_COUNT = 600;
+        BOTTLE_COUNT = 2250; JELLY_COUNT = 2025; PAINT_COUNT = 540;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 1875;
-        BOTTLE_COUNT = 4500; JELLY_COUNT = 4500; PAINT_COUNT = 1200;
+        BOTTLE_COUNT = 4500; JELLY_COUNT = 4050; PAINT_COUNT = 1080;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
@@ -1981,6 +2179,23 @@ function fmtTimeStr(ms) {
 async function showLeaderboard(difficulty) {
     const lb = document.getElementById('lb-content');
     lb.innerHTML = '<span style="color:#555;font-size:0.9em;">Loading...</span>';
+    
+    // Detect sandboxed/preview environment where Firebase is unreachable
+    const isPreview = (window.location.protocol === 'blob:' || window.location.hostname === '' || window.self !== window.top);
+    if (isPreview) {
+        const colors = {'SANE':'#00ff55','QUESTIONABLE':'#d4d42b','INSANE':'#ff4444'};
+        const col = colors[difficulty] || '#aaa';
+        lb.innerHTML = `
+            <div style="text-align:center;padding:20px 10px;">
+                <div style="color:${col};font-size:1em;letter-spacing:2px;margin-bottom:10px;">SURVIVOR LOG</div>
+                <div style="color:#555;font-size:0.85em;line-height:1.7;">
+                    Leaderboard connects to Firebase<br>in the deployed app.<br><br>
+                    <span style="color:#888;">Scores are saved globally<br>when running outside preview.</span>
+                </div>
+            </div>`;
+        return;
+    }
+
     try {
         const top10 = await getTop10(difficulty);
         if (!top10.length) {
@@ -2023,6 +2238,10 @@ function showWinScreen(){
     // Check if qualifies for top 10
     const lbSection = document.getElementById('win-leaderboard-section');
     lbSection.style.display = 'none';
+
+    // Skip Firebase in sandboxed/preview environments
+    const isPreviewWin = (window.location.protocol === 'blob:' || window.location.hostname === '' || window.self !== window.top);
+    if (isPreviewWin) return;
     
     checkTop10(currentSanity, ms).then(qualifies => {
         if (!qualifies) return;
@@ -2596,134 +2815,447 @@ function animate() {
                 activeGhost = null;
             }
         }
+
+        // Ambient horror events — door slams and wailing cries
+        ambientEventTimer -= delta;
+        if(ambientEventTimer <= 0) {
+            ambientEventCount++;
+            // Alternate: slam, wail, slam, wail... with some randomness
+            if(ambientEventCount % 2 === 1 || Math.random() < 0.4) {
+                playDoorSlam();
+            } else {
+                playWailing();
+            }
+            // Next event in 45–120 seconds
+            ambientEventTimer = 45 + Math.random() * 75;
+        }
  
         let tookDamage = false;
         const px = camera.position.x;
         const pz = camera.position.z;
- 
+
+        // Estimate ambient light level at camera position (used by Smilers)
+        const _cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
+        const _cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
+        const _ls = Math.sin(_cx/6) + Math.sin(_cz/6) + Math.sin((_cx+_cz)/9);
+        const playerLightEstimate = Math.max(0, Math.min(1, (_ls + 3) / 6)); // 0=dark, 1=bright
+
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
-            
+
+            // ── Animation ──────────────────────────────────────────────────
             e.animTimer += delta;
             if (e.animTimer > 0.1) {
                 e.animTimer -= 0.1;
                 e.animFrame = (e.animFrame + 1) % 4;
             }
-            
-            if (e.type === 'SMILING_SHADOW') {
-                e.mesh.material = e.isBlinking ? shadowMatClosed : shadowMatsOpen[e.animFrame];
-            } else {
-                e.mesh.material = bacteriaPoses[e.currentPose][e.animFrame];
-            }
- 
+
             let dx = px - e.mesh.position.x;
             let dz = pz - e.mesh.position.z;
-            // Massively expanded the entity culling radius so Smilers don't get lost
-            if (Math.abs(dx) > 400 || Math.abs(dz) > 400) continue; 
- 
+            if (Math.abs(dx) > 400 || Math.abs(dz) > 400) continue;
             const dist = Math.sqrt(dx*dx + dz*dz);
-            
+
+            // ══════════════════════════════════════════════════════════════
+            // SMILING SHADOW — paranoia machine
+            // ══════════════════════════════════════════════════════════════
             if (e.type === 'SMILING_SHADOW') {
+
+                // Smiler visibility: only in darkness
+                e.lightLevel += (playerLightEstimate - e.lightLevel) * delta * 1.5;
+                const smilerVisible = e.lightLevel < 0.55;
+
+                // Vanish in bright light — teleport to a dark spot elsewhere
+                if (e.state !== 'vanished' && e.lightLevel > 0.60 && dist < 300) {
+                    e.state = 'vanished';
+                    e.vanishCooldown = 4 + Math.random() * 6;
+                    e.mesh.position.y = -999; // hide underground
+                }
+
+                // Reappear after cooldown — find a dark cell near player
+                if (e.state === 'vanished') {
+                    e.vanishCooldown -= delta;
+                    if (e.vanishCooldown <= 0) {
+                        // Find a random open cell at medium distance
+                        let attempts2 = 0, placed2 = false;
+                        while (attempts2 < 60 && !placed2) {
+                            attempts2++;
+                            const angle = Math.random() * Math.PI * 2;
+                            const range = 80 + Math.random() * 120;
+                            const nx2 = Math.floor((_cx + Math.cos(angle)*range/TILE_SIZE));
+                            const nz2 = Math.floor((_cz + Math.sin(angle)*range/TILE_SIZE));
+                            if (nx2 > 0 && nx2 < MAP_SIZE-1 && nz2 > 0 && nz2 < MAP_SIZE-1 && grid[nx2][nz2] === 0) {
+                                e.mesh.position.x = (nx2 - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
+                                e.mesh.position.z = (nz2 - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
+                                e.mesh.position.y = e.baseY;
+                                e.state = 'dormant';
+                                e.stateTimer = 3 + Math.random() * 5;
+                                e.hasVanishedOnce = true;
+                                placed2 = true;
+                            }
+                        }
+                        if (!placed2) e.vanishCooldown = 2; // retry
+                    }
+                    // Don't process further while vanished
+                    continue;
+                }
+
+                // Blink
                 e.blinkTimer -= delta;
                 if (e.blinkTimer <= 0) {
-                    if (e.isBlinking) {
-                        e.isBlinking = false;
-                        e.blinkTimer = 2 + Math.random() * 4; 
-                    } else {
-                        e.isBlinking = true;
-                        e.blinkTimer = 0.15; 
+                    e.isBlinking = !e.isBlinking;
+                    e.blinkTimer = e.isBlinking ? 0.12 : (2 + Math.random() * 5);
+                }
+                e.mesh.material = e.isBlinking ? shadowMatClosed : shadowMatsOpen[e.animFrame];
+
+                // State timer tick
+                e.stateTimer -= delta;
+
+                // ── SMILER STATE MACHINE ────────────────────────────────
+                if (e.state === 'dormant') {
+                    // Mostly stationary. Occasionally notices player.
+                    if (dist < 180 && e.stateTimer <= 0) {
+                        const roll = Math.random();
+                        if (roll < 0.45) {
+                            e.state = 'observing';
+                            e.stateTimer = 5 + Math.random() * 10;
+                            e.observeAngle = Math.atan2(dz, dx);
+                        } else if (roll < 0.65 && e.hasVanishedOnce) {
+                            // Rare: teleport closer silently
+                            e.state = 'vanished';
+                            e.vanishCooldown = 0.5 + Math.random() * 1.5;
+                        } else {
+                            e.stateTimer = 6 + Math.random() * 8;
+                        }
+                    }
+
+                } else if (e.state === 'observing') {
+                    // Stares. Creeps a tiny bit. Creates paranoia.
+                    if (dist < 150 && Math.random() < 0.001) playMetallicGrowl();
+                    // Very slow drift toward player while "observing"
+                    if (dist > ENTITY_MIN_DIST + 10) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const nx2 = e.mesh.position.x + dir2.x * 8 * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * 8 * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (e.stateTimer <= 0) {
+                        const roll = Math.random();
+                        if (roll < 0.3) {
+                            e.state = 'stalking';
+                            e.stateTimer = 4 + Math.random() * 6;
+                        } else if (roll < 0.55) {
+                            // Lose interest
+                            e.state = 'dormant';
+                            e.stateTimer = 8 + Math.random() * 12;
+                        } else if (roll < 0.75) {
+                            // Vanish and reappear closer
+                            e.state = 'vanished';
+                            e.vanishCooldown = 1 + Math.random() * 2;
+                        } else {
+                            // Sudden aggression (rare)
+                            e.state = 'aggressive';
+                            e.stateTimer = 2 + Math.random() * 3;
+                            if (time - lastSpotScreechTime > 2000) { playScreech(); lastSpotScreechTime = time; }
+                        }
+                    }
+
+                } else if (e.state === 'stalking') {
+                    // Follows slowly. May lose interest or go dormant.
+                    if (dist < 150 && Math.random() < 0.0015) playMetallicGrowl();
+                    if (dist > ENTITY_MIN_DIST) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const spd = 30;
+                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (e.stateTimer <= 0) {
+                        const roll = Math.random();
+                        if (roll < 0.25) {
+                            e.state = 'dormant';
+                            e.stateTimer = 10 + Math.random() * 10;
+                        } else if (roll < 0.5) {
+                            e.state = 'observing';
+                            e.stateTimer = 4 + Math.random() * 6;
+                        } else if (roll < 0.7) {
+                            e.state = 'vanished';
+                            e.vanishCooldown = 1.5 + Math.random() * 3;
+                        } else {
+                            e.state = 'aggressive';
+                            e.stateTimer = 3 + Math.random() * 2;
+                            if (time - lastSpotScreechTime > 2000) { playScreech(); lastSpotScreechTime = time; }
+                        }
+                    }
+
+                } else if (e.state === 'aggressive') {
+                    // Fast charge. Rare and brief.
+                    if (dist > ENTITY_MIN_DIST) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const spd = 120;
+                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (dist < 25) {
+                        health -= 18 * delta;
+                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(80);
+                        tookDamage = true;
+                        if (health <= 0) showDeathScreen("CONSUMED.", "A Smiler took you.");
+                    }
+                    if (e.stateTimer <= 0) {
+                        // Always retreats — vanishes after aggression
+                        e.state = 'vanished';
+                        e.vanishCooldown = 5 + Math.random() * 8;
                     }
                 }
-                
-                if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
-                
+
+                // Bob
+                e.bob += delta * 1.5;
+                if (e.state !== 'vanished') {
+                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.state === 'aggressive' ? 2.0 : 0.4);
+                }
+
+            // ══════════════════════════════════════════════════════════════
+            // BACTERIA — desperate, biological hunter
+            // ══════════════════════════════════════════════════════════════
             } else if (e.type === 'BACTERIA') {
+
+                // Mirror / pose twitch
                 e.mirrorTimer -= delta;
                 if (e.mirrorTimer <= 0) {
                     e.isMirrored = !e.isMirrored;
                     e.mesh.scale.x = e.isMirrored ? -e.baseScaleX : e.baseScaleX;
-                    e.currentPose = Math.floor(Math.random() * bacteriaPoses.length); // Aggressive apparating across all 7 poses
-                    e.mirrorTimer = 0.05 + Math.random() * 0.15; 
-                }
-                
-                if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
-            }
- 
-            if(dist < 200) { 
-                if (!e.hasSpotted) {
-                    e.hasSpotted = true;
-                    if (time - lastSpotScreechTime > 2000) {
-                        if (e.type === 'BACTERIA') playHowl();
-                        else playScreech();
-                        lastSpotScreechTime = time;
-                    }
-                }
- 
-                if(!e.isGlitching && Math.random() < 0.005) { 
-                    e.isGlitching = true;
-                    e.glitchTimer = 1.0; 
-                }
-                if(e.isGlitching) {
-                    e.glitchTimer -= delta;
-                    if(e.glitchTimer <= 0) e.isGlitching = false;
-                }
- 
-                let speed = 0;
-                if (e.type === 'BACTERIA') {
-                    if (dist < 120) {
-                        speed = 20; // Stalk slowly while preparing to apparate
-                        e.apparateTimer -= delta;
-                        if (e.apparateTimer <= 0) {
-                            const jumpDist = Math.min(dist - 15, 20 + Math.random()*30); 
-                            const angleOffset = (Math.random() - 0.5) * 1.5; 
-                            const moveDir = camera.position.clone().sub(e.mesh.position).normalize();
-                            moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
- 
-                            // Much finer step-wise apparition to prevent teleporting/wedging through walls
-                            const steps = Math.ceil(jumpDist / 2);
-                            const stepDist = jumpDist / steps;
-                            for (let s = 0; s < steps; s++) {
-                                let nx = e.mesh.position.x + moveDir.x * stepDist;
-                                let nz = e.mesh.position.z + moveDir.z * stepDist;
-                                if (!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
-                                if (!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
-                            }
- 
-                            e.apparateTimer = 0.5 + Math.random() * 1.0; 
-                        }
+                    // Only thrash poses when close and active
+                    if (e.state === 'hunting' || e.state === 'aggressive') {
+                        e.currentPose = Math.floor(Math.random() * bacteriaPoses.length);
+                        e.mirrorTimer = 0.05 + Math.random() * 0.10;
                     } else {
-                        speed = 75; // Faster stalking
+                        e.mirrorTimer = 0.2 + Math.random() * 0.4;
                     }
-                } else if (e.type === 'SMILING_SHADOW') {
-                    speed = 135; // Much faster pursuit speed! (Player moves at 180)
                 }
- 
-                // Match Flamethrower Range & Adjusted Deadliness (-25%)
-                if(dist < 25) {
-                    health -= 14 * delta; 
-                    if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50); 
+                e.mesh.material = bacteriaPoses[e.currentPose][e.animFrame];
+
+                // Twitch / pause
+                e.twitchTimer -= delta;
+                const isTwitching = e.twitchTimer > 0;
+
+                // State timer
+                e.stateTimer -= delta;
+
+                // Erratic burst
+                if (e.erraticTimer > 0) {
+                    e.erraticTimer -= delta;
+                    const nx2 = e.mesh.position.x + e.erraticVelX * delta;
+                    const nz2 = e.mesh.position.z + e.erraticVelZ * delta;
+                    if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                    if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                }
+
+                // ── BACTERIA STATE MACHINE ──────────────────────────────
+                if (e.state === 'idle') {
+                    // Wanders randomly, doesn't notice player far away
+                    if (dist < 160) {
+                        e.state = 'investigating';
+                        e.interestTimer = 3 + Math.random() * 4;
+                        e.lastKnownPlayerX = px;
+                        e.lastKnownPlayerZ = pz;
+                        if (time - lastSpotScreechTime > 2500) { playHowl(); lastSpotScreechTime = time; }
+                    }
+
+                } else if (e.state === 'investigating') {
+                    // Moves toward last known position, not directly at player
+                    if (!isTwitching) {
+                        const tdx = e.lastKnownPlayerX - e.mesh.position.x;
+                        const tdz = e.lastKnownPlayerZ - e.mesh.position.z;
+                        const tdist = Math.sqrt(tdx*tdx + tdz*tdz);
+                        if (tdist > ENTITY_MIN_DIST) {
+                            const dir2 = new THREE.Vector3(tdx, 0, tdz).normalize();
+                            const spd = 45;
+                            const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                            const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                            if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                            if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                        }
+                    }
+                    // Update known position if close enough to "hear" player
+                    if (dist < 100) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
+
+                    // Occasional pause/twitch
+                    if (Math.random() < 0.008) { e.twitchTimer = 0.3 + Math.random() * 0.5; }
+
+                    if (e.stateTimer <= 0 || (dist > 200 && Math.random() < 0.02)) {
+                        const roll = Math.random();
+                        if (roll < 0.35) {
+                            e.state = 'stalking';
+                            e.stateTimer = 5 + Math.random() * 8;
+                        } else if (roll < 0.55) {
+                            e.state = 'lost';
+                            e.lostTimer = 4 + Math.random() * 6;
+                            e.stateTimer = e.lostTimer;
+                        } else if (roll < 0.8) {
+                            // Sudden erratic burst toward player
+                            e.state = 'hunting';
+                            e.stateTimer = 3 + Math.random() * 4;
+                        } else {
+                            e.state = 'idle';
+                            e.stateTimer = 6 + Math.random() * 8;
+                        }
+                    }
+
+                } else if (e.state === 'stalking') {
+                    // Slow deliberate approach, updates last known position
+                    if (!isTwitching && dist > ENTITY_MIN_DIST) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const spd = 22;
+                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (dist < 80) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
+                    if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
+                    if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
+
+                    // Apparate jump
+                    e.apparateTimer -= delta;
+                    if (e.apparateTimer <= 0 && dist < 100) {
+                        const jumpDist = Math.min(dist - 15, 15 + Math.random() * 25);
+                        const angleOffset = (Math.random() - 0.5) * 1.2;
+                        const moveDir = new THREE.Vector3(dx, 0, dz).normalize();
+                        moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
+                        const steps = Math.ceil(jumpDist / 2);
+                        const stepDist = jumpDist / steps;
+                        for (let s = 0; s < steps; s++) {
+                            let nx2 = e.mesh.position.x + moveDir.x * stepDist;
+                            let nz2 = e.mesh.position.z + moveDir.z * stepDist;
+                            if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                            if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                        }
+                        e.apparateTimer = 1.0 + Math.random() * 1.5;
+                    }
+
+                    if (e.stateTimer <= 0) {
+                        const roll = Math.random();
+                        if (roll < 0.3) {
+                            e.state = 'hunting';
+                            e.stateTimer = 4 + Math.random() * 3;
+                            if (time - lastSpotScreechTime > 2500) { playHowl(); lastSpotScreechTime = time; }
+                        } else if (roll < 0.5) {
+                            e.state = 'lost';
+                            e.lostTimer = 3 + Math.random() * 5;
+                            e.stateTimer = e.lostTimer;
+                        } else if (roll < 0.65) {
+                            e.state = 'idle';
+                            e.stateTimer = 8 + Math.random() * 6;
+                        } else {
+                            e.state = 'investigating';
+                            e.stateTimer = 4 + Math.random() * 4;
+                        }
+                    }
+
+                } else if (e.state === 'hunting') {
+                    // Fast desperate charge at player
+                    if (!isTwitching && dist > ENTITY_MIN_DIST) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const spd = 90;
+                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
+                    // Erratic burst mid-hunt
+                    if (e.erraticTimer <= 0 && Math.random() < 0.02) {
+                        const a = Math.random() * Math.PI * 2;
+                        e.erraticVelX = Math.cos(a) * 60;
+                        e.erraticVelZ = Math.sin(a) * 60;
+                        e.erraticTimer = 0.15 + Math.random() * 0.2;
+                    }
+                    if (dist < 150 && Math.random() < 0.003) playMetallicGrowl();
+
+                    if (e.stateTimer <= 0) {
+                        // Bacteria sometimes loses player or suddenly goes passive
+                        const roll = Math.random();
+                        if (roll < 0.3) {
+                            e.state = 'lost';
+                            e.lostTimer = 5 + Math.random() * 6;
+                            e.stateTimer = e.lostTimer;
+                        } else if (roll < 0.55) {
+                            e.state = 'stalking';
+                            e.stateTimer = 5 + Math.random() * 5;
+                        } else if (roll < 0.75) {
+                            e.state = 'aggressive';
+                            e.stateTimer = 2 + Math.random() * 2;
+                        } else {
+                            e.state = 'idle';
+                            e.stateTimer = 6 + Math.random() * 6;
+                        }
+                    }
+
+                } else if (e.state === 'lost') {
+                    // Wanders near last known position, confused
+                    e.lostTimer -= delta;
+                    if (!isTwitching) {
+                        const tdx = e.lastKnownPlayerX - e.mesh.position.x + (Math.random()-0.5)*40;
+                        const tdz = e.lastKnownPlayerZ - e.mesh.position.z + (Math.random()-0.5)*40;
+                        const tdir = new THREE.Vector3(tdx, 0, tdz).normalize();
+                        const spd = 30;
+                        const nx2 = e.mesh.position.x + tdir.x * spd * delta;
+                        const nz2 = e.mesh.position.z + tdir.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (Math.random() < 0.012) { e.twitchTimer = 0.2 + Math.random() * 0.6; }
+                    // Re-spots player
+                    if (dist < 80) {
+                        e.state = 'hunting';
+                        e.stateTimer = 4 + Math.random() * 3;
+                        if (time - lastSpotScreechTime > 2500) { playHowl(); lastSpotScreechTime = time; }
+                    } else if (e.lostTimer <= 0) {
+                        e.state = 'idle';
+                        e.stateTimer = 8 + Math.random() * 8;
+                    }
+
+                } else if (e.state === 'aggressive') {
+                    // Very fast frenzied burst — desperate/biological
+                    if (dist > ENTITY_MIN_DIST) {
+                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                        const spd = 140;
+                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                    }
+                    if (dist < 25) {
+                        health -= 14 * delta;
+                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
+                        tookDamage = true;
+                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                    }
+                    if (e.stateTimer <= 0) {
+                        // After frenzy, always loses interest briefly
+                        e.state = 'lost';
+                        e.lostTimer = 3 + Math.random() * 4;
+                        e.stateTimer = e.lostTimer;
+                        e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
+                    }
+                }
+
+                // Standard damage window for any close-contact state
+                if (dist < 25 && (e.state === 'hunting' || e.state === 'stalking') && e.state !== 'aggressive') {
+                    health -= 10 * delta;
+                    if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
                     tookDamage = true;
-                    if(health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                    if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                 }
- 
-                if (speed > 0) {
-                    const dir = camera.position.clone().sub(e.mesh.position).normalize(); dir.y=0;
-                    const effectiveSpeed = dist < ENTITY_MIN_DIST ? 0 : speed;
-                    
-                    let nx = e.mesh.position.x + dir.x * effectiveSpeed * delta;
-                    let nz = e.mesh.position.z + dir.z * effectiveSpeed * delta;
-                    
-                    if(!checkEntityCollision({x: nx, z: e.mesh.position.z})) e.mesh.position.x = nx;
-                    if(!checkEntityCollision({x: e.mesh.position.x, z: nz})) e.mesh.position.z = nz;
- 
-                    e.bob += delta * effectiveSpeed * 0.05;
-                    // Lower the bob height if in crawling pose
-                    let bobHeight = e.type === 'BACTERIA' ? (e.currentPose === 3 ? 0.2 : 0.5) : 1.5;
-                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * bobHeight; 
-                } else {
-                    e.bob += delta * 2;
-                    e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.type === 'BACTERIA' ? 0.2 : 0.5);
-                }
+
+                // Bob
+                e.bob += delta * (e.state === 'hunting' || e.state === 'aggressive' ? 18 : 4);
+                const bobHeight = e.currentPose === 3 ? 0.15 : (e.state === 'hunting' ? 0.8 : 0.35);
+                e.mesh.position.y = e.baseY + Math.sin(e.bob) * bobHeight;
             }
         }
  
