@@ -1273,10 +1273,16 @@ function placeEntities() {
     }
 }
  
-let ghostTimer = 20 + Math.random() * 30; // First jumpscare within 20-50 seconds
+let ghostTimer = 15 + Math.random() * 15; // First jumpscare within 15-30 seconds
 let activeGhost = null;
 let ambientEventTimer = 45 + Math.random() * 75; // Door slam or wailing every 45-120s
 let ambientEventCount = 0;
+
+// Guaranteed encounter manager — at least one entity encounter every 90s
+let encounterTimer = 30 + Math.random() * 20; // First forced encounter at 30-50s
+let lastEncounterTime = 0;
+let encounterTypes = ['bacteria_stalk','bacteria_hunt','smiler_appear','smiler_stalk','bacteria_investigate'];
+let encounterIndex = 0;
  
 // ─── SPRAY PAINT & FLAMETHROWER ───────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
@@ -2770,41 +2776,109 @@ function animate() {
             }
         }
  
+        // ── Ghost jumpscare ──────────────────────────────────────────
         ghostTimer -= delta;
         if(ghostTimer <= 0 && !activeGhost) {
             activeGhost = spawnGhost();
             if(activeGhost) {
-                ghostTimer = 120 + Math.random() * 120; // 2 to 4 minutes between scares
+                ghostTimer = 60 + Math.random() * 60; // 1-2 min between jumpscares
             } else {
-                ghostTimer = 5; // Retry soon if it couldn't find a spawn point
+                ghostTimer = 5;
             }
         }
         if(activeGhost) {
             activeGhost.life -= delta;
             const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
-            // Ghost completely ignores walls and flies straight at you fast
-            activeGhost.mesh.position.add(dir.multiplyScalar(150 * delta)); 
+            activeGhost.mesh.position.add(dir.multiplyScalar(150 * delta));
             activeGhost.mesh.position.y = 7.5 + Math.sin(time/50)*1.5;
-            
-            // Jumpscare vanish condition
             if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 8) {
-                scene.remove(activeGhost.mesh); 
+                scene.remove(activeGhost.mesh);
                 activeGhost = null;
             }
         }
 
-        // Ambient horror events — door slams and wailing cries
+        // ── Ambient sound events — door slams + wailing ──────────────
         ambientEventTimer -= delta;
         if(ambientEventTimer <= 0) {
             ambientEventCount++;
-            // Alternate: slam, wail, slam, wail... with some randomness
             if(ambientEventCount % 2 === 1 || Math.random() < 0.4) {
                 playDoorSlam();
             } else {
                 playWailing();
             }
-            // Next event in 45–120 seconds
-            ambientEventTimer = 45 + Math.random() * 75;
+            ambientEventTimer = 35 + Math.random() * 55;
+        }
+
+        // ── Guaranteed encounter manager — at least one every 90s ────
+        encounterTimer -= delta;
+        if(encounterTimer <= 0) {
+            encounterTimer = 75 + Math.random() * 30; // Reset: next in 75-105s
+
+            // Pick next encounter type in rotating order with shuffle
+            const etype = encounterTypes[encounterIndex % encounterTypes.length];
+            encounterIndex++;
+
+            // Find the nearest idle/dormant entity of the right type and force-activate it
+            const playerPos = camera.position;
+            let bestEntity = null;
+            let bestScore = Infinity;
+
+            const wantShadow = etype.startsWith('smiler');
+            for(let ei=0; ei<entities.length; ei++) {
+                const e = entities[ei];
+                if((e.type==='SMILING_SHADOW') !== wantShadow) continue;
+                // Skip already-active aggressive hunters
+                if(e.state==='aggressive' || e.state==='hunting') continue;
+                const ed = e.mesh.position.distanceTo(playerPos);
+                // Prefer entities 80-250 units away — close enough to feel real
+                const rangePenalty = Math.abs(ed - 160);
+                if(rangePenalty < bestScore) { bestScore = rangePenalty; bestEntity = e; }
+            }
+
+            if(bestEntity) {
+                const e = bestEntity;
+                if(etype === 'bacteria_hunt') {
+                    e.state = 'hunting';
+                    e.stateTimer = 8 + Math.random() * 6;
+                    e.lastKnownPlayerX = playerPos.x;
+                    e.lastKnownPlayerZ = playerPos.z;
+                    if(time - lastSpotScreechTime > 2000) { playHowl(); lastSpotScreechTime = time; }
+
+                } else if(etype === 'bacteria_stalk') {
+                    e.state = 'stalking';
+                    e.stateTimer = 10 + Math.random() * 8;
+                    e.lastKnownPlayerX = playerPos.x;
+                    e.lastKnownPlayerZ = playerPos.z;
+                    playMetallicGrowl();
+
+                } else if(etype === 'bacteria_investigate') {
+                    e.state = 'investigating';
+                    e.stateTimer = 7 + Math.random() * 5;
+                    e.lastKnownPlayerX = playerPos.x + (Math.random()-0.5)*40;
+                    e.lastKnownPlayerZ = playerPos.z + (Math.random()-0.5)*40;
+                    playMetallicGrowl();
+
+                } else if(etype === 'smiler_appear') {
+                    // Teleport smiler to a spot the player will see
+                    const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+                    const tryDist = 60 + Math.random()*60;
+                    const tryX = Math.floor((_cx + fwd.x * tryDist/TILE_SIZE));
+                    const tryZ = Math.floor((_cz + fwd.z * tryDist/TILE_SIZE));
+                    if(tryX>0&&tryX<MAP_SIZE-1&&tryZ>0&&tryZ<MAP_SIZE-1&&grid[tryX][tryZ]===0) {
+                        e.mesh.position.x = (tryX-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
+                        e.mesh.position.z = (tryZ-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
+                        e.mesh.position.y = e.baseY;
+                    }
+                    e.state = 'observing';
+                    e.stateTimer = 8 + Math.random() * 6;
+                    if(time - lastSpotScreechTime > 2000) { playScreech(); lastSpotScreechTime = time; }
+
+                } else if(etype === 'smiler_stalk') {
+                    e.state = 'stalking';
+                    e.stateTimer = 8 + Math.random() * 5;
+                    playMetallicGrowl();
+                }
+            }
         }
  
         let tookDamage = false;
@@ -2889,8 +2963,8 @@ function animate() {
 
                 // ── SMILER STATE MACHINE ────────────────────────────────
                 if (e.state === 'dormant') {
-                    // Mostly stationary. Occasionally notices player.
-                    if (dist < 180 && e.stateTimer <= 0) {
+                    // Smiler detects player from further — raised from 180 to 300
+                    if (dist < 300 && e.stateTimer <= 0) {
                         const roll = Math.random();
                         if (roll < 0.45) {
                             e.state = 'observing';
@@ -3033,8 +3107,8 @@ function animate() {
 
                 // ── BACTERIA STATE MACHINE ──────────────────────────────
                 if (e.state === 'idle') {
-                    // Wanders randomly, doesn't notice player far away
-                    if (dist < 160) {
+                    // Bacteria notices player from further away — raised from 160 to 280
+                    if (dist < 280) {
                         e.state = 'investigating';
                         e.interestTimer = 3 + Math.random() * 4;
                         e.lastKnownPlayerX = px;
