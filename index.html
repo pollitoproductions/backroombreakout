@@ -472,7 +472,7 @@ const HYDRATION_DRAIN    = 0.28;
 const ITEM_PICKUP_DIST   = 25;    
  
 let BOTTLE_COUNT       = 1500;  
-let JELLY_COUNT        = 1350;  
+let JELLY_COUNT        = 1080;  
 let PAINT_COUNT        = 360;     
  
 // ENTITY AI
@@ -1562,275 +1562,252 @@ function initAudio(){
  
 // Entity Sounds
 function playScreech() {
-    // Smiler sound: deep resonant chord that rises — terrifying but not ear-splitting
+    // Smiler: a low gritty presence tone — like something large breathing wrong in the dark
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-    const len = 3.5;
+    const len = 4.0;
 
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
-    masterG.gain.linearRampToValueAtTime(0.55, now + 0.18);
-    masterG.gain.setValueAtTime(0.55, now + len - 0.8);
+    masterG.gain.linearRampToValueAtTime(0.48, now + 0.6);
+    masterG.gain.setValueAtTime(0.48, now + len - 1.2);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
 
-    // Reverb-like tail using a convolver impulse
-    const revLen = audioCtx.sampleRate * 2.5;
-    const revBuf = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
-    for(let ch=0; ch<2; ch++){
-        const d = revBuf.getChannelData(ch);
-        for(let i=0; i<revLen; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/revLen, 2.2);
-    }
-    const conv = audioCtx.createConvolver();
-    conv.buffer = revBuf;
-    conv.connect(masterG);
+    // Long corridor reverb
+    const rvLen = Math.floor(audioCtx.sampleRate * 3.2);
+    const rvBuf = audioCtx.createBuffer(2, rvLen, audioCtx.sampleRate);
+    for(let ch=0;ch<2;ch++){const d=rvBuf.getChannelData(ch); for(let i=0;i<rvLen;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,1.8);}
+    const conv = audioCtx.createConvolver(); conv.buffer = rvBuf;
+    const revOut = audioCtx.createGain(); revOut.gain.value = 0.5; conv.connect(revOut); revOut.connect(masterG);
 
-    const dry = audioCtx.createGain(); dry.gain.value = 0.6; dry.connect(masterG);
-    const wet = audioCtx.createGain(); wet.gain.value = 0.55; wet.connect(conv);
+    // Noise foundation — filtered to a dark mid-band rumble, NOT white hiss
+    const nLen = Math.floor(audioCtx.sampleRate * len);
+    const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
+    const nD = nBuf.getChannelData(0);
+    // Pink-ish noise: average neighbour pairs to roll off highs
+    for(let i=0;i<nLen;i++) nD[i]=Math.random()*2-1;
+    for(let pass=0;pass<6;pass++) for(let i=1;i<nLen;i++) nD[i]=(nD[i]+nD[i-1])*0.5;
+    const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
+    const nLP = audioCtx.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=340; nLP.Q.value=0.7;
+    const nHP = audioCtx.createBiquadFilter(); nHP.type='highpass'; nHP.frequency.value=55;
+    const nG = audioCtx.createGain();
+    nG.gain.setValueAtTime(0,now); nG.gain.linearRampToValueAtTime(0.55,now+0.8);
+    nG.gain.setValueAtTime(0.55,now+len-1.4); nG.gain.exponentialRampToValueAtTime(0.001,now+len);
+    nSrc.connect(nLP); nLP.connect(nHP); nHP.connect(nG); nG.connect(masterG); nG.connect(conv);
+    nSrc.start(now);
 
-    // Three sine-based voices — low, mid, unsettling overtone — no harsh highs
-    const voices = [
-        { freq: 110, detune: 0,   type: 'sine',     vol: 0.7  },
-        { freq: 220, detune: 8,   type: 'sine',     vol: 0.45 },
-        { freq: 329, detune: -12, type: 'triangle', vol: 0.25 },
-    ];
-    voices.forEach(v => {
-        const osc = audioCtx.createOscillator();
-        osc.type = v.type;
-        osc.frequency.setValueAtTime(v.freq * 0.6, now);
-        osc.frequency.linearRampToValueAtTime(v.freq, now + 0.5);
-        osc.frequency.setValueAtTime(v.freq, now + len - 1.0);
-        osc.frequency.exponentialRampToValueAtTime(v.freq * 0.85, now + len);
-        osc.detune.value = v.detune;
-        const vg = audioCtx.createGain(); vg.gain.value = v.vol;
-        osc.connect(vg); vg.connect(dry); vg.connect(wet);
-        osc.start(now); osc.stop(now + len);
+    // One detuned pair of sines — barely pitched, just unsettling depth
+    // Slightly different frequencies create a slow beating/pulsing effect
+    [[58, 0],[61.3, 900],[116, -700]].forEach(([freq, det]) => {
+        const o = audioCtx.createOscillator(); o.type='sine';
+        o.frequency.setValueAtTime(freq*0.8, now);
+        o.frequency.linearRampToValueAtTime(freq, now+1.5);
+        o.frequency.linearRampToValueAtTime(freq*0.88, now+len);
+        o.detune.value = det;
+        const og = audioCtx.createGain(); og.gain.value=0.18;
+        o.connect(og); og.connect(masterG); og.connect(conv);
+        o.start(now); o.stop(now+len);
     });
 
-    // Subtle breath-noise underneath — adds presence without harshness
-    const bSize = audioCtx.sampleRate * len;
-    const bBuf = audioCtx.createBuffer(1, bSize, audioCtx.sampleRate);
-    const bData = bBuf.getChannelData(0);
-    for(let i=0; i<bSize; i++) bData[i] = Math.random()*2-1;
-    const bSrc = audioCtx.createBufferSource(); bSrc.buffer = bBuf;
-    const bFilter = audioCtx.createBiquadFilter(); bFilter.type='bandpass'; bFilter.frequency.value=320; bFilter.Q.value=1.2;
-    const bGain = audioCtx.createGain(); bGain.gain.setValueAtTime(0,now); bGain.gain.linearRampToValueAtTime(0.08, now+0.3); bGain.gain.exponentialRampToValueAtTime(0.001, now+len);
-    bSrc.connect(bFilter); bFilter.connect(bGain); bGain.connect(masterG);
-    bSrc.start(now);
+    // Slow amplitude tremor — makes it feel alive and breathing
+    const trem = audioCtx.createOscillator(); trem.type='sine'; trem.frequency.value=1.8+Math.random()*0.6;
+    const tremG = audioCtx.createGain(); tremG.gain.value=0.12;
+    trem.connect(tremG); tremG.connect(masterG.gain);
+    trem.start(now); trem.stop(now+len);
 }
  
 function playHowl() {
-    // Bacteria sound: wet biological gurgle-moan — inhuman, organic, deeply unsettling
+    // Bacteria: a wet grinding scrape-moan — like cartilage dragged across concrete
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-    const len = 3.8;
+    const len = 3.2 + Math.random() * 1.2;
 
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
-    masterG.gain.linearRampToValueAtTime(0.65, now + 0.35);
-    masterG.gain.setValueAtTime(0.65, now + len - 1.2);
+    masterG.gain.linearRampToValueAtTime(0.52, now + 0.25);
+    masterG.gain.setValueAtTime(0.52, now + len - 0.9);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
 
-    // Pitch wobble LFO — gives it that wet, unstable, alive quality
-    const wobble = audioCtx.createOscillator();
-    wobble.type = 'sine';
-    wobble.frequency.value = 3.5 + Math.random() * 2;
-    const wobbleGain = audioCtx.createGain();
-    wobbleGain.gain.value = 18;
-    wobble.connect(wobbleGain);
-    wobble.start(now); wobble.stop(now + len);
-
-    // Secondary flutter LFO — faster irregular breathing
-    const flutter = audioCtx.createOscillator();
-    flutter.type = 'triangle';
-    flutter.frequency.value = 7 + Math.random() * 4;
-    const flutterGain = audioCtx.createGain();
-    flutterGain.gain.value = 9;
-    flutter.connect(flutterGain);
-    flutter.start(now); flutter.stop(now + len);
-
-    // Main moan — low mid-range, clearly non-human throat
-    const osc1 = audioCtx.createOscillator();
-    osc1.type = 'sawtooth';
-    osc1.frequency.setValueAtTime(78, now);
-    osc1.frequency.linearRampToValueAtTime(95, now + 0.6);
-    osc1.frequency.linearRampToValueAtTime(62, now + len);
-    wobbleGain.connect(osc1.frequency);
-    flutterGain.connect(osc1.frequency);
-
-    // Harmonic layer — adds body and wrongness
-    const osc2 = audioCtx.createOscillator();
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(156, now);
-    osc2.frequency.linearRampToValueAtTime(186, now + 0.6);
-    osc2.frequency.linearRampToValueAtTime(124, now + len);
-    wobbleGain.connect(osc2.frequency);
-
-    // Wet formant filter — makes it sound throat-shaped
-    const formant = audioCtx.createBiquadFilter();
-    formant.type = 'peaking';
-    formant.frequency.setValueAtTime(380, now);
-    formant.frequency.linearRampToValueAtTime(520, now + 1.0);
-    formant.frequency.linearRampToValueAtTime(280, now + len);
-    formant.gain.value = 14;
-    formant.Q.value = 3.5;
-
-    const lowpass = audioCtx.createBiquadFilter();
-    lowpass.type = 'lowpass';
-    lowpass.frequency.setValueAtTime(900, now);
-    lowpass.frequency.linearRampToValueAtTime(1400, now + 0.4);
-    lowpass.frequency.linearRampToValueAtTime(600, now + len);
-
-    const g1 = audioCtx.createGain(); g1.gain.value = 0.7;
-    const g2 = audioCtx.createGain(); g2.gain.value = 0.35;
-
-    osc1.connect(g1); osc2.connect(g2);
-    g1.connect(formant); g2.connect(formant);
-    formant.connect(lowpass); lowpass.connect(masterG);
-
-    // Wet noise breath — the biological wet-lung layer
-    const nSize = Math.floor(audioCtx.sampleRate * len);
-    const nBuf = audioCtx.createBuffer(1, nSize, audioCtx.sampleRate);
-    const nData = nBuf.getChannelData(0);
-    for(let i=0; i<nSize; i++) nData[i] = Math.random()*2-1;
+    // Gritty noise core — band-limited to grating mid-low frequencies
+    const nLen = Math.floor(audioCtx.sampleRate * len);
+    const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
+    const nD = nBuf.getChannelData(0);
+    for(let i=0;i<nLen;i++) nD[i]=Math.random()*2-1;
+    // Four smoothing passes — rolls off harshest highs, keeps grit
+    for(let p=0;p<4;p++) for(let i=1;i<nLen;i++) nD[i]=(nD[i]*0.6+nD[i-1]*0.4);
     const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
-    const nFilt = audioCtx.createBiquadFilter(); nFilt.type='bandpass'; nFilt.frequency.value=280; nFilt.Q.value=0.8;
-    const nGain = audioCtx.createGain();
-    nGain.gain.setValueAtTime(0,now); nGain.gain.linearRampToValueAtTime(0.12, now+0.4);
-    nGain.gain.linearRampToValueAtTime(0.06, now+len-0.5); nGain.gain.exponentialRampToValueAtTime(0.001,now+len);
-    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(masterG);
+
+    const nBP = audioCtx.createBiquadFilter(); nBP.type='bandpass'; nBP.frequency.value=420; nBP.Q.value=0.6;
+    const nPK = audioCtx.createBiquadFilter(); nPK.type='peaking'; nPK.frequency.value=680; nPK.gain.value=9; nPK.Q.value=1.8;
+    const nG = audioCtx.createGain();
+    nG.gain.setValueAtTime(0,now); nG.gain.linearRampToValueAtTime(0.7,now+0.3);
+    nG.gain.setValueAtTime(0.7,now+len-0.8); nG.gain.exponentialRampToValueAtTime(0.001,now+len);
+    nSrc.connect(nBP); nBP.connect(nPK); nPK.connect(nG); nG.connect(masterG);
     nSrc.start(now);
 
-    osc1.start(now); osc1.stop(now+len);
-    osc2.start(now); osc2.stop(now+len);
+    // Slow irregular pitch wobble on a sub-tone — feels like a creature
+    const subBase = 62 + Math.random()*18;
+    const wob = audioCtx.createOscillator(); wob.type='sine'; wob.frequency.value=2.1+Math.random()*1.4;
+    const wobG = audioCtx.createGain(); wobG.gain.value=24; wob.connect(wobG);
+    wob.start(now); wob.stop(now+len);
+
+    const sub = audioCtx.createOscillator(); sub.type='sawtooth';
+    sub.frequency.setValueAtTime(subBase, now);
+    sub.frequency.linearRampToValueAtTime(subBase*1.18, now+len*0.4);
+    sub.frequency.linearRampToValueAtTime(subBase*0.82, now+len);
+    wobG.connect(sub.frequency);
+    const subLP = audioCtx.createBiquadFilter(); subLP.type='lowpass'; subLP.frequency.value=380;
+    const subG = audioCtx.createGain(); subG.gain.value=0.38;
+    sub.connect(subLP); subLP.connect(subG); subG.connect(masterG);
+    sub.start(now); sub.stop(now+len);
+
+    // Irregular amplitude chop — broken breathing rhythm
+    const chop = audioCtx.createOscillator(); chop.type='triangle'; chop.frequency.value=3.8+Math.random()*2.5;
+    const chopG = audioCtx.createGain(); chopG.gain.value=0.22;
+    chop.connect(chopG);
+    const chopDest = audioCtx.createGain(); chopDest.gain.value=1.0;
+    chopG.connect(chopDest.gain);
+    nG.connect(chopDest); subG.connect(chopDest);
+    chopDest.connect(masterG);
+    chop.start(now); chop.stop(now+len);
 }
  
-// Distant door slam — sudden low-frequency thud with reverb tail
+// Distant door slam — heavy thud, junk rattle, long room tail
 function playDoorSlam() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
 
     const masterG = audioCtx.createGain();
-    masterG.gain.setValueAtTime(0, now);
-    masterG.gain.linearRampToValueAtTime(0.9, now + 0.01); // instant thud
-    masterG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+    masterG.gain.setValueAtTime(0.85, now);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
     masterG.connect(masterGain);
 
-    // Impact body — sub-bass thump
-    const imp = audioCtx.createOscillator();
-    imp.type = 'sine';
-    imp.frequency.setValueAtTime(95, now);
-    imp.frequency.exponentialRampToValueAtTime(22, now + 0.25);
-    const impG = audioCtx.createGain(); impG.gain.value = 1.0;
-    imp.connect(impG); impG.connect(masterG);
-    imp.start(now); imp.stop(now + 0.3);
-
-    // Rattle/click transient — wood and metal
-    const clickBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
-    const cd = clickBuf.getChannelData(0);
-    for(let i=0; i<cd.length; i++) cd[i] = (Math.random()*2-1) * Math.exp(-i/(audioCtx.sampleRate*0.015));
-    const clickSrc = audioCtx.createBufferSource(); clickSrc.buffer = clickBuf;
-    const clickFilt = audioCtx.createBiquadFilter(); clickFilt.type = 'highpass'; clickFilt.frequency.value = 800;
-    const clickG = audioCtx.createGain(); clickG.gain.value = 0.5;
-    clickSrc.connect(clickFilt); clickFilt.connect(clickG); clickG.connect(masterG);
-    clickSrc.start(now);
-
-    // Room reverb tail — makes it feel far away down the corridor
-    const revSize = audioCtx.sampleRate * 2.8;
-    const revBuf = audioCtx.createBuffer(2, revSize, audioCtx.sampleRate);
-    for(let ch=0; ch<2; ch++){
-        const d = revBuf.getChannelData(ch);
-        for(let i=0; i<revSize; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/revSize, 1.4);
+    // Sub impact — door mass hitting frame. Fast pitch drop, not musical
+    const impLen = Math.floor(audioCtx.sampleRate * 0.18);
+    const impBuf = audioCtx.createBuffer(1, impLen, audioCtx.sampleRate);
+    const impD = impBuf.getChannelData(0);
+    for(let i=0;i<impLen;i++){
+        const t=i/audioCtx.sampleRate;
+        // Decaying sine with strong transient click at t=0
+        impD[i]=(Math.sin(2*Math.PI*(130-100*t/0.18)*t)*Math.exp(-t/0.04))+(Math.random()*2-1)*Math.exp(-t/0.008)*0.6;
     }
-    const conv = audioCtx.createConvolver(); conv.buffer = revBuf;
-    const revG = audioCtx.createGain(); revG.gain.value = 0.45;
-    conv.connect(revG); revG.connect(masterG);
-    impG.connect(conv); clickG.connect(conv);
+    const impSrc = audioCtx.createBufferSource(); impSrc.buffer = impBuf;
+    const impLP = audioCtx.createBiquadFilter(); impLP.type='lowpass'; impLP.frequency.value=480;
+    const impG = audioCtx.createGain(); impG.gain.value=1.1;
+    impSrc.connect(impLP); impLP.connect(impG); impG.connect(masterG);
+    impSrc.start(now);
+
+    // Wood rattle — debris/panels vibrating after impact, 80-300ms later
+    const ratLen = Math.floor(audioCtx.sampleRate * 0.22);
+    const ratBuf = audioCtx.createBuffer(1, ratLen, audioCtx.sampleRate);
+    const ratD = ratBuf.getChannelData(0);
+    for(let i=0;i<ratLen;i++) ratD[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.035));
+    const ratSrc = audioCtx.createBufferSource(); ratSrc.buffer = ratBuf;
+    const ratBP = audioCtx.createBiquadFilter(); ratBP.type='bandpass'; ratBP.frequency.value=1100; ratBP.Q.value=1.2;
+    const ratG = audioCtx.createGain(); ratG.gain.value=0.4;
+    ratSrc.connect(ratBP); ratBP.connect(ratG); ratG.connect(masterG);
+    ratSrc.start(now + 0.09 + Math.random()*0.06);
+
+    // Long corridor reverb tail
+    const rvLen = Math.floor(audioCtx.sampleRate * 3.5);
+    const rvBuf = audioCtx.createBuffer(2, rvLen, audioCtx.sampleRate);
+    for(let ch=0;ch<2;ch++){const d=rvBuf.getChannelData(ch); for(let i=0;i<rvLen;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,1.2);}
+    const conv = audioCtx.createConvolver(); conv.buffer = rvBuf;
+    const rvG = audioCtx.createGain(); rvG.gain.value=0.55;
+    conv.connect(rvG); rvG.connect(masterG);
+    impG.connect(conv); ratG.connect(conv);
 }
 
-// Distant wailing cry — mournful, human-adjacent, fades in from nowhere
+// Distant wailing — dry, gritty, somewhere else in the building
 function playWailing() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-    const len = 5.5 + Math.random() * 2.0;
+    const len = 5.0 + Math.random() * 3.0;
 
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
-    masterG.gain.linearRampToValueAtTime(0.38, now + 1.2); // slow fade in
-    masterG.gain.setValueAtTime(0.38, now + len - 1.8);
+    masterG.gain.linearRampToValueAtTime(0.32, now + 1.8);
+    masterG.gain.setValueAtTime(0.32, now + len - 2.0);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
 
-    // Pitch contour — rises, wavers, falls like crying
-    const basePitch = 220 + Math.random() * 80;
-    const wobble = audioCtx.createOscillator();
-    wobble.type = 'sine';
-    wobble.frequency.value = 4.2 + Math.random() * 2.5;
-    const wobbleG = audioCtx.createGain(); wobbleG.gain.value = 22;
-    wobble.connect(wobbleG);
-    wobble.start(now); wobble.stop(now + len);
+    // Room reverb — long, gives sense of distant source
+    const rvLen = Math.floor(audioCtx.sampleRate * 4.0);
+    const rvBuf = audioCtx.createBuffer(2, rvLen, audioCtx.sampleRate);
+    for(let ch=0;ch<2;ch++){const d=rvBuf.getChannelData(ch); for(let i=0;i<rvLen;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,1.5);}
+    const conv = audioCtx.createConvolver(); conv.buffer=rvBuf;
+    const rvG = audioCtx.createGain(); rvG.gain.value=0.6; conv.connect(rvG); rvG.connect(masterG);
 
-    const cry1 = audioCtx.createOscillator();
-    cry1.type = 'sine';
-    cry1.frequency.setValueAtTime(basePitch * 0.75, now);
-    cry1.frequency.linearRampToValueAtTime(basePitch * 1.15, now + len * 0.35);
-    cry1.frequency.linearRampToValueAtTime(basePitch * 0.6, now + len);
-    wobbleG.connect(cry1.frequency);
+    // Noise-driven voice — not a pure sine, has grit and texture like a real throat
+    const vLen = Math.floor(audioCtx.sampleRate * len);
+    const vBuf = audioCtx.createBuffer(1, vLen, audioCtx.sampleRate);
+    const vD = vBuf.getChannelData(0);
+    // Light smoothing — keeps mid texture, removes pure white noise harshness
+    for(let i=0;i<vLen;i++) vD[i]=Math.random()*2-1;
+    for(let p=0;p<3;p++) for(let i=1;i<vLen;i++) vD[i]=(vD[i]*0.55+vD[i-1]*0.45);
+    const vSrc = audioCtx.createBufferSource(); vSrc.buffer=vBuf;
 
-    const cry2 = audioCtx.createOscillator();
-    cry2.type = 'triangle';
-    cry2.frequency.setValueAtTime(basePitch * 1.48, now);
-    cry2.frequency.linearRampToValueAtTime(basePitch * 1.82, now + len * 0.4);
-    cry2.frequency.linearRampToValueAtTime(basePitch * 1.2, now + len);
-    wobbleG.connect(cry2.frequency);
+    // Slow pitch-mod LFO — natural human vibrato rate ~5Hz, but irregular
+    const vibLFO = audioCtx.createOscillator(); vibLFO.type='sine'; vibLFO.frequency.value=4.8+Math.random()*1.8;
+    const vibG = audioCtx.createGain(); vibG.gain.value=0; // start silent, ramp up
+    vibG.gain.setValueAtTime(0,now); vibG.gain.linearRampToValueAtTime(180,now+1.2);
+    vibLFO.connect(vibG); vibLFO.start(now); vibLFO.stop(now+len);
 
-    // Vocal formant shaping
-    const f1 = audioCtx.createBiquadFilter(); f1.type='peaking'; f1.frequency.value=680; f1.gain.value=10; f1.Q.value=4;
-    const f2 = audioCtx.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=1200; f2.gain.value=6; f2.Q.value=5;
-    const lp = audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200;
+    // Formant sweep — moves through vowel space like "aah" -> "ooh" -> "aah"
+    const f1 = audioCtx.createBiquadFilter(); f1.type='bandpass';
+    f1.frequency.setValueAtTime(780, now);
+    f1.frequency.linearRampToValueAtTime(420, now+len*0.45);
+    f1.frequency.linearRampToValueAtTime(680, now+len);
+    f1.Q.value=2.8;
+    vibG.connect(f1.frequency);
 
-    const g1 = audioCtx.createGain(); g1.gain.value = 0.65;
-    const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
-    cry1.connect(g1); cry2.connect(g2);
-    g1.connect(f1); g2.connect(f1);
-    f1.connect(f2); f2.connect(lp); lp.connect(masterG);
+    const f2 = audioCtx.createBiquadFilter(); f2.type='peaking';
+    f2.frequency.setValueAtTime(1100, now);
+    f2.frequency.linearRampToValueAtTime(820, now+len*0.45);
+    f2.frequency.linearRampToValueAtTime(980, now+len);
+    f2.gain.value=7; f2.Q.value=3.5;
 
-    cry1.start(now); cry1.stop(now+len);
-    cry2.start(now); cry2.stop(now+len);
+    // Gentle highcut — keeps it dark and distant
+    const hiCut = audioCtx.createBiquadFilter(); hiCut.type='lowpass'; hiCut.frequency.value=1600;
+
+    const vG = audioCtx.createGain(); vG.gain.value=0.68;
+    vSrc.connect(f1); f1.connect(f2); f2.connect(hiCut); hiCut.connect(vG);
+    vG.connect(masterG); vG.connect(conv);
+    vSrc.start(now);
 }
 
-// Metallic, growly stuttering sound for stalking entities
+// Nearby entity presence — low gritty scrape, like something shifting its weight
 function playMetallicGrowl() {
     if(!masterGain || audioCtx.state !== 'running') return;
-    const len = 0.4 + Math.random() * 0.3;
+    const now = audioCtx.currentTime;
+    const len = 0.35 + Math.random() * 0.45;
+
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + len);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.28, now + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.001, now + len);
     g.connect(masterGain);
- 
-    const osc1 = audioCtx.createOscillator();
-    osc1.type = 'sawtooth';
-    osc1.frequency.setValueAtTime(40 + Math.random()*20, audioCtx.currentTime);
- 
-    const osc2 = audioCtx.createOscillator();
-    osc2.type = 'square';
-    osc2.frequency.setValueAtTime(45 + Math.random()*25, audioCtx.currentTime);
- 
-    const lfo = audioCtx.createOscillator();
-    lfo.type = 'square';
-    lfo.frequency.value = 15 + Math.random() * 10;
-    const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 30;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc1.frequency);
-    lfoGain.connect(osc2.frequency);
- 
-    osc1.connect(g);
-    osc2.connect(g);
-    lfo.start(); osc1.start(); osc2.start();
-    lfo.stop(audioCtx.currentTime + len); osc1.stop(audioCtx.currentTime + len); osc2.stop(audioCtx.currentTime + len);
+
+    // Gritty noise burst — filtered to low-mid scrape range
+    const bLen = Math.floor(audioCtx.sampleRate * len);
+    const bBuf = audioCtx.createBuffer(1, bLen, audioCtx.sampleRate);
+    const bD = bBuf.getChannelData(0);
+    for(let i=0;i<bLen;i++) bD[i]=Math.random()*2-1;
+    // Two smoothing passes — removes pure white, keeps grit
+    for(let p=0;p<2;p++) for(let i=1;i<bLen;i++) bD[i]=(bD[i]*0.6+bD[i-1]*0.4);
+    const bSrc = audioCtx.createBufferSource(); bSrc.buffer=bBuf;
+    const bBP = audioCtx.createBiquadFilter(); bBP.type='bandpass'; bBP.frequency.value=180+Math.random()*120; bBP.Q.value=0.9;
+    bSrc.connect(bBP); bBP.connect(g); bSrc.start(now);
+
+    // Sub thud underneath — weight, not musicality
+    const sub = audioCtx.createOscillator(); sub.type='sine';
+    sub.frequency.setValueAtTime(55+Math.random()*20, now);
+    sub.frequency.exponentialRampToValueAtTime(28, now+len);
+    const subG = audioCtx.createGain(); subG.gain.value=0.35;
+    sub.connect(subG); subG.connect(g);
+    sub.start(now); sub.stop(now+len);
 }
  
 // Low frequency sine wave for muffled damp carpet footsteps
@@ -1992,15 +1969,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 187;
-        BOTTLE_COUNT = 450; JELLY_COUNT = 405; PAINT_COUNT = 108;
+        BOTTLE_COUNT = 450; JELLY_COUNT = 324; PAINT_COUNT = 108;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 937;
-        BOTTLE_COUNT = 2250; JELLY_COUNT = 2025; PAINT_COUNT = 540;
+        BOTTLE_COUNT = 2250; JELLY_COUNT = 1620; PAINT_COUNT = 540;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 1875;
-        BOTTLE_COUNT = 4500; JELLY_COUNT = 4050; PAINT_COUNT = 1080;
+        BOTTLE_COUNT = 4500; JELLY_COUNT = 3240; PAINT_COUNT = 1080;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
