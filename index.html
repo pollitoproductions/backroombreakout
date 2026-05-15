@@ -468,7 +468,7 @@ const EXIT_MIN_DIST   = 80;
  
 // SURVIVAL STATS & ITEMS
 const STAT_MAX           = 100;
-const HYDRATION_DRAIN    = 0.28;  
+const HYDRATION_DRAIN    = 0.38; // slightly more survival pressure  
 const ITEM_PICKUP_DIST   = 25;    
  
 let BOTTLE_COUNT       = 1500;  
@@ -477,7 +477,7 @@ let PAINT_COUNT        = 360;
  
 // ENTITY AI
 let ENTITY_COUNT       = 1875;   
-const ENTITY_MIN_DIST    = 22.0;
+const ENTITY_MIN_DIST    = 12.0; // closer stop dist — no more camping just outside flame range
  
 // GAME SETTINGS
 let lookSensitivity = 2.0;
@@ -2715,9 +2715,9 @@ function animate() {
                         if (Math.abs(camera.position.x - e.mesh.position.x) > 50 || Math.abs(camera.position.z - e.mesh.position.z) > 50) continue; 
                         
                         const dist = camera.position.distanceTo(e.mesh.position);
-                        if(dist < 25) { // Match exact range of entity attack
+                        if(dist < 45) { // Flame reach — meaningful threat range
                             const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
-                            if(dirToEnt.dot(camDir) > 0.85) { 
+                            if(dirToEnt.dot(camDir) > 0.70) { // wider cone — easier to aim 
                                 playPoof();
                                 
                                 // Explosive Fireball Death
@@ -2983,7 +2983,21 @@ function animate() {
                     // Stares. Creeps a tiny bit. Creates paranoia.
                     if (dist < 150 && Math.random() < 0.001) playMetallicGrowl();
                     // Very slow drift toward player while "observing"
-                    if (dist > ENTITY_MIN_DIST + 10) {
+                    // But backs away if player gets too close — maintains eerie distance
+                    if (dist < 35 && dist > ENTITY_MIN_DIST) {
+                        // Player is closing in — retreat
+                        const dir2 = new THREE.Vector3(-dx, 0, -dz).normalize();
+                        const nx2 = e.mesh.position.x + dir2.x * 25 * delta;
+                        const nz2 = e.mesh.position.z + dir2.z * 25 * delta;
+                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                        else if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                        // Cornered — escalate instead of retreating into wall
+                        else {
+                            e.state = 'aggressive';
+                            e.stateTimer = 2.5 + Math.random() * 2;
+                            if (time - lastSpotScreechTime > 2000) { playScreech(); lastSpotScreechTime = time; }
+                        }
+                    } else if (dist > ENTITY_MIN_DIST + 10) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
                         const nx2 = e.mesh.position.x + dir2.x * 8 * delta;
                         const nz2 = e.mesh.position.z + dir2.z * 8 * delta;
@@ -3041,25 +3055,24 @@ function animate() {
                     }
 
                 } else if (e.state === 'aggressive') {
-                    // Fast charge. Rare and brief.
+                    // Rare but punishing — wide damage window
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 120;
+                        const spd = 130;
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
-                    if (dist < 25) {
-                        health -= 18 * delta;
+                    if (dist < 42) { // wider than before — 42 not 25
+                        health -= 16 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(80);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "A Smiler took you.");
                     }
                     if (e.stateTimer <= 0) {
-                        // Always retreats — vanishes after aggression
                         e.state = 'vanished';
-                        e.vanishCooldown = 5 + Math.random() * 8;
+                        e.vanishCooldown = 4 + Math.random() * 6;
                     }
                 }
 
@@ -3157,24 +3170,46 @@ function animate() {
                     }
 
                 } else if (e.state === 'stalking') {
-                    // Slow deliberate approach, updates last known position
-                    if (!isTwitching && dist > ENTITY_MIN_DIST) {
-                        const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 22;
-                        const nx2 = e.mesh.position.x + dir2.x * spd * delta;
-                        const nz2 = e.mesh.position.z + dir2.z * spd * delta;
-                        if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
-                        if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
-                    }
-                    if (dist < 80) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
-                    if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
-                    if (dist < 150 && Math.random() < 0.002) playMetallicGrowl();
+                    // Deliberate approach — but backs off if player charges directly at it
+                    // Detect if player is moving toward entity (dot product of player velocity vs dir to entity)
+                    const playerMoving = Math.hypot(velocity.x, velocity.z) > 15;
+                    const dirToEntity = new THREE.Vector3(-dx, 0, -dz).normalize();
+                    const playerVelNorm = velocity.clone().normalize();
+                    const playerChargingAt = playerMoving && playerVelNorm.dot(dirToEntity) > 0.55;
 
-                    // Apparate jump
+                    if (!isTwitching) {
+                        if (playerChargingAt && dist < 55) {
+                            // Player charging — retreat sideways/back, don't just stand there
+                            const retreatAngle = Math.PI * 0.7 + Math.random() * Math.PI * 0.6;
+                            const retreatDir = dirToEntity.clone().applyAxisAngle(new THREE.Vector3(0,1,0), retreatAngle);
+                            const nx2 = e.mesh.position.x + retreatDir.x * 55 * delta;
+                            const nz2 = e.mesh.position.z + retreatDir.z * 55 * delta;
+                            if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                            else if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                            else {
+                                // Cornered — snap to hunting
+                                e.state = 'hunting';
+                                e.stateTimer = 4 + Math.random() * 3;
+                                if (time - lastSpotScreechTime > 2000) { playHowl(); lastSpotScreechTime = time; }
+                            }
+                        } else if (dist > ENTITY_MIN_DIST) {
+                            const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
+                            const spd = 38;
+                            const nx2 = e.mesh.position.x + dir2.x * spd * delta;
+                            const nz2 = e.mesh.position.z + dir2.z * spd * delta;
+                            if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
+                            if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
+                        }
+                    }
+                    if (dist < 120) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
+                    if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
+                    if (dist < 150 && Math.random() < 0.003) playMetallicGrowl();
+
+                    // Apparate jump — more frequent and covers more ground
                     e.apparateTimer -= delta;
-                    if (e.apparateTimer <= 0 && dist < 100) {
-                        const jumpDist = Math.min(dist - 15, 15 + Math.random() * 25);
-                        const angleOffset = (Math.random() - 0.5) * 1.2;
+                    if (e.apparateTimer <= 0 && dist < 130) {
+                        const jumpDist = Math.min(dist - 15, 25 + Math.random() * 35);
+                        const angleOffset = (Math.random() - 0.5) * 0.8;
                         const moveDir = new THREE.Vector3(dx, 0, dz).normalize();
                         moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
                         const steps = Math.ceil(jumpDist / 2);
@@ -3185,64 +3220,77 @@ function animate() {
                             if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
                             if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                         }
-                        e.apparateTimer = 1.0 + Math.random() * 1.5;
+                        e.apparateTimer = 0.6 + Math.random() * 0.9;
+                    }
+
+                    // If close enough, escalate to hunting instead of resetting
+                    if (dist < 60 && Math.random() < 0.015) {
+                        e.state = 'hunting';
+                        e.stateTimer = 5 + Math.random() * 4;
+                        if (time - lastSpotScreechTime > 2000) { playHowl(); lastSpotScreechTime = time; }
                     }
 
                     if (e.stateTimer <= 0) {
                         const roll = Math.random();
-                        if (roll < 0.3) {
+                        if (roll < 0.50) { // escalate more often
                             e.state = 'hunting';
-                            e.stateTimer = 4 + Math.random() * 3;
-                            if (time - lastSpotScreechTime > 2500) { playHowl(); lastSpotScreechTime = time; }
-                        } else if (roll < 0.5) {
+                            e.stateTimer = 5 + Math.random() * 4;
+                            if (time - lastSpotScreechTime > 2000) { playHowl(); lastSpotScreechTime = time; }
+                        } else if (roll < 0.70) {
                             e.state = 'lost';
-                            e.lostTimer = 3 + Math.random() * 5;
+                            e.lostTimer = 2 + Math.random() * 3;
                             e.stateTimer = e.lostTimer;
-                        } else if (roll < 0.65) {
-                            e.state = 'idle';
-                            e.stateTimer = 8 + Math.random() * 6;
-                        } else {
+                        } else if (roll < 0.85) {
                             e.state = 'investigating';
-                            e.stateTimer = 4 + Math.random() * 4;
+                            e.stateTimer = 3 + Math.random() * 3;
+                        } else {
+                            e.state = 'idle';
+                            e.stateTimer = 5 + Math.random() * 4;
                         }
                     }
 
                 } else if (e.state === 'hunting') {
-                    // Fast desperate charge at player
+                    // Desperate charge — fast enough to catch a walking player
                     if (!isTwitching && dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 90;
+                        const spd = 110; // was 90 — can close on a walking player
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
                     e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
-                    // Erratic burst mid-hunt
-                    if (e.erraticTimer <= 0 && Math.random() < 0.02) {
+                    if (e.erraticTimer <= 0 && Math.random() < 0.018) {
                         const a = Math.random() * Math.PI * 2;
-                        e.erraticVelX = Math.cos(a) * 60;
-                        e.erraticVelZ = Math.sin(a) * 60;
-                        e.erraticTimer = 0.15 + Math.random() * 0.2;
+                        e.erraticVelX = Math.cos(a) * 50;
+                        e.erraticVelZ = Math.sin(a) * 50;
+                        e.erraticTimer = 0.12 + Math.random() * 0.18;
                     }
-                    if (dist < 150 && Math.random() < 0.003) playMetallicGrowl();
+                    if (dist < 150 && Math.random() < 0.004) playMetallicGrowl();
+
+                    // Damage on contact during hunt
+                    if (dist < 35) {
+                        health -= 8 * delta; // moderate — survivable but hurts
+                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(60);
+                        tookDamage = true;
+                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                    }
 
                     if (e.stateTimer <= 0) {
-                        // Bacteria sometimes loses player or suddenly goes passive
                         const roll = Math.random();
-                        if (roll < 0.3) {
-                            e.state = 'lost';
-                            e.lostTimer = 5 + Math.random() * 6;
-                            e.stateTimer = e.lostTimer;
-                        } else if (roll < 0.55) {
-                            e.state = 'stalking';
-                            e.stateTimer = 5 + Math.random() * 5;
-                        } else if (roll < 0.75) {
+                        if (roll < 0.40) { // escalate to full aggression more often
                             e.state = 'aggressive';
-                            e.stateTimer = 2 + Math.random() * 2;
+                            e.stateTimer = 3 + Math.random() * 3;
+                        } else if (roll < 0.65) {
+                            e.state = 'lost';
+                            e.lostTimer = 3 + Math.random() * 4;
+                            e.stateTimer = e.lostTimer;
+                        } else if (roll < 0.85) {
+                            e.state = 'stalking';
+                            e.stateTimer = 4 + Math.random() * 4;
                         } else {
                             e.state = 'idle';
-                            e.stateTimer = 6 + Math.random() * 6;
+                            e.stateTimer = 5 + Math.random() * 4;
                         }
                     }
 
@@ -3271,34 +3319,33 @@ function animate() {
                     }
 
                 } else if (e.state === 'aggressive') {
-                    // Very fast frenzied burst — desperate/biological
+                    // Full sprint frenzy — faster than sprinting player
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 140;
+                        const spd = 155; // faster than sprinting player (180) but not quite
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
-                    if (dist < 25) {
-                        health -= 14 * delta;
-                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
+                    if (dist < 40) { // wider damage window — 40 not 25
+                        health -= 12 * delta;
+                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(70);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                     }
                     if (e.stateTimer <= 0) {
-                        // After frenzy, always loses interest briefly
                         e.state = 'lost';
-                        e.lostTimer = 3 + Math.random() * 4;
+                        e.lostTimer = 2 + Math.random() * 3;
                         e.stateTimer = e.lostTimer;
                         e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
                     }
                 }
 
-                // Standard damage window for any close-contact state
-                if (dist < 25 && (e.state === 'hunting' || e.state === 'stalking') && e.state !== 'aggressive') {
-                    health -= 10 * delta;
-                    if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
+                // Stalking contact damage — light pressure, survivable
+                if (dist < 30 && e.state === 'stalking') {
+                    health -= 4 * delta;
+                    if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(30);
                     tookDamage = true;
                     if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                 }
