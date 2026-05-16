@@ -1571,10 +1571,23 @@ function initAudio(){
     const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.008; o3.connect(g3); g3.connect(ambientBuzzGain); o3.start();
     const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=8; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
  
-    // Flame gain node — actual noise spawned per-frame when firing
+    // Flame audio — looping noise filtered to a deep roar, gated by flameGain
+    const flameBufferSize = audioCtx.sampleRate * 2;
+    const flameNoiseBuffer = audioCtx.createBuffer(1, flameBufferSize, audioCtx.sampleRate);
+    const flameData = flameNoiseBuffer.getChannelData(0);
+    for (let i = 0; i < flameBufferSize; i++) flameData[i] = Math.random() * 2 - 1;
+    const flameNoiseSrc = audioCtx.createBufferSource();
+    flameNoiseSrc.buffer = flameNoiseBuffer;
+    flameNoiseSrc.loop = true;
+    const flameFilter = audioCtx.createBiquadFilter();
+    flameFilter.type = 'lowpass';
+    flameFilter.frequency.value = 500;
     flameGain = audioCtx.createGain();
-    flameGain.gain.value = 0;
+    flameGain.gain.value = 0; // silent until firing
+    flameNoiseSrc.connect(flameFilter);
+    flameFilter.connect(flameGain);
     flameGain.connect(masterGain);
+    flameNoiseSrc.start();
 }
  
 // Entity Sounds
