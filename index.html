@@ -312,7 +312,7 @@
             <div class="title">BACKROOMS</div>
             <div style="font-size:1em;color:#aaa;margin-bottom:20px;letter-spacing:6px;text-transform:uppercase;">Noclip Sim</div>
  
-            <!-- PAGE 0 — LORE (condensed, 2 screens) -->
+            <!-- PAGE 0 — LORE -->
             <div id="page-0" class="start-page">
                 <div class="lore">
                     As you walk through an industrial park at night, the clatter of a can of spray paint you accidentally kick startles you. You pick it up, take two more steps, and you fall through solid concrete — noclipping into something vast. Endless buzzing hallways, moist carpet, no sky, no doors. Just yellow.
@@ -322,15 +322,37 @@
                 </div>
                 <div class="hint">Tap anywhere to continue...</div>
             </div>
- 
-            <!-- PAGE 1 — CONTROLS / COMBAT -->
+
+            <!-- PAGE 1 — MAIN MENU -->
             <div id="page-1" class="start-page" style="display:none;">
+                <div class="btn-container" style="flex-direction:column;align-items:center;gap:12px;margin-top:8px;width:100%;">
+                    <button class="choice-btn green" id="btn-play">▶ &nbsp; PLAY</button>
+                    <button class="choice-btn" id="btn-howtoplay">HOW TO PLAY</button>
+                    <button class="choice-btn" id="btn-settings">⚙ &nbsp; SETTINGS</button>
+                    <button class="choice-btn" id="btn-survivors">SURVIVOR LOG</button>
+                </div>
+                <div style="margin-top:24px;font-size:0.82em;color:#555;font-family:monospace;">&copy; Brant Fuller 2026</div>
+            </div>
+
+            <!-- PAGE 2 — DIFFICULTY -->
+            <div id="page-2" class="start-page" style="display:none;">
+                <div class="hint" style="margin-top:8px;margin-bottom:12px;color:#00ff00;">Choose Your Sanity:</div>
+                <div class="btn-container" style="flex-direction:column;align-items:center;gap:10px;margin-top:0;width:100%;">
+                    <button class="choice-btn green" id="btn-easy">SANE &nbsp;·&nbsp; 1 mi² &nbsp;·&nbsp; 10 Exits</button>
+                    <button class="choice-btn" id="btn-med">QUESTIONABLE &nbsp;·&nbsp; 5 mi² &nbsp;·&nbsp; 5 Exits</button>
+                    <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
+                </div>
+                <button class="choice-btn" style="margin-top:18px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
+            </div>
+
+            <!-- PAGE 3 — HOW TO PLAY -->
+            <div id="page-3" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.1em;letter-spacing:3px;margin-bottom:14px;color:#fff;">HOW TO SURVIVE</div>
 
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ffffff;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#fff;">🕹️ MOVE</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
-                        <strong style="color:#aaa;">Mobile:</strong> Left thumb joystick to walk. Drag right side to look around.<br>
+                        Left thumb joystick to walk. Drag right side to look around.<br>
                         The <strong style="color:#fff;">sprint button</strong> (top right) boosts speed — watch the stamina ring.<br>
                         The <strong style="color:#00ff88;">walk button</strong> (below sprint) locks you moving forward hands-free.
                     </span>
@@ -339,8 +361,8 @@
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ff4444;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#ff4444;">🔥 FLAMETHROWER</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
-                        <strong style="color:#aaa;">Mobile:</strong> Hold the spray can button to fire.<br>
-                        Takes <strong style="color:#ffaa00;">two sustained bursts</strong> to kill an entity. Paint is limited — use it only when something is right on you.<br>
+                        Hold the spray can button to fire. Takes two sustained bursts to kill.<br>
+                        Paint is limited — use it only when something is right on you.<br>
                         <strong style="color:#ff6666;">Don't let them get close. They will hurt you.</strong>
                     </span>
                 </div>
@@ -348,70 +370,52 @@
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #88ccff;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#88ccff;">✕ MARK WALLS</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
-                        <strong style="color:#aaa;">Mobile:</strong> Tap (don't hold) the spray button near a wall to tag it.<br>
-                        The Backrooms loops endlessly. Mark where you've been. Follow the red graffiti arrows — they point toward the exit.
+                        Tap (don't hold) the spray button near a wall to tag it.<br>
+                        The Backrooms loops endlessly. Follow the red graffiti arrows to the exit.
                     </span>
                 </div>
 
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ffcc44;width:100%;box-sizing:border-box;">
                     <strong style="color:#ffcc44;">⚠️ STAY HYDRATED</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
-                        Your hydration drains constantly. Pick up <strong style="color:#88ccff;">Almond Water</strong> (blue glow) to survive.<br>
-                        <strong style="color:#88ffcc;">Moth Jelly</strong> (green glow) restores health. <strong style="color:#ff4444;">Red cans</strong> refill your paint.
+                        Hydration drains constantly. <strong style="color:#88ccff;">Blue glow</strong> = Almond Water.<br>
+                        <strong style="color:#88ffcc;">Green glow</strong> = Moth Jelly (health). <strong style="color:#ff4444;">Red cans</strong> = paint refill.
                     </span>
                 </div>
 
-                <div class="hint" style="margin-top:16px;">Tap anywhere to continue...</div>
+                <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
- 
-            <!-- PAGE 2 — CHOOSE DIFFICULTY + SURVIVORS -->
-            <div id="page-2" class="start-page" style="display:none;">
-                <div class="hint" style="margin-top:8px;margin-bottom:12px;color:#00ff00;">Choose Your Sanity:</div>
-                <div class="btn-container" style="flex-direction:column;align-items:center;gap:10px;margin-top:0;width:100%;">
-                    <button class="choice-btn green" id="btn-easy">SANE &nbsp;·&nbsp; 1 mi² &nbsp;·&nbsp; 10 Exits</button>
-                    <button class="choice-btn" id="btn-med">QUESTIONABLE &nbsp;·&nbsp; 5 mi² &nbsp;·&nbsp; 5 Exits</button>
-                    <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
-                </div>
-                <div style="width:100%;height:1px;background:rgba(212,212,43,0.15);margin:18px 0;"></div>
-                <button class="choice-btn" style="border-color:rgba(180,180,180,0.4);color:#aaa;max-width:400px;width:100%; margin-bottom:10px;" id="btn-settings">⚙ SETTINGS</button>
-                <button class="choice-btn" style="border-color:rgba(180,180,180,0.4);color:#aaa;max-width:400px;width:100%;" id="btn-survivors">SURVIVOR LOG</button>
-                <div style="margin-top:20px;font-size:0.82em;color:#555;font-family:monospace;">&copy; Brant Fuller 2026</div>
-            </div>
- 
-            <!-- PAGE 3 — SURVIVORS LEADERBOARD -->
-            <div id="page-3" class="start-page" style="display:none;">
+
+            <!-- PAGE 4 — SURVIVORS LEADERBOARD -->
+            <div id="page-4" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.1em;letter-spacing:4px;margin-bottom:14px;color:#aaa;">SURVIVORS</div>
                 <div class="btn-container" style="flex-direction:row;gap:8px;margin-bottom:16px;margin-top:0;">
                     <button class="choice-btn green"  style="font-size:0.85em;padding:8px 12px;" id="lb-easy-btn"  onclick="showLeaderboard('SANE')">SANE</button>
                     <button class="choice-btn"        style="font-size:0.85em;padding:8px 12px;" id="lb-med-btn"   onclick="showLeaderboard('QUESTIONABLE')">QUESTIONABLE</button>
-                    <button class="choice-btn red"    style="font-size:0.85em;padding:8px 12px;" id="lb-hard-btn" onclick="showLeaderboard('INSANE')">INSANE</button>
+                    <button class="choice-btn red"    style="font-size:0.85em;padding:8px 12px;" id="lb-hard-btn"  onclick="showLeaderboard('INSANE')">INSANE</button>
                 </div>
                 <div id="lb-content" style="width:100%;min-height:160px;display:flex;align-items:center;justify-content:center;">
                     <span style="color:#555;font-size:0.9em;">Select a difficulty above</span>
                 </div>
-                <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(2)">← BACK</button>
+                <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
- 
-            <!-- PAGE 4 — SETTINGS -->
-            <div id="page-4" class="start-page" style="display:none;">
+
+            <!-- PAGE 5 — SETTINGS -->
+            <div id="page-5" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.2em;letter-spacing:4px;margin-bottom:24px;color:#aaa;">SETTINGS</div>
-                
                 <div class="setting-row">
                     <span>LOOK SENSITIVITY</span>
                     <input type="range" id="sens-slider" min="1" max="10" value="2" step="0.5">
                 </div>
-                
                 <div class="setting-row">
                     <span>SOUND</span>
                     <button class="choice-btn" id="setting-mute-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
                 </div>
- 
                 <div class="setting-row">
                     <span>VIBRATION</span>
                     <button class="choice-btn" id="setting-vib-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
                 </div>
-                
-                <button class="choice-btn" style="margin-top:26px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(2)">← BACK</button>
+                <button class="choice-btn" style="margin-top:26px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
         </div>
     </div>
@@ -1720,23 +1724,19 @@ function showPage(n) {
     document.getElementById('page-' + currentPage).style.display = 'block';
 }
 startScreen.addEventListener('click', (e)=>{
-    if (currentPage >= 2) return; // pages 2+ are button-driven
+    if (currentPage >= 1) return; // page 1+ are button-driven
     e.stopPropagation();
-    showPage(currentPage + 1);
+    showPage(1); // lore → main menu
 });
- 
+
+document.getElementById('btn-play').addEventListener('click', e => { e.stopPropagation(); showPage(2); });
+document.getElementById('btn-howtoplay').addEventListener('click', e => { e.stopPropagation(); showPage(3); });
+document.getElementById('btn-survivors').addEventListener('click', e => { e.stopPropagation(); showPage(4); showLeaderboard('SANE'); });
+document.getElementById('btn-settings').addEventListener('click', e => { e.stopPropagation(); showPage(5); });
+
 document.getElementById('btn-easy').addEventListener('click', e => selectDifficulty('easy', e));
 document.getElementById('btn-med').addEventListener('click', e => selectDifficulty('medium', e));
 document.getElementById('btn-hard').addEventListener('click', e => selectDifficulty('hard', e));
-document.getElementById('btn-survivors').addEventListener('click', e => { 
-    e.stopPropagation(); 
-    showPage(3); 
-    showLeaderboard('SANE');
-});
-document.getElementById('btn-settings').addEventListener('click', e => { 
-    e.stopPropagation(); 
-    showPage(4); 
-});
  
 // Settings Events
 document.getElementById('setting-mute-btn').addEventListener('click', e => {
