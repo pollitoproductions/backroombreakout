@@ -1560,10 +1560,16 @@ function initAudio(){
     masterGain.gain.value = isMuted ? 0 : 0.5; // Sync with settings
     masterGain.connect(audioCtx.destination);
     
-    // Ambient buzz removed — was causing constant looping wave sound
+    // Fluorescent light buzz — the backbone of backrooms atmosphere
     ambientBuzzGain = audioCtx.createGain();
-    ambientBuzzGain.gain.value = 0;
+    ambientBuzzGain.gain.value = 0.18; // subtle, not overpowering
     ambientBuzzGain.connect(masterGain);
+
+    const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(ambientBuzzGain); o1.start();
+    const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(ambientBuzzGain); o2.start();
+    // High frequency flicker — very quiet, just presence
+    const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.008; o3.connect(g3); g3.connect(ambientBuzzGain); o3.start();
+    const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=8; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
  
     // Flame gain node — actual noise spawned per-frame when firing
     flameGain = audioCtx.createGain();
@@ -2726,7 +2732,9 @@ function animate() {
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
         scene.fog.color.lerp(fogColorTarget, delta * 4);
         
-        // ambient buzz removed
+        if (ambientBuzzGain && audioCtx && audioCtx.state === 'running') {
+            ambientBuzzGain.gain.setTargetAtTime(buzzVolTarget * 0.36, audioCtx.currentTime, 0.5);
+        }
  
         // Continuous Flamethrower Process
         if (isFiring && Date.now() - touchStartTime > 200) {
