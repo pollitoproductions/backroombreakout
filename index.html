@@ -1796,40 +1796,7 @@ function playWailing() {
 }
 
 // Nearby entity presence — low gritty scrape, like something shifting its weight
-let lastGrowlTime = 0;
-function playMetallicGrowl() {
-    const nowMs = Date.now();
-    if (nowMs - lastGrowlTime < 4000) return; // max once per 4 seconds globally
-    lastGrowlTime = nowMs;
-    if(!masterGain || audioCtx.state !== 'running') return;
-    const now = audioCtx.currentTime;
-    const len = 0.35 + Math.random() * 0.45;
-
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.28, now + 0.04);
-    g.gain.exponentialRampToValueAtTime(0.001, now + len);
-    g.connect(masterGain);
-
-    // Gritty noise burst — filtered to low-mid scrape range
-    const bLen = Math.floor(audioCtx.sampleRate * len);
-    const bBuf = audioCtx.createBuffer(1, bLen, audioCtx.sampleRate);
-    const bD = bBuf.getChannelData(0);
-    for(let i=0;i<bLen;i++) bD[i]=Math.random()*2-1;
-    // Two smoothing passes — removes pure white, keeps grit
-    for(let p=0;p<2;p++) for(let i=1;i<bLen;i++) bD[i]=(bD[i]*0.6+bD[i-1]*0.4);
-    const bSrc = audioCtx.createBufferSource(); bSrc.buffer=bBuf;
-    const bBP = audioCtx.createBiquadFilter(); bBP.type='bandpass'; bBP.frequency.value=180+Math.random()*120; bBP.Q.value=0.9;
-    bSrc.connect(bBP); bBP.connect(g); bSrc.start(now);
-
-    // Sub thud underneath — weight, not musicality
-    const sub = audioCtx.createOscillator(); sub.type='sine';
-    sub.frequency.setValueAtTime(55+Math.random()*20, now);
-    sub.frequency.exponentialRampToValueAtTime(28, now+len);
-    const subG = audioCtx.createGain(); subG.gain.value=0.35;
-    sub.connect(subG); subG.connect(g);
-    sub.start(now); sub.stop(now+len);
-}
+// metallic growl removed
  
 // Low frequency sine wave for muffled damp carpet footsteps
 function playFootstep() {
@@ -2992,14 +2959,14 @@ function animate() {
                     e.stateTimer = 10 + Math.random() * 8;
                     e.lastKnownPlayerX = playerPos.x;
                     e.lastKnownPlayerZ = playerPos.z;
-                    playMetallicGrowl();
+                    
 
                 } else if(etype === 'bacteria_investigate') {
                     e.state = 'investigating';
                     e.stateTimer = 7 + Math.random() * 5;
                     e.lastKnownPlayerX = playerPos.x + (Math.random()-0.5)*40;
                     e.lastKnownPlayerZ = playerPos.z + (Math.random()-0.5)*40;
-                    playMetallicGrowl();
+                    
 
                 } else if(etype === 'smiler_appear') {
                     // Teleport smiler to a spot the player will see
@@ -3019,7 +2986,7 @@ function animate() {
                 } else if(etype === 'smiler_stalk') {
                     e.state = 'stalking';
                     e.stateTimer = 8 + Math.random() * 5;
-                    playMetallicGrowl();
+                    
                 }
             }
         }
@@ -3192,7 +3159,7 @@ function animate() {
 
                 } else if (e.state === 'observing') {
                     // Stares. Creeps a tiny bit. Creates paranoia.
-                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
+                    
                     // Very slow drift toward player while "observing"
                     // But backs away if player gets too close — maintains eerie distance
                     if (dist < 35 && dist > ENTITY_MIN_DIST) {
@@ -3238,7 +3205,7 @@ function animate() {
 
                 } else if (e.state === 'stalking') {
                     // Follows slowly. May lose interest or go dormant.
-                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
+                    
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
                         const spd = 30;
@@ -3422,7 +3389,7 @@ function animate() {
                     }
                     if (dist < 120) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
                     if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
-                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
+                    
 
                     // Apparate jump — more frequent and covers more ground
                     e.apparateTimer -= delta;
@@ -3485,7 +3452,7 @@ function animate() {
                         e.erraticVelZ = Math.sin(a) * 50;
                         e.erraticTimer = 0.12 + Math.random() * 0.18;
                     }
-                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
+                    
 
                     // Damage on contact during hunt
                     if (dist < 35) {
