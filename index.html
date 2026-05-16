@@ -1560,35 +1560,15 @@ function initAudio(){
     masterGain.gain.value = isMuted ? 0 : 0.5; // Sync with settings
     masterGain.connect(audioCtx.destination);
     
+    // Ambient buzz removed — was causing constant looping wave sound
     ambientBuzzGain = audioCtx.createGain();
-    ambientBuzzGain.gain.value = 0.5;
+    ambientBuzzGain.gain.value = 0;
     ambientBuzzGain.connect(masterGain);
  
-    // Ambient hums connected to dynamic ambientBuzzGain
-    const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(ambientBuzzGain); o1.start();
-    const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(ambientBuzzGain); o2.start();
-    const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.03; o3.connect(g3); g3.connect(ambientBuzzGain); o3.start();
-    const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=15; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
- 
-    // Propelled Flame Noise Generator
-    const bufferSize = audioCtx.sampleRate * 2;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
-    }
-    const noiseSrc = audioCtx.createBufferSource();
-    noiseSrc.buffer = noiseBuffer;
-    noiseSrc.loop = true;
-    const flameFilter = audioCtx.createBiquadFilter();
-    flameFilter.type = 'lowpass';
-    flameFilter.frequency.value = 500; // Deep hot air balloon roar
+    // Flame gain node — actual noise spawned per-frame when firing
     flameGain = audioCtx.createGain();
-    flameGain.gain.value = 0; // Starts silent
-    noiseSrc.connect(flameFilter);
-    flameFilter.connect(flameGain);
+    flameGain.gain.value = 0;
     flameGain.connect(masterGain);
-    noiseSrc.start();
 }
  
 // Entity Sounds
@@ -1810,7 +1790,11 @@ function playWailing() {
 }
 
 // Nearby entity presence — low gritty scrape, like something shifting its weight
+let lastGrowlTime = 0;
 function playMetallicGrowl() {
+    const nowMs = Date.now();
+    if (nowMs - lastGrowlTime < 4000) return; // max once per 4 seconds globally
+    lastGrowlTime = nowMs;
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
     const len = 0.35 + Math.random() * 0.45;
@@ -2742,9 +2726,7 @@ function animate() {
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
         scene.fog.color.lerp(fogColorTarget, delta * 4);
         
-        if (ambientBuzzGain && audioCtx && audioCtx.state === 'running') {
-            ambientBuzzGain.gain.setTargetAtTime(buzzVolTarget, audioCtx.currentTime, 0.5);
-        }
+        // ambient buzz removed
  
         // Continuous Flamethrower Process
         if (isFiring && Date.now() - touchStartTime > 200) {
@@ -3202,7 +3184,7 @@ function animate() {
 
                 } else if (e.state === 'observing') {
                     // Stares. Creeps a tiny bit. Creates paranoia.
-                    if (dist < 150 && Math.random() < 0.001) playMetallicGrowl();
+                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
                     // Very slow drift toward player while "observing"
                     // But backs away if player gets too close — maintains eerie distance
                     if (dist < 35 && dist > ENTITY_MIN_DIST) {
@@ -3248,7 +3230,7 @@ function animate() {
 
                 } else if (e.state === 'stalking') {
                     // Follows slowly. May lose interest or go dormant.
-                    if (dist < 150 && Math.random() < 0.0015) playMetallicGrowl();
+                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
                         const spd = 30;
@@ -3432,7 +3414,7 @@ function animate() {
                     }
                     if (dist < 120) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
                     if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
-                    if (dist < 150 && Math.random() < 0.003) playMetallicGrowl();
+                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
 
                     // Apparate jump — more frequent and covers more ground
                     e.apparateTimer -= delta;
@@ -3495,7 +3477,7 @@ function animate() {
                         e.erraticVelZ = Math.sin(a) * 50;
                         e.erraticTimer = 0.12 + Math.random() * 0.18;
                     }
-                    if (dist < 150 && Math.random() < 0.004) playMetallicGrowl();
+                    if (dist < 150 && Math.random() < 0.0002) playMetallicGrowl();
 
                     // Damage on contact during hunt
                     if (dist < 35) {
