@@ -1593,59 +1593,76 @@ function initAudio(){
  
 // Entity Sounds
 function playScreech() {
-    // Smiler: a low gritty presence tone — like something large breathing wrong in the dark
+    // Smiler ambient presence — low unsettling rumble when it spots you at distance
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-    const len = 4.0;
-
+    const len = 2.5;
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
-    masterG.gain.linearRampToValueAtTime(0.48, now + 0.6);
-    masterG.gain.setValueAtTime(0.48, now + len - 1.2);
+    masterG.gain.linearRampToValueAtTime(0.35, now + 0.4);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
-
-    // Long corridor reverb
-    const rvLen = Math.floor(audioCtx.sampleRate * 3.2);
-    const rvBuf = audioCtx.createBuffer(2, rvLen, audioCtx.sampleRate);
-    for(let ch=0;ch<2;ch++){const d=rvBuf.getChannelData(ch); for(let i=0;i<rvLen;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,1.8);}
-    const conv = audioCtx.createConvolver(); conv.buffer = rvBuf;
-    const revOut = audioCtx.createGain(); revOut.gain.value = 0.5; conv.connect(revOut); revOut.connect(masterG);
-
-    // Noise foundation — filtered to a dark mid-band rumble, NOT white hiss
     const nLen = Math.floor(audioCtx.sampleRate * len);
     const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
     const nD = nBuf.getChannelData(0);
-    // Pink-ish noise: average neighbour pairs to roll off highs
     for(let i=0;i<nLen;i++) nD[i]=Math.random()*2-1;
-    for(let pass=0;pass<6;pass++) for(let i=1;i<nLen;i++) nD[i]=(nD[i]+nD[i-1])*0.5;
-    const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
-    const nLP = audioCtx.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=340; nLP.Q.value=0.7;
-    const nHP = audioCtx.createBiquadFilter(); nHP.type='highpass'; nHP.frequency.value=55;
-    const nG = audioCtx.createGain();
-    nG.gain.setValueAtTime(0,now); nG.gain.linearRampToValueAtTime(0.55,now+0.8);
-    nG.gain.setValueAtTime(0.55,now+len-1.4); nG.gain.exponentialRampToValueAtTime(0.001,now+len);
-    nSrc.connect(nLP); nLP.connect(nHP); nHP.connect(nG); nG.connect(masterG); nG.connect(conv);
+    for(let p=0;p<6;p++) for(let i=1;i<nLen;i++) nD[i]=(nD[i]+nD[i-1])*0.5;
+    const nSrc = audioCtx.createBufferSource(); nSrc.buffer=nBuf;
+    const nLP = audioCtx.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=280;
+    const nG = audioCtx.createGain(); nG.gain.value=0.5;
+    nSrc.connect(nLP); nLP.connect(nG); nG.connect(masterG);
     nSrc.start(now);
-
-    // One detuned pair of sines — barely pitched, just unsettling depth
-    // Slightly different frequencies create a slow beating/pulsing effect
-    [[58, 0],[61.3, 900],[116, -700]].forEach(([freq, det]) => {
-        const o = audioCtx.createOscillator(); o.type='sine';
-        o.frequency.setValueAtTime(freq*0.8, now);
-        o.frequency.linearRampToValueAtTime(freq, now+1.5);
-        o.frequency.linearRampToValueAtTime(freq*0.88, now+len);
-        o.detune.value = det;
-        const og = audioCtx.createGain(); og.gain.value=0.18;
-        o.connect(og); og.connect(masterG); og.connect(conv);
+    [[55,0],[58.5,600]].forEach(([freq,det])=>{
+        const o=audioCtx.createOscillator(); o.type='sine';
+        o.frequency.value=freq; o.detune.value=det;
+        const og=audioCtx.createGain(); og.gain.value=0.15;
+        o.connect(og); og.connect(masterG);
         o.start(now); o.stop(now+len);
     });
+}
 
-    // Slow amplitude tremor — makes it feel alive and breathing
-    const trem = audioCtx.createOscillator(); trem.type='sine'; trem.frequency.value=1.8+Math.random()*0.6;
-    const tremG = audioCtx.createGain(); tremG.gain.value=0.12;
-    trem.connect(tremG); tremG.connect(masterG.gain);
-    trem.start(now); trem.stop(now+len);
+function playJumpScream() {
+    // Smiler jumpscare — instant full-volume shriek right in the player's face
+    if(!masterGain || audioCtx.state !== 'running') return;
+    const now = audioCtx.currentTime;
+    const len = 1.8;
+
+    const masterG = audioCtx.createGain();
+    // Instant full volume, then hard cutoff — no slow ramp
+    masterG.gain.setValueAtTime(0.85, now);
+    masterG.gain.setValueAtTime(0.85, now + 0.05);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
+    masterG.connect(masterGain);
+
+    // Piercing shriek — three layered sawtooth voices, mid-high range, not ear-destroying
+    // Scream rises fast then drops — classic vocal terror shape
+    [640, 820, 1050].forEach((baseFreq, idx) => {
+        const o = audioCtx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(baseFreq * 0.6, now);
+        o.frequency.linearRampToValueAtTime(baseFreq * 1.3, now + 0.08); // instant rise
+        o.frequency.linearRampToValueAtTime(baseFreq * 0.75, now + len); // falls off
+        o.detune.value = (idx - 1) * 18; // slight detuning — human-ish not mechanical
+        const g = audioCtx.createGain(); g.gain.value = 0.28;
+        // Lowpass to keep it gritty not piercing
+        const lp = audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200;
+        o.connect(lp); lp.connect(g); g.connect(masterG);
+        o.start(now); o.stop(now + len);
+    });
+
+    // Noise burst — adds rawness, sounds like actual screaming throat
+    const nLen = Math.floor(audioCtx.sampleRate * len);
+    const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
+    const nD = nBuf.getChannelData(0);
+    for(let i=0;i<nLen;i++) nD[i]=Math.random()*2-1;
+    for(let p=0;p<2;p++) for(let i=1;i<nLen;i++) nD[i]=(nD[i]*0.55+nD[i-1]*0.45);
+    const nSrc = audioCtx.createBufferSource(); nSrc.buffer=nBuf;
+    const nBP = audioCtx.createBiquadFilter(); nBP.type='bandpass'; nBP.frequency.value=900; nBP.Q.value=1.0;
+    const nG = audioCtx.createGain();
+    nG.gain.setValueAtTime(0.4, now);
+    nG.gain.exponentialRampToValueAtTime(0.001, now+len);
+    nSrc.connect(nBP); nBP.connect(nG); nG.connect(masterG);
+    nSrc.start(now);
 }
  
 function playHowl() {
@@ -1707,48 +1724,39 @@ function playHowl() {
  
 // Distant door slam — heavy thud, junk rattle, long room tail
 function playDoorSlam() {
+    // Single clean BOOM — one hit, distant, then silence. No rattle waves.
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
 
     const masterG = audioCtx.createGain();
-    masterG.gain.setValueAtTime(0.85, now);
-    masterG.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
+    masterG.gain.setValueAtTime(0.9, now);
+    masterG.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
     masterG.connect(masterGain);
 
-    // Sub impact — door mass hitting frame. Fast pitch drop, not musical
-    const impLen = Math.floor(audioCtx.sampleRate * 0.18);
+    // Single sub-bass thud — pitch drops fast like a real door slam
+    const impLen = Math.floor(audioCtx.sampleRate * 0.12);
     const impBuf = audioCtx.createBuffer(1, impLen, audioCtx.sampleRate);
     const impD = impBuf.getChannelData(0);
     for(let i=0;i<impLen;i++){
-        const t=i/audioCtx.sampleRate;
-        // Decaying sine with strong transient click at t=0
-        impD[i]=(Math.sin(2*Math.PI*(130-100*t/0.18)*t)*Math.exp(-t/0.04))+(Math.random()*2-1)*Math.exp(-t/0.008)*0.6;
+        const t = i / audioCtx.sampleRate;
+        impD[i] = Math.sin(2*Math.PI*90*t) * Math.exp(-t/0.025)
+                + (Math.random()*2-1) * Math.exp(-t/0.005) * 0.4;
     }
     const impSrc = audioCtx.createBufferSource(); impSrc.buffer = impBuf;
-    const impLP = audioCtx.createBiquadFilter(); impLP.type='lowpass'; impLP.frequency.value=480;
-    const impG = audioCtx.createGain(); impG.gain.value=1.1;
+    const impLP = audioCtx.createBiquadFilter(); impLP.type='lowpass'; impLP.frequency.value=400;
+    const impG = audioCtx.createGain(); impG.gain.value=1.2;
     impSrc.connect(impLP); impLP.connect(impG); impG.connect(masterG);
     impSrc.start(now);
 
-    // Wood rattle — debris/panels vibrating after impact, 80-300ms later
-    const ratLen = Math.floor(audioCtx.sampleRate * 0.22);
-    const ratBuf = audioCtx.createBuffer(1, ratLen, audioCtx.sampleRate);
-    const ratD = ratBuf.getChannelData(0);
-    for(let i=0;i<ratLen;i++) ratD[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.035));
-    const ratSrc = audioCtx.createBufferSource(); ratSrc.buffer = ratBuf;
-    const ratBP = audioCtx.createBiquadFilter(); ratBP.type='bandpass'; ratBP.frequency.value=1100; ratBP.Q.value=1.2;
-    const ratG = audioCtx.createGain(); ratG.gain.value=0.4;
-    ratSrc.connect(ratBP); ratBP.connect(ratG); ratG.connect(masterG);
-    ratSrc.start(now + 0.09 + Math.random()*0.06);
-
-    // Long corridor reverb tail
-    const rvLen = Math.floor(audioCtx.sampleRate * 3.5);
-    const rvBuf = audioCtx.createBuffer(2, rvLen, audioCtx.sampleRate);
-    for(let ch=0;ch<2;ch++){const d=rvBuf.getChannelData(ch); for(let i=0;i<rvLen;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,1.2);}
+    // Very short room tail — just enough to feel distant, not looping
+    const rvLen = Math.floor(audioCtx.sampleRate * 1.2);
+    const rvBuf = audioCtx.createBuffer(1, rvLen, audioCtx.sampleRate);
+    const rvD = rvBuf.getChannelData(0);
+    for(let i=0;i<rvLen;i++) rvD[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,3.5);
     const conv = audioCtx.createConvolver(); conv.buffer = rvBuf;
-    const rvG = audioCtx.createGain(); rvG.gain.value=0.55;
+    const rvG = audioCtx.createGain(); rvG.gain.value=0.35;
     conv.connect(rvG); rvG.connect(masterG);
-    impG.connect(conv); ratG.connect(conv);
+    impG.connect(conv);
 }
 
 // Distant wailing — dry, gritty, somewhere else in the building
@@ -2629,8 +2637,8 @@ function spawnGhost() {
     sprite.position.set(wx, 7.5, wz);
     scene.add(sprite);
     
-    playScreech();
-    return { mesh: sprite, life: 2.0 }; // Lives for 2 seconds
+    playJumpScream();
+    return { mesh: sprite, life: 1.6 }; // Faster pass — 1.6s
 }
  
 function animate() {
@@ -2864,8 +2872,12 @@ function animate() {
         if(activeGhost) {
             activeGhost.life -= delta;
             const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
-            activeGhost.mesh.position.add(dir.multiplyScalar(150 * delta));
-            activeGhost.mesh.position.y = 7.5 + Math.sin(time/50)*1.5;
+            activeGhost.mesh.position.add(dir.multiplyScalar(220 * delta)); // faster rush
+            activeGhost.mesh.position.y = 7.5 + Math.sin(time/50)*1.0;
+            // Scale up as it closes in — fills the screen
+            const ghostDist = camera.position.distanceTo(activeGhost.mesh.position);
+            const scl = Math.max(16, 40 * (1 - ghostDist/60));
+            activeGhost.mesh.scale.set(scl, scl * 1.35, 1);
             if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 8) {
                 scene.remove(activeGhost.mesh);
                 activeGhost = null;
@@ -2878,7 +2890,7 @@ function animate() {
             ambientEventCount++;
             const secNow = elapsed / 1000;
             // Door slam: only if 3 minutes have passed since last one
-            if ((ambientEventCount % 2 === 1 || Math.random() < 0.4) && (secNow - lastDoorSlamTime >= 180)) {
+            if ((ambientEventCount % 2 === 1 || Math.random() < 0.35) && (secNow - lastDoorSlamTime >= 270)) { // 4.5min minimum
                 playDoorSlam();
                 lastDoorSlamTime = secNow;
             } else {
