@@ -1297,9 +1297,9 @@ function placeEntities() {
  
 let ghostTimer = 15 + Math.random() * 15; // First jumpscare within 15-30 seconds
 let activeGhost = null;
-let ambientEventTimer = 45 + Math.random() * 75; // Wailing every 45-120s
+let ambientEventTimer = 90 + Math.random() * 60; // First ambient event 90-150s in
 let ambientEventCount = 0;
-let lastDoorSlamTime = -999; // track door slam — max once per 3 minutes
+let lastDoorSlamTime = 0; // slam blocked for first 270s (4.5 min) of game
 
 // Encounter + dynamic spawn manager
 let encounterTimer = 25 + Math.random() * 15; // First encounter 25-40s in
@@ -1748,15 +1748,7 @@ function playDoorSlam() {
     impSrc.connect(impLP); impLP.connect(impG); impG.connect(masterG);
     impSrc.start(now);
 
-    // Very short room tail — just enough to feel distant, not looping
-    const rvLen = Math.floor(audioCtx.sampleRate * 1.2);
-    const rvBuf = audioCtx.createBuffer(1, rvLen, audioCtx.sampleRate);
-    const rvD = rvBuf.getChannelData(0);
-    for(let i=0;i<rvLen;i++) rvD[i]=(Math.random()*2-1)*Math.pow(1-i/rvLen,3.5);
-    const conv = audioCtx.createConvolver(); conv.buffer = rvBuf;
-    const rvG = audioCtx.createGain(); rvG.gain.value=0.35;
-    conv.connect(rvG); rvG.connect(masterG);
-    impG.connect(conv);
+    // No convolver — it caused wave artifacts. Just the dry thud fading naturally.
 }
 
 // Distant wailing — dry, gritty, somewhere else in the building
