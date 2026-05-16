@@ -496,7 +496,7 @@ let PAINT_COUNT        = 360;
  
 // ENTITY AI
 let ENTITY_COUNT       = 1875;   
-const ENTITY_MIN_DIST    = 12.0; // closer stop dist — no more camping just outside flame range
+const ENTITY_MIN_DIST    = 40.0; // stop just inside flame range — fair fight
  
 // GAME SETTINGS
 let lookSensitivity = 2.0;
@@ -1304,7 +1304,7 @@ let lastDoorSlamTime = 0; // slam blocked for first 270s (4.5 min) of game
 // Encounter + dynamic spawn manager
 let encounterTimer = 25 + Math.random() * 15; // First encounter 25-40s in
 let lastEncounterTime = 0;
-let encounterTypes = ['bacteria_stalk','bacteria_hunt','smiler_appear','smiler_stalk','bacteria_investigate','bacteria_investigate','bacteria_hunt'];
+let encounterTypes = ['bacteria_investigate','smiler_appear','bacteria_stalk','smiler_stalk','bacteria_hunt','bacteria_investigate','smiler_appear','bacteria_hunt','smiler_stalk','bacteria_stalk'];
 let encounterIndex = 0;
 // Dynamic spawn — new entity near player every 45-90s
 let dynamicSpawnTimer = 45 + Math.random() * 45;
@@ -2616,30 +2616,7 @@ function animate() {
             }
         }
  
-        // ── Ghost jumpscare ──────────────────────────────────────────
-        ghostTimer -= delta;
-        if(ghostTimer <= 0 && !activeGhost) {
-            activeGhost = spawnGhost();
-            if(activeGhost) {
-                ghostTimer = 60 + Math.random() * 60; // 1-2 min between jumpscares
-            } else {
-                ghostTimer = 5;
-            }
-        }
-        if(activeGhost) {
-            activeGhost.life -= delta;
-            const dir = camera.position.clone().sub(activeGhost.mesh.position).normalize(); dir.y=0;
-            activeGhost.mesh.position.add(dir.multiplyScalar(220 * delta)); // faster rush
-            activeGhost.mesh.position.y = 7.5 + Math.sin(time/50)*1.0;
-            // Scale up as it closes in — fills the screen
-            const ghostDist = camera.position.distanceTo(activeGhost.mesh.position);
-            const scl = Math.max(16, 40 * (1 - ghostDist/60));
-            activeGhost.mesh.scale.set(scl, scl * 1.35, 1);
-            if(activeGhost.life <= 0 || camera.position.distanceTo(activeGhost.mesh.position) < 8) {
-                scene.remove(activeGhost.mesh);
-                activeGhost = null;
-            }
-        }
+        // Ghost jumpscare removed
 
         // ── Ambient sound events — door slams + wailing ──────────────
         ambientEventTimer -= delta;
@@ -2883,7 +2860,7 @@ function animate() {
             const dist = Math.sqrt(dx*dx + dz*dz);
 
             // Hard rule: any entity in personal space ALWAYS attacks, no exceptions
-            if (dist < 30 && e.state !== 'aggressive' && e.state !== 'hunting' && e.state !== 'vanished') {
+            if (dist < 42 && e.state !== 'aggressive' && e.state !== 'hunting' && e.state !== 'vanished') {
                 e.state = e.type === 'SMILING_SHADOW' ? 'aggressive' : 'hunting';
                 e.stateTimer = 3 + Math.random() * 3;
                 if (time - lastSpotScreechTime > 1500) {
@@ -2897,16 +2874,8 @@ function animate() {
             // ══════════════════════════════════════════════════════════════
             if (e.type === 'SMILING_SHADOW') {
 
-                // Smiler visibility: only in darkness
-                e.lightLevel += (playerLightEstimate - e.lightLevel) * delta * 1.5;
-                const smilerVisible = e.lightLevel < 0.55;
-
-                // Vanish in bright light — teleport to a dark spot elsewhere
-                if (e.state !== 'vanished' && e.lightLevel > 0.60 && dist < 300) {
-                    e.state = 'vanished';
-                    e.vanishCooldown = 4 + Math.random() * 6;
-                    e.mesh.position.y = -999; // hide underground
-                }
+                // Smilers always visible
+                e.lightLevel = 1.0; // always rendered
 
                 // Reappear after cooldown — find a dark cell near player
                 if (e.state === 'vanished') {
@@ -2950,7 +2919,7 @@ function animate() {
                 // ── SMILER STATE MACHINE ────────────────────────────────
                 if (e.state === 'dormant') {
                     // Smiler detects player from further — raised from 180 to 300
-                    if (dist < 300 && e.stateTimer <= 0) {
+                    if (dist < 350 && e.stateTimer <= 0) {
                         const roll = Math.random();
                         if (roll < 0.45) {
                             e.state = 'observing';
@@ -2970,7 +2939,7 @@ function animate() {
                     
                     // Very slow drift toward player while "observing"
                     // But backs away if player gets too close — maintains eerie distance
-                    if (dist < 35 && dist > ENTITY_MIN_DIST) {
+                    if (dist < 50 && dist > ENTITY_MIN_DIST) {
                         // Player is closing in — retreat
                         const dir2 = new THREE.Vector3(-dx, 0, -dz).normalize();
                         const nx2 = e.mesh.position.x + dir2.x * 25 * delta;
@@ -3051,7 +3020,7 @@ function animate() {
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
                     if (dist < 42) { // wider than before — 42 not 25
-                        health -= 16 * delta;
+                        health -= 9 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(80);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "A Smiler took you.");
@@ -3134,8 +3103,8 @@ function animate() {
                     }
 
                     // Damage on contact even while investigating — it's not safe to let them close
-                    if (dist < 28) {
-                        health -= 6 * delta;
+                    if (dist < 42) {
+                        health -= 4.5 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(40);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
@@ -3264,7 +3233,7 @@ function animate() {
 
                     // Damage on contact during hunt
                     if (dist < 35) {
-                        health -= 8 * delta; // moderate — survivable but hurts
+                        health -= 6 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(60);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
@@ -3340,12 +3309,12 @@ function animate() {
                 // Scales by state — investigating is light, hunting/aggressive is serious
                 if (dist < 28) {
                     let dmgRate = 0;
-                    if (e.state === 'investigating')           dmgRate = 6;
-                    else if (e.state === 'stalking')           dmgRate = 9;
+                    if (e.state === 'investigating')           dmgRate = 4.5;
+                    else if (e.state === 'stalking')           dmgRate = 6.75;
                     else if (e.state === 'hunting')            dmgRate = 0; // handled in hunt block
                     else if (e.state === 'aggressive')         dmgRate = 0; // handled in aggressive block
-                    else if (e.state === 'observing')          dmgRate = 5; // smiler
-                    else if (e.state === 'dormant')            dmgRate = 2; // even dormant stings if you walk into it
+                    else if (e.state === 'observing')          dmgRate = 3.75;
+                    else if (e.state === 'dormant')            dmgRate = 1.5;
                     if (dmgRate > 0) {
                         health -= dmgRate * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(30);
