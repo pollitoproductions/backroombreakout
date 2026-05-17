@@ -606,22 +606,27 @@ function createTexture(type) {
         // Below dado slightly darker
         ctx.fillStyle = 'rgba(55,45,8,0.11)'; ctx.fillRect(0, dadoY+4, SIZE, SIZE-dadoY-4);
  
-        // Water stain patches
-        for (let i=0;i<28;i++) {
-            const px=Math.random()*SIZE, py=Math.random()*SIZE, r=12+Math.random()*40;
-            const g=ctx.createRadialGradient(px,py,0,px,py,r);
-            g.addColorStop(0,`rgba(55,48,10,${0.08+Math.random()*0.18})`);
-            g.addColorStop(1,'rgba(0,0,0,0)');
-            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
-        }
-        // Damp vertical streaks
-        for (let i=0;i<8;i++) {
-            const sx=Math.random()*SIZE, sy=Math.random()*SIZE*0.5, len=30+Math.random()*120;
-            const grad=ctx.createLinearGradient(sx,sy,sx+(Math.random()-0.5)*8,sy+len);
-            grad.addColorStop(0,'rgba(0,0,0,0)');
-            grad.addColorStop(0.3,`rgba(38,32,7,${0.07+Math.random()*0.10})`);
-            grad.addColorStop(1,'rgba(0,0,0,0)');
-            ctx.fillStyle=grad; ctx.fillRect(sx-2,sy,4,len);
+        // Water stains — only on 60% of wall tiles (random per texture instance)
+        const hasStains = Math.random() < 0.60;
+        if (hasStains) {
+            const stainCount = Math.floor(4 + Math.random()*14); // 4-18 stains not always 28
+            for (let i=0;i<stainCount;i++) {
+                const px=Math.random()*SIZE, py=Math.random()*SIZE, r=8+Math.random()*30;
+                const g=ctx.createRadialGradient(px,py,0,px,py,r);
+                g.addColorStop(0,`rgba(55,48,10,${0.06+Math.random()*0.14})`);
+                g.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+            }
+            // Damp vertical streaks
+            const streakCount = Math.floor(Math.random()*5);
+            for (let i=0;i<streakCount;i++) {
+                const sx=Math.random()*SIZE, sy=Math.random()*SIZE*0.5, len=30+Math.random()*100;
+                const grad=ctx.createLinearGradient(sx,sy,sx+(Math.random()-0.5)*8,sy+len);
+                grad.addColorStop(0,'rgba(0,0,0,0)');
+                grad.addColorStop(0.3,`rgba(38,32,7,${0.06+Math.random()*0.09})`);
+                grad.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=grad; ctx.fillRect(sx-2,sy,4,len);
+            }
         }
         // Fine grain noise
         for (let i=0;i<16000;i++) {
@@ -630,25 +635,51 @@ function createTexture(type) {
         }
  
     } else if (type === 'floor') {
-        // Dark worn carpet
-        ctx.fillStyle = '#28220f'; ctx.fillRect(0,0,SIZE,SIZE);
-        for (let i=0;i<25000;i++) {
-            const a=Math.random();
-            ctx.fillStyle=`rgba(${a>0.5?42:0},${a>0.5?36:0},0,${Math.random()*0.11})`;
-            ctx.fillRect(Math.random()*SIZE, Math.random()*SIZE, 2, 1);
+        // 70s shaggy carpet — warm olive/brown, visible in dark
+        ctx.fillStyle = '#4a3a18'; ctx.fillRect(0,0,SIZE,SIZE); // brighter warm base
+
+        // Shag pile — short dense diagonal tufts in two directions
+        for (let i=0;i<6000;i++) {
+            const x=Math.random()*SIZE, y=Math.random()*SIZE;
+            const len2=3+Math.random()*6;
+            const angle=(Math.random()>0.5?0.4:-0.4)+(Math.random()-0.5)*0.3;
+            const r2=Math.floor(60+Math.random()*30), g2=Math.floor(48+Math.random()*24);
+            ctx.strokeStyle=`rgba(${r2},${g2},8,${0.35+Math.random()*0.4})`;
+            ctx.lineWidth=1.5+Math.random()*1.5;
+            ctx.lineCap='round';
+            ctx.beginPath();
+            ctx.moveTo(x,y);
+            ctx.lineTo(x+Math.cos(angle)*len2, y+Math.sin(angle)*len2);
+            ctx.stroke();
         }
-        // Carpet fiber direction lines
-        for (let i=0;i<400;i++) {
-            ctx.strokeStyle=`rgba(50,42,12,${0.03+Math.random()*0.06})`;
-            ctx.lineWidth=1; ctx.beginPath();
-            const x=Math.random()*SIZE;
-            ctx.moveTo(x,0); ctx.lineTo(x+(Math.random()*4-2),SIZE); ctx.stroke();
+
+        // Loop pile texture — small circular tufts
+        for (let i=0;i<2000;i++) {
+            const x=Math.random()*SIZE, y=Math.random()*SIZE;
+            ctx.fillStyle=`rgba(${55+Math.floor(Math.random()*25)},${42+Math.floor(Math.random()*18)},6,${0.3+Math.random()*0.35})`;
+            ctx.beginPath(); ctx.arc(x,y,1+Math.random()*2,0,Math.PI*2); ctx.fill();
         }
-        // Worn patches
-        for (let i=0;i<12;i++) {
-            const px=Math.random()*SIZE, py=Math.random()*SIZE, r=15+Math.random()*35;
+
+        // 70s pattern overlay — subtle diamond/check in darker tone
+        ctx.strokeStyle='rgba(38,28,6,0.12)'; ctx.lineWidth=1;
+        const GRID=32;
+        for(let gx=0;gx<SIZE;gx+=GRID) for(let gy=0;gy<SIZE;gy+=GRID) {
+            ctx.strokeRect(gx,gy,GRID,GRID);
+        }
+
+        // Worn path patches — slightly lighter, compressed pile
+        for (let i=0;i<8;i++) {
+            const px=Math.random()*SIZE, py=Math.random()*SIZE, r=20+Math.random()*50;
             const g=ctx.createRadialGradient(px,py,0,px,py,r);
-            g.addColorStop(0,'rgba(60,52,20,0.18)'); g.addColorStop(1,'rgba(0,0,0,0)');
+            g.addColorStop(0,'rgba(80,62,22,0.25)'); g.addColorStop(1,'rgba(0,0,0,0)');
+            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+        }
+
+        // Stain patches — darker spots
+        for (let i=0;i<6;i++) {
+            const px=Math.random()*SIZE, py=Math.random()*SIZE, r=8+Math.random()*20;
+            const g=ctx.createRadialGradient(px,py,0,px,py,r);
+            g.addColorStop(0,'rgba(15,10,2,0.35)'); g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
         }
  
@@ -685,7 +716,7 @@ const ceilTex  = createTexture('ceiling');
  
 // MATERIALS — MeshLambertMaterial keeps uniform count safe across all devices
 const wallMat  = new THREE.MeshLambertMaterial({ map: wallTex });
-const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
+const floorMat = new THREE.MeshLambertMaterial({ map: floorTex, emissive: new THREE.Color(0x1a1208) }); // catches warm light
 const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex, emissive: new THREE.Color(0x1a1a0a) });
  
 const graffitiTex = (function(){
@@ -1234,6 +1265,21 @@ const bacteriaPoses = [
 const shadowMatsOpen = shadowFramesOpen.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatClosed = new THREE.SpriteMaterial({ map: shadowFramesClosed[0], color: 0xffffff, transparent: true });
  
+// Line-of-sight check — returns true if path between two world positions is clear of walls
+function hasLineOfSight(ax, az, bx, bz) {
+    const steps = Math.ceil(Math.max(Math.abs(bx-ax), Math.abs(bz-az)) / TILE_SIZE) + 2;
+    for (let s = 1; s < steps; s++) {
+        const t = s / steps;
+        const wx = ax + (bx-ax)*t;
+        const wz = az + (bz-az)*t;
+        const gx = Math.floor((wx + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        const gz = Math.floor((wz + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+        if (gx<0||gx>=MAP_SIZE||gz<0||gz>=MAP_SIZE) return false;
+        if (grid[gx][gz] === 1) return false;
+    }
+    return true;
+}
+
 function placeEntities() {
     let placed = 0, attempts = 0;
     while (placed < ENTITY_COUNT && attempts < ENTITY_COUNT * 20) {
@@ -1286,6 +1332,7 @@ function placeEntities() {
             burnTimer: 0,
             hasDamageRoared: false,
             hasSpotRoared: false,
+            hasApproachSounded: false,
             stateTimer: 4 + Math.random() * 8,
             interestTimer: 0,
             lostTimer: 0,
@@ -1546,9 +1593,9 @@ function placeItems() {
 }
  
 // ─── LIGHTING & STATE ──────────────────────────────────────────────────────
-const ambientLight = new THREE.AmbientLight(0xffecaa, 0.42);
+const ambientLight = new THREE.AmbientLight(0xffecaa, 0.55); // brighter base
 scene.add(ambientLight);
-const playerLight=new THREE.PointLight(0xffecaa, 0.85, 90, 1.6);
+const playerLight=new THREE.PointLight(0xffecaa, 1.1, 130, 1.4); // wider reach, lights carpet
 scene.add(playerLight);
  
 let yaw=0, pitch=0;
@@ -1744,6 +1791,23 @@ function playBacteriaRoar(vol) {
     const lfoG = audioCtx.createGain(); lfoG.gain.value=14;
     lfo.connect(lfoG); lfoG.connect(sub.frequency); lfoG.connect(growl.frequency);
     lfo.start(now); lfo.stop(now+len);
+
+    // Metallic grind layer — high-frequency sawtooth through narrow bandpass
+    const grind = audioCtx.createOscillator(); grind.type='sawtooth';
+    grind.frequency.setValueAtTime(380+Math.random()*80, now);
+    grind.frequency.linearRampToValueAtTime(180, now+len);
+    const grindBP = audioCtx.createBiquadFilter(); grindBP.type='bandpass';
+    grindBP.frequency.value=320; grindBP.Q.value=4.5;
+    const grindG = audioCtx.createGain(); grindG.gain.value=0.22;
+    grind.connect(grindBP); grindBP.connect(grindG); grindG.connect(ws);
+    grind.start(now); grind.stop(now+len);
+
+    // Irregular amplitude chop — gives metallic stutter
+    const chopLFO = audioCtx.createOscillator(); chopLFO.type='square';
+    chopLFO.frequency.value=18+Math.random()*12;
+    const chopG2 = audioCtx.createGain(); chopG2.gain.value=0.15;
+    chopLFO.connect(chopG2); chopG2.connect(grindG.gain);
+    chopLFO.start(now); chopLFO.stop(now+len);
 }
 
 // Bacteria death roar — same roar pitching down as it burns
@@ -2683,7 +2747,7 @@ function animate() {
         
         const lightSignal = Math.sin(cx/6) + Math.sin(cz/6) + Math.sin((cx+cz)/9);
         
-        let darknessFactor = (lightSignal - 0.6) / (1.2 - 0.6);
+        let darknessFactor = (lightSignal - 0.4) / (1.0 - 0.4); // wider band
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
         const spawnMask = Math.min(1, Math.max(0, (distFromSpawn - 10) / 10));
         darknessFactor *= spawnMask;
@@ -2712,9 +2776,9 @@ function animate() {
             buzzVolTarget = 0.5 + (brightnessFactor * 0.5); // Louder in bright
         }
  
-        ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 4;
-        scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 4;
-        scene.fog.color.lerp(fogColorTarget, delta * 4);
+        ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 1.8;
+        scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 1.8;
+        scene.fog.color.lerp(fogColorTarget, delta * 1.8);
         
         if (ambientBuzzGain && audioCtx && audioCtx.state === 'running') {
             ambientBuzzGain.gain.setTargetAtTime(buzzVolTarget * 0.65, audioCtx.currentTime, 0.5);
@@ -3081,6 +3145,13 @@ function animate() {
             if (Math.abs(dx) > 400 || Math.abs(dz) > 400) continue;
             const dist = Math.sqrt(dx*dx + dz*dz);
 
+            // Approach warning sound — fires ONCE when entity closes to ~55 units
+            if (dist < 55 && !e.hasApproachSounded && e.state !== 'vanished' && e.state !== 'dormant' && e.state !== 'idle') {
+                e.hasApproachSounded = true;
+                if (e.type === 'BACTERIA') playBacteriaRoar(0.7);
+                else playSmilerLaugh(0.5);
+            }
+
             // Hard rule: any entity in personal space ALWAYS attacks, no exceptions
             if (dist < 42 && e.state !== 'aggressive' && e.state !== 'hunting' && e.state !== 'vanished') {
                 e.state = e.type === 'SMILING_SHADOW' ? 'aggressive' : 'hunting';
@@ -3246,10 +3317,12 @@ function animate() {
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
                     if (dist < 42) { // wider than before — 42 not 25
-                        health -= 9 * delta;
+                        if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
+                            health -= 9 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(80);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "A Smiler took you.");
+                        }
                     }
                     if (e.stateTimer <= 0) {
                         e.state = 'vanished';
@@ -3334,10 +3407,12 @@ function animate() {
                             e.hasDamageRoared = true;
                             playBacteriaRoar(1.0);
                         }
-                        health -= 4.5 * delta;
+                        if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
+                            health -= 4.5 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(40);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        }
                     }
 
                     if (Math.random() < 0.006) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
@@ -3463,10 +3538,12 @@ function animate() {
 
                     // Damage on contact during hunt
                     if (dist < 35) {
-                        health -= 6 * delta;
+                        if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
+                            health -= 6 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(60);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        }
                     }
 
                     if (e.stateTimer <= 0) {
@@ -3525,10 +3602,12 @@ function animate() {
                         if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                     }
                     if (dist < 40) { // wider damage window — 40 not 25
-                        health -= 12 * delta;
+                        if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
+                            health -= 12 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(70);
                         tookDamage = true;
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        }
                     }
                     if (e.stateTimer <= 0) {
                         e.state = 'lost';
