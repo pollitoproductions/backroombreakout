@@ -1251,9 +1251,9 @@ function placeEntities() {
         const isShadow = (Math.random() < 0.30); // 70% bacteria, 30% smilers
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaPoses[0][0]);
         
-        let baseScaleX = isShadow ? 14 : 12.0;  // bigger — actually visible
-        let baseScaleY = isShadow ? 14 : 18.0; 
-        let baseY = isShadow ? 7.5 : 9.0;
+        let baseScaleX = isShadow ? 22 : 12.0; // smiler much bigger
+        let baseScaleY = isShadow ? 22 : 14.0;
+        let baseY = isShadow ? 7.5 : 7.0;
         
         sprite.scale.set(baseScaleX, baseScaleY, 1); 
         sprite.position.set(wx, baseY, wz); 
@@ -1285,6 +1285,7 @@ function placeEntities() {
             burning: false,
             burnTimer: 0,
             hasDamageRoared: false,
+            hasSpotRoared: false,
             stateTimer: 4 + Math.random() * 8,
             interestTimer: 0,
             lostTimer: 0,
@@ -1747,23 +1748,49 @@ function playBacteriaRoar(vol) {
 
 // Bacteria death roar — same roar pitching down as it burns
 function playBacteriaDeathRoar() {
+    // Dying shriek-roar — starts as a peak then falls apart
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-    const len = 1.4;
+    const len = 1.6;
     const masterG = audioCtx.createGain();
-    masterG.gain.setValueAtTime(0.55, now);
+    masterG.gain.setValueAtTime(0.0, now);
+    masterG.gain.linearRampToValueAtTime(0.7, now + 0.05); // fast attack
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
+
+    // Distortion waveshaper
     const wsCurve = new Float32Array(512);
-    for(let i=0;i<512;i++){const x=(i*2/512)-1; wsCurve[i]=Math.sign(x)*Math.pow(Math.abs(x),0.35);}
+    for(let i=0;i<512;i++){const x=(i*2/512)-1; wsCurve[i]=Math.sign(x)*Math.pow(Math.abs(x),0.28);}
     const ws = audioCtx.createWaveShaper(); ws.curve=wsCurve; ws.oversample='4x';
     ws.connect(masterG);
-    const sub = audioCtx.createOscillator(); sub.type='sawtooth';
-    sub.frequency.setValueAtTime(72, now);
-    sub.frequency.exponentialRampToValueAtTime(18, now+len); // pitch drops to nothing
-    const subG = audioCtx.createGain(); subG.gain.value=0.75;
-    sub.connect(subG); subG.connect(ws);
-    sub.start(now); sub.stop(now+len);
+
+    // Main roar — peaks high then pitches down fast
+    const osc = audioCtx.createOscillator(); osc.type='sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.linearRampToValueAtTime(85, now+0.12);
+    osc.frequency.exponentialRampToValueAtTime(22, now+len);
+    const og = audioCtx.createGain(); og.gain.value=0.7;
+    osc.connect(og); og.connect(ws);
+    osc.start(now); osc.stop(now+len);
+
+    // Harmonic scream layer — higher pitch crumbling
+    const osc2 = audioCtx.createOscillator(); osc2.type='triangle';
+    osc2.frequency.setValueAtTime(280, now);
+    osc2.frequency.exponentialRampToValueAtTime(45, now+len*0.7);
+    const og2 = audioCtx.createGain(); og2.gain.value=0.4;
+    osc2.connect(og2); og2.connect(ws);
+    osc2.start(now); osc2.stop(now+len*0.75);
+
+    // Noise burst — burning flesh texture
+    const nLen = Math.floor(audioCtx.sampleRate * 0.5);
+    const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
+    const nD = nBuf.getChannelData(0);
+    for(let i=0;i<nLen;i++) nD[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.08));
+    const nSrc = audioCtx.createBufferSource(); nSrc.buffer=nBuf;
+    const nLP = audioCtx.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=600;
+    const nG = audioCtx.createGain(); nG.gain.value=0.5;
+    nSrc.connect(nLP); nLP.connect(nG); nG.connect(masterG);
+    nSrc.start(now);
 }
 
 // Keep stubs for old calls that may still exist
@@ -2848,9 +2875,9 @@ function animate() {
                 const spawnShadow = Math.random() < 0.30;
                 const spriteMat = spawnShadow ? shadowMatsOpen[0] : bacteriaPoses[0][0];
                 const newSprite = new THREE.Sprite(spriteMat);
-                const bsX = spawnShadow ? 14 : 12.0;
-                const bsY = spawnShadow ? 7.5 : 9.0;
-                newSprite.scale.set(bsX, spawnShadow ? 14 : 18.0, 1);
+                const bsX = spawnShadow ? 22 : 12.0;
+                const bsY = spawnShadow ? 7.5 : 7.0;
+                newSprite.scale.set(bsX, spawnShadow ? 22 : 14.0, 1);
                 newSprite.position.set(wx2, bsY, wz2);
                 scene.add(newSprite);
 
@@ -2919,7 +2946,7 @@ function animate() {
                     e.stateTimer = 8 + Math.random() * 6;
                     e.lastKnownPlayerX = playerPos.x;
                     e.lastKnownPlayerZ = playerPos.z;
-                    if(time - lastSpotScreechTime > 2000) { playBacteriaRoar(0.5); lastSpotScreechTime = time; }
+                    if(time - lastSpotScreechTime > 2000) { playBacteriaRoar(0.6); lastSpotScreechTime = time; }
 
                 } else if(etype === 'bacteria_stalk') {
                     e.state = 'stalking';
@@ -2970,6 +2997,22 @@ function animate() {
 
             // ── Animation ──────────────────────────────────────────────────
             // ── Burn death animation ──────────────────────────────────
+            // Safety: if entity is inside a wall, teleport it out
+            const egx = Math.floor((e.mesh.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+            const egz = Math.floor((e.mesh.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
+            if (egx >= 0 && egx < MAP_SIZE && egz >= 0 && egz < MAP_SIZE && grid[egx][egz] !== 0) {
+                // Push to nearest open neighbour
+                const offsets = [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
+                for (const [ox,oz] of offsets) {
+                    const nx2=egx+ox, nz2=egz+oz;
+                    if (nx2>0&&nx2<MAP_SIZE-1&&nz2>0&&nz2<MAP_SIZE-1&&grid[nx2][nz2]===0) {
+                        e.mesh.position.x=(nx2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
+                        e.mesh.position.z=(nz2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
+                        break;
+                    }
+                }
+            }
+
             if (e.burning) {
                 e.burnTimer -= delta;
 
@@ -3104,6 +3147,10 @@ function animate() {
                             e.state = 'observing';
                             e.stateTimer = 5 + Math.random() * 10;
                             e.observeAngle = Math.atan2(dz, dx);
+                            if (!e.hasSpotRoared) {
+                                e.hasSpotRoared = true;
+                                playSmilerLaugh(0.25); // distant laugh
+                            }
                         } else if (roll < 0.65 && e.hasVanishedOnce) {
                             // Rare: teleport closer silently
                             e.state = 'vanished';
@@ -3443,6 +3490,7 @@ function animate() {
                 } else if (e.state === 'lost') {
                     // Reset roar flag — next engagement will trigger it fresh
                     e.hasDamageRoared = false;
+                    e.hasSpotRoared = false;
                     // Wanders near last known position, confused
                     e.lostTimer -= delta;
                     if (!isTwitching) {
