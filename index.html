@@ -326,7 +326,7 @@
             <!-- PAGE 1 — MAIN MENU -->
             <div id="page-1" class="start-page" style="display:none;">
                 <div class="btn-container" style="flex-direction:column;align-items:center;gap:12px;margin-top:8px;width:100%;">
-                    <button class="choice-btn green" id="btn-play">▶ &nbsp; PLAY</button>
+                    <button class="choice-btn green" id="btn-play">▶ &nbsp; NOCLIP</button>
                     <button class="choice-btn" id="btn-howtoplay">HOW TO PLAY</button>
                     <button class="choice-btn" id="btn-settings">⚙ &nbsp; SETTINGS</button>
                     <button class="choice-btn" id="btn-survivors">SURVIVOR LOG</button>
@@ -3716,7 +3716,7 @@ function animate() {
     renderer.render(scene, camera);
 }
  
-window.addEventListAener('resize', () => {
+window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
