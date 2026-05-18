@@ -518,6 +518,7 @@ let entities = [];
  
 let spraysLeft    = 50;
 let unlimitedPaint = false;
+let lastAdTime = 0; // ms timestamp of last reward ad
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
 let lastSprayTime  = 0;
@@ -1404,18 +1405,27 @@ const mistTex = (function(){
     return new THREE.CanvasTexture(c);
 })();
  
+let paintAdLastShown = 0;
+function showPaintAdPrompt() {
+    if (unlimitedPaint) return;
+    if (document.getElementById('paint-ad-prompt').style.display === 'flex') return;
+    if (Date.now() - paintAdLastShown < 2000) return;
+    paintAdLastShown = Date.now();
+    document.getElementById('paint-ad-prompt').style.display = 'flex';
+    isPaused = true;
+    stopAction();
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false;
+    joyX=joyY=0; leftTouchId=rightTouchId=null;
+    joyBase.style.display='none';
+}
+
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
     
     if (!unlimitedPaint && spraysLeft <= 0) {
         isFiring = false;
-        if (!hasSeenPaintAdThisRound) {
-            hasSeenPaintAdThisRound = true;
-            document.getElementById('paint-ad-prompt').style.display = 'flex';
-            isPaused = true;
-            if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-            moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
-        }
+        showPaintAdPrompt();
         return;
     }
  
@@ -2234,6 +2244,19 @@ function selectDifficulty(level, e) {
 }
  
 function showRewardAd(onSuccess) {
+    const now = Date.now();
+    const secondsSinceLast = (now - lastAdTime) / 1000;
+    if (lastAdTime > 0 && secondsSinceLast < 60) {
+        const wait = Math.ceil(60 - secondsSinceLast);
+        // Show a brief overlay message then dismiss
+        const msg = document.createElement('div');
+        msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.92);border:1px solid #d4d42b;color:#d4d42b;font-family:monospace;font-size:1.1em;text-align:center;padding:24px 30px;border-radius:10px;z-index:99999;max-width:320px;line-height:1.6;';
+        msg.innerHTML = `⏳ Please wait <strong style="color:#fff">${wait} second${wait===1?'':'s'}</strong><br><span style="color:#aaa;font-size:0.88em;">Reward ads can only be used<br>once per minute.</span>`;
+        document.body.appendChild(msg);
+        setTimeout(() => { if(msg.parentNode) msg.parentNode.removeChild(msg); }, 2800);
+        return;
+    }
+    lastAdTime = now;
     window.onRewardEarned = onSuccess;
     try {
         if (typeof Android !== 'undefined' && Android !== null) {
