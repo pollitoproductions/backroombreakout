@@ -660,12 +660,7 @@ function createTexture(type) {
             ctx.beginPath(); ctx.arc(x,y,1+Math.random()*2,0,Math.PI*2); ctx.fill();
         }
 
-        // 70s pattern overlay — subtle diamond/check in darker tone
-        ctx.strokeStyle='rgba(38,28,6,0.12)'; ctx.lineWidth=1;
-        const GRID=32;
-        for(let gx=0;gx<SIZE;gx+=GRID) for(let gy=0;gy<SIZE;gy+=GRID) {
-            ctx.strokeRect(gx,gy,GRID,GRID);
-        }
+        // grid pattern removed — texture only
 
         // Worn path patches — slightly lighter, compressed pile
         for (let i=0;i<8;i++) {
@@ -959,6 +954,7 @@ function buildWorld() {
     }
  
     placeItems();
+    placeFurniture();
     placeEntities();
  
     camera.position.set((SPAWN_GRID_X-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, PLAYER_HEIGHT, (SPAWN_GRID_Z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
@@ -1544,10 +1540,172 @@ function makePaintCan() {
     return group;
 }
  
+// ── LIMINAL FURNITURE ─────────────────────────────────────────────────────
+// Each returns a THREE.Group with rough collision radius stored as .colliderRadius
+
+function makeOfficeChair() {
+    const g = new THREE.Group();
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(5,0.8,5),
+        new THREE.MeshLambertMaterial({color:0x2a2218,emissive:new THREE.Color(0x0a0806)}));
+    seat.position.y=4.5; g.add(seat);
+    // Back
+    const back = new THREE.Mesh(new THREE.BoxGeometry(5,6,0.7),
+        new THREE.MeshLambertMaterial({color:0x221e14,emissive:new THREE.Color(0x080604)}));
+    back.position.set(0,8,-2.2); g.add(back);
+    // Arm rests
+    [-2.2,2.2].forEach(x=>{
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,4),
+            new THREE.MeshLambertMaterial({color:0x1a1510}));
+        arm.position.set(x,5.5,0); g.add(arm);
+    });
+    // Central pole
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,4,6),
+        new THREE.MeshLambertMaterial({color:0x333333}));
+    pole.position.y=2; g.add(pole);
+    // Base spokes
+    for(let i=0;i<5;i++){
+        const angle=i/5*Math.PI*2;
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(4,0.3,0.5),
+            new THREE.MeshLambertMaterial({color:0x333333}));
+        spoke.rotation.y=angle; spoke.position.y=0.3; g.add(spoke);
+    }
+    g.colliderRadius=4;
+    return g;
+}
+
+function makeFilingCabinet() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(7,12,6),
+        new THREE.MeshLambertMaterial({color:0x4a4438,emissive:new THREE.Color(0x0c0b08)}));
+    body.position.y=6; g.add(body);
+    // Drawer lines
+    [2,5,8,11].forEach(y=>{
+        const drawer = new THREE.Mesh(new THREE.BoxGeometry(6.8,0.25,0.3),
+            new THREE.MeshLambertMaterial({color:0x222018}));
+        drawer.position.set(0,y,3.1); g.add(drawer);
+        // Handle
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.4,0.4),
+            new THREE.MeshLambertMaterial({color:0x555540}));
+        handle.position.set(0,y+0.8,3.3); g.add(handle);
+    });
+    g.colliderRadius=5;
+    return g;
+}
+
+function makeRadiatorPipe() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({color:0x3a3028,emissive:new THREE.Color(0x0a0806)});
+    // Main vertical pipe
+    const main = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,13,8),mat);
+    main.position.y=6.5; g.add(main);
+    // Horizontal cross pipes
+    [-3,0,3,6].forEach(y=>{
+        const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,8,6),mat);
+        cross.rotation.z=Math.PI/2; cross.position.y=y+4;
+        g.add(cross);
+        // End caps
+        [-3.8,3.8].forEach(x=>{
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,0.6,6),mat);
+            cap.rotation.z=Math.PI/2; cap.position.set(x,y+4,0); g.add(cap);
+        });
+    });
+    g.colliderRadius=3;
+    return g;
+}
+
+function makePileOfChairs() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({color:0x1e1a10,emissive:new THREE.Color(0x060504)});
+    // Three jumbled chair shapes stacked
+    [[0,0,0],[1.5,4,0.5],[-1,7,-0.5]].forEach(([x,y,z],i)=>{
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(4,0.7,4),mat);
+        seat.position.set(x,y+3,z);
+        seat.rotation.set((Math.random()-0.5)*0.4,Math.random()*Math.PI,(Math.random()-0.5)*0.3);
+        g.add(seat);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(4,5,0.6),mat);
+        back.position.set(x,y+7,z-1.8);
+        back.rotation.set((Math.random()-0.5)*0.5,Math.random()*0.4,0);
+        g.add(back);
+    });
+    g.colliderRadius=5;
+    return g;
+}
+
+function makeDeskCorpse() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({color:0x3a3020,emissive:new THREE.Color(0x0a0908)});
+    // Overturned desk — top panel lying flat
+    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.8,6),mat);
+    top.position.set(0,0.4,0);
+    top.rotation.z=(Math.random()-0.5)*0.3;
+    g.add(top);
+    // Legs sticking up at angles
+    [[3.5,4,2],[3.5,4,-2],[-3.5,4,2],[-3.5,4,-2]].forEach(([x,y,z])=>{
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.8,6,0.8),mat);
+        leg.position.set(x,y,z);
+        leg.rotation.set((Math.random()-0.5)*1.2,0,(Math.random()-0.5)*1.0);
+        g.add(leg);
+    });
+    g.colliderRadius=6;
+    return g;
+}
+
+// Master furniture maker — picks one randomly
+const furnitureMakers = [makeOfficeChair, makeFilingCabinet, makeRadiatorPipe, makePileOfChairs, makeDeskCorpse];
+let furnitureObjects = []; // {group, wx, wz, radius}
+
+function placeFurniture() {
+    furnitureObjects = [];
+    // One piece roughly every 25 open tiles
+    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 25);
+    let placed = 0, attempts = 0;
+    while (placed < targetCount && attempts < targetCount * 30) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0) continue;
+        // Must have open neighbours on at least 2 sides — don't block corridors
+        const openCount = [
+            grid[gx-1]&&grid[gx-1][gz]===0,
+            grid[gx+1]&&grid[gx+1][gz]===0,
+            grid[gx][gz-1]===0,
+            grid[gx][gz+1]===0
+        ].filter(Boolean).length;
+        if (openCount < 2) continue;
+        // Not too close to spawn or exits
+        if (Math.abs(gx-SPAWN_GRID_X)<8 && Math.abs(gz-SPAWN_GRID_Z)<8) continue;
+
+        const wx = (gx-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
+        const wz = (gz-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
+
+        const maker = furnitureMakers[Math.floor(Math.random()*furnitureMakers.length)];
+        const obj = maker();
+        const scale = 0.7+Math.random()*0.5;
+        obj.scale.setScalar(scale);
+        obj.position.set(wx, 0, wz);
+        obj.rotation.y = Math.random()*Math.PI*2;
+        scene.add(obj);
+        furnitureObjects.push({group:obj, wx, wz, radius: obj.colliderRadius * scale});
+        placed++;
+    }
+}
+
+// Furniture collision — called in checkCollision
+function checkFurnitureCollision(pos) {
+    for (let f of furnitureObjects) {
+        const dx=pos.x-f.wx, dz=pos.z-f.wz;
+        if (Math.sqrt(dx*dx+dz*dz) < f.radius+PLAYER_SIZE) return true;
+    }
+    return false;
+}
+
 function placeItems() {
     // Clean up any old items on restart
     for (let item of itemData) scene.remove(item.group);
     itemData = [];
+    for (let f of furnitureObjects) scene.remove(f.group);
+    furnitureObjects = [];
  
     let placed = 0, attempts = 0;
     while (placed < BOTTLE_COUNT && attempts < BOTTLE_COUNT * 20) {
@@ -2618,6 +2776,7 @@ function checkCollision(targetPosition) {
         const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE), gz = Math.floor((c.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
         if (gx<0 || gx>=MAP_SIZE || gz<0 || gz>=MAP_SIZE || grid[gx][gz]===1) return true;
     }
+    if (furnitureObjects && checkFurnitureCollision(targetPosition)) return true;
     return false;
 }
  
