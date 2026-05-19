@@ -2682,20 +2682,6 @@ document.addEventListener('keydown',e=>{
         case 'ShiftLeft': case 'ShiftRight':
             activateSprint();
             break;
-        case 'KeyT':
-            if (exitGroups.length > 0) {
-                let nearest = exitGroups[0];
-                let minDist = camera.position.distanceTo(nearest.position);
-                for (let i = 1; i < exitGroups.length; i++) {
-                    let d = camera.position.distanceTo(exitGroups[i].position);
-                    if (d < minDist) {
-                        minDist = d;
-                        nearest = exitGroups[i];
-                    }
-                }
-                camera.position.set(nearest.position.x, PLAYER_HEIGHT, nearest.position.z + 40);
-            }
-            break;
         case 'Escape': pauseGame(); break;
     }
 });
