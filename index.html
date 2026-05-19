@@ -1622,9 +1622,9 @@ function makePileOfChairs() {
     }
     // Three chairs, each tipped on side at different angles
     const poses = [
-        {x:0,   y:2,  z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
-        {x:3,   y:4,  z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
-        {x:-2,  y:6,  z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
+        {x:0,   y:1.5, z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
+        {x:2.5, y:3.0, z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
+        {x:-1.5,y:4.5, z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
     ];
     poses.forEach(p=>{
         const c = buildChair();
@@ -1638,19 +1638,23 @@ function makePileOfChairs() {
 function makeDeskCorpse() {
     const g = new THREE.Group();
     const mat = new THREE.MeshLambertMaterial({color:0x3a3020,emissive:new THREE.Color(0x0a0908)});
-    // Overturned desk — top panel lying on its side, legs pointing sideways
-    const tilt = 0.3 + Math.random()*0.4;
-    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.8,6),mat);
-    top.position.set(0,3,0);
-    top.rotation.z = Math.PI/2 + tilt; // tipped over
-    g.add(top);
-    // Four legs attached to corners, lying sideways with top
-    [[3.5,0,2],[3.5,0,-2],[-3.5,0,2],[-3.5,0,-2]].forEach(([x,y,z])=>{
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.8,6,0.8),mat);
-        leg.position.set(x, 3 + Math.sin(tilt)*3, z);
-        leg.rotation.set(0,0,Math.PI/2+tilt+(Math.random()-0.5)*0.3);
-        g.add(leg);
+    // Build desk as a sub-group so legs rotate with the top when tipped
+    const desk = new THREE.Group();
+    // Tabletop — flat panel
+    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.6,6),mat);
+    top.position.set(0,0,0);
+    desk.add(top);
+    // Four legs going downward from corners — attached to top
+    [[3.8,2.2],[3.8,-2.2],[-3.8,2.2],[-3.8,-2.2]].forEach(([lx,lz])=>{
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.7,6,0.7),mat);
+        leg.position.set(lx,-3.3,lz);
+        desk.add(leg);
     });
+    // Now tip the whole desk over on its side
+    const tilt = Math.PI/2 + 0.25 + Math.random()*0.35;
+    desk.rotation.z = tilt;
+    desk.position.set(0, 3.5, 0);
+    g.add(desk);
     g.colliderRadius=6;
     return g;
 }
@@ -1660,7 +1664,7 @@ let furnitureObjects = []; // {group, wx, wz, radius}
 function placeFurniture() {
     furnitureObjects = [];
     // One piece roughly every 25 open tiles
-    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 55); // less furniture = less geometry
+    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 27); // ~2x more furniture
     let placed = 0, attempts = 0;
     while (placed < targetCount && attempts < targetCount * 30) {
         attempts++;
