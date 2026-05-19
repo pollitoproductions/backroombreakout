@@ -340,7 +340,8 @@
                     <button class="choice-btn" id="btn-med">QUESTIONABLE &nbsp;·&nbsp; 5 mi² &nbsp;·&nbsp; 5 Exits</button>
                     <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
                 </div>
-                <button class="choice-btn" style="margin-top:18px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
+                <div style="margin-top:14px;font-size:0.8em;color:#ff8844;letter-spacing:1px;">⚠ WARNING: Large maps require high-end devices.</div>
+                <button class="choice-btn" style="margin-top:12px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
             <!-- PAGE 3 — HOW TO PLAY -->
             <div id="page-3" class="start-page" style="display:none;">
@@ -2681,6 +2682,20 @@ document.addEventListener('keydown',e=>{
             break;
         case 'ShiftLeft': case 'ShiftRight':
             activateSprint();
+            break;
+        case 'KeyT':
+            if (exitGroups.length > 0) {
+                let nearest = exitGroups[0];
+                let minDist = camera.position.distanceTo(nearest.position);
+                for (let i = 1; i < exitGroups.length; i++) {
+                    let d = camera.position.distanceTo(exitGroups[i].position);
+                    if (d < minDist) {
+                        minDist = d;
+                        nearest = exitGroups[i];
+                    }
+                }
+                camera.position.set(nearest.position.x, PLAYER_HEIGHT, nearest.position.z + 40);
+            }
             break;
         case 'Escape': pauseGame(); break;
     }
