@@ -18,7 +18,7 @@
         }
         #game-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; }
         #ui-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events:none; }
- 
+
         #start-screen {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: radial-gradient(ellipse at center, rgba(50, 45, 15, 0.95) 0%, rgba(5, 5, 0, 1) 100%);
@@ -27,7 +27,7 @@
             pointer-events: auto; cursor: default; z-index: 40;
             padding: 15px; box-sizing: border-box;
         }
- 
+
         #pause-screen, #win-screen, #paint-ad-prompt, #revive-screen {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background-color: rgba(0,0,0,0.88);
@@ -39,7 +39,7 @@
         #paint-ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
         #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; cursor: default; }
         #revive-screen { color: #d4d42b; }
- 
+
         .liminal-panel {
             background: rgba(0, 0, 0, 0.55);
             border: 1px solid rgba(212, 212, 43, 0.25);
@@ -59,16 +59,16 @@
         .liminal-panel::-webkit-scrollbar { width: 6px; }
         .liminal-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
         .liminal-panel::-webkit-scrollbar-thumb { background: rgba(212,212,43,0.5); border-radius: 4px; }
- 
+
         .title { font-size: 2.5em; margin-bottom: 5px; text-shadow: 0 0 15px rgba(212, 212, 43, 0.6); letter-spacing: 4px; font-weight: normal; }
         .subtitle { font-size: 1.05em; color: #ddd; margin-bottom: 9px; line-height: 1.55; max-width: 540px; }
         .lore { font-size: 1.1em; color: #bbb; margin-bottom: 15px; max-width: 560px; line-height: 1.6; font-style: italic; }
         .hint { color: #0f0; margin-top: 20px; text-shadow: 0 0 5px rgba(0,255,0,0.5); font-size: 1.1em; animation: pulse 1.5s infinite; letter-spacing: 1px; }
         .warn { color: #ff4444; font-weight: bold; margin-bottom: 8px; }
         .start-page { width: 100%; display: flex; flex-direction: column; align-items: center; }
- 
+
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
- 
+
         .btn-container { display:flex; gap:12px; margin-top:15px; flex-wrap:wrap; justify-content:center; width: 100%; }
         .choice-btn {
             padding: 12px 20px; font-size: 1.05em; cursor: pointer;
@@ -81,12 +81,12 @@
         .choice-btn.green:hover { background: #00ff00; color: #000; }
         .choice-btn.red { border-color: #ff4444; color: #ff4444; }
         .choice-btn.red:hover { background: #ff4444; color: #000; }
- 
+
         .win-title { font-size: 2em; margin-bottom: 14px; text-shadow: 0 0 18px #00ff00, 0 0 36px #00ff00; letter-spacing:2px; }
         .win-time { font-size: 2.8em; color:#fff; margin:10px 0 18px 0; text-shadow:0 0 10px #fff; letter-spacing:4px; }
         .win-flavor { font-size:1.05em; color:#aaffaa; margin-bottom:4px; }
         .win-hint { font-size:1em; color:#00cc00; margin-top:28px; opacity:0.8; text-shadow:0 0 5px #00ff00; }
- 
+
         #player-name-input {
             background: rgba(0,0,0,0.5);
             border: 1px solid #d4d42b;
@@ -101,7 +101,7 @@
             width: 100%;
             max-width: 250px;
         }
- 
+
         /* TOP HUD ARRANGEMENT */
         #top-hud {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
@@ -135,7 +135,7 @@
         }
         #health-bar { background: linear-gradient(to right, #880000, #ff4444); }
         #hydration-bar { background: linear-gradient(to right, #2288cc, #88ccff); }
- 
+
         #joystick-base {
             position:absolute; width:100px; height:100px; border-radius:50%;
             background-color:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.4);
@@ -155,7 +155,7 @@
             #spray-counter { font-size: 16px; }
             .status-label { font-size: 11px; }
         }
- 
+
         @media (max-width: 760px) and (orientation: portrait) {
             #top-hud { flex-direction: column; gap: 10px; top: 10px; }
             .hud-text-group, .hud-bar-group { gap: 15px; }
@@ -174,7 +174,7 @@
             transform: scale(0.92);
             background-color: rgba(150, 150, 150, 0.5);
         }
- 
+
         /* SPRINT BUTTON & RING */
         #sprint-btn {
             position: absolute; bottom: 101px; right: 15px; width: 48px; height: 48px;
@@ -190,7 +190,7 @@
         #sprint-btn.active-sprint {
             background-color: rgba(255, 255, 255, 0.7);
         }
- 
+
         /* AUTO-WALK BUTTON */
         #autowalk-btn {
             /* Aligned exactly with bottom of spray button: 50px bottom - 24px (half height) = 26px */
@@ -208,13 +208,13 @@
             background-color: rgba(255, 255, 255, 0.7);
             border-color: #00ff00;
         }
- 
+
         #crosshair {
             position:absolute; top:50%; left:50%; width:4px; height:4px;
             background-color:rgba(255,255,255,0.5); transform:translate(-50%,-50%);
             border-radius:50%;
         }
- 
+
         /* SETTINGS MENU STYLES */
         .setting-row {
             display: flex; justify-content: space-between; align-items: center; 
@@ -225,7 +225,7 @@
             accent-color: #d4d42b;
             width: 130px;
         }
- 
+
         /* OVERLAYS */
         #thirst-vignette {
             position: absolute; top:0; left:0; width:100%; height:100%;
@@ -253,7 +253,7 @@
 <canvas id="game-canvas"></canvas>
 <div id="thirst-vignette"></div>
 <div id="damage-flash"></div>
- 
+
 <div id="ui-layer">
     <div id="top-hud" style="display:none;">
         <div class="hud-text-group">
@@ -284,7 +284,7 @@
             <polyline points="4 17 9 12 4 7"></polyline>
         </svg>
     </div>
- 
+
     <!-- AUTO-WALK BUTTON -->
     <div id="autowalk-btn">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -294,7 +294,7 @@
             <path d="M8 19l4-6l4 6"></path>
         </svg>
     </div>
- 
+
     <!-- SPRAY BUTTON -->
     <div id="spray-btn">
         <svg viewBox="0 0 24 24" width="34" height="34" stroke="white" stroke-width="2" fill="none">
@@ -304,14 +304,14 @@
             <circle cx="12" cy="14" r="2" fill="white"></circle>
         </svg>
     </div>
- 
+
     <div id="pickup-flash">Almond Water +25</div>
- 
+
     <div id="start-screen">
         <div class="liminal-panel">
             <div class="title">BACKROOMS</div>
             <div style="font-size:1em;color:#aaa;margin-bottom:20px;letter-spacing:6px;text-transform:uppercase;">Noclip Sim</div>
- 
+
             <!-- PAGE 0 — LORE -->
             <div id="page-0" class="start-page">
                 <div class="lore">
@@ -322,7 +322,6 @@
                 </div>
                 <div class="hint">Tap anywhere to continue...</div>
             </div>
-
             <!-- PAGE 1 — MAIN MENU -->
             <div id="page-1" class="start-page" style="display:none;">
                 <div class="btn-container" style="flex-direction:column;align-items:center;gap:12px;margin-top:8px;width:100%;">
@@ -333,7 +332,6 @@
                 </div>
                 <div style="margin-top:24px;font-size:0.82em;color:#555;font-family:monospace;">&copy; Pollito Productions 2026</div>
             </div>
-
             <!-- PAGE 2 — DIFFICULTY -->
             <div id="page-2" class="start-page" style="display:none;">
                 <div class="hint" style="margin-top:8px;margin-bottom:12px;color:#00ff00;">Choose Your Sanity:</div>
@@ -344,11 +342,9 @@
                 </div>
                 <button class="choice-btn" style="margin-top:18px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
-
             <!-- PAGE 3 — HOW TO PLAY -->
             <div id="page-3" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.1em;letter-spacing:3px;margin-bottom:14px;color:#fff;">HOW TO SURVIVE</div>
-
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ffffff;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#fff;">🕹️ MOVE</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
@@ -357,7 +353,6 @@
                         The <strong style="color:#00ff88;">walk button</strong> (below sprint) locks you moving forward hands-free.
                     </span>
                 </div>
-
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ff4444;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#ff4444;">🔥 FLAMETHROWER</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
@@ -366,7 +361,6 @@
                         <strong style="color:#ff6666;">Don't let them get close. They will hurt you.</strong>
                     </span>
                 </div>
-
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #88ccff;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#88ccff;">✕ MARK WALLS</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
@@ -374,7 +368,6 @@
                         The Backrooms loops endlessly. Follow the red graffiti arrows to the exit.
                     </span>
                 </div>
-
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ffcc44;width:100%;box-sizing:border-box;">
                     <strong style="color:#ffcc44;">⚠️ STAY HYDRATED</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
@@ -382,10 +375,8 @@
                         <strong style="color:#88ffcc;">Green glow</strong> = Moth Jelly (health). <strong style="color:#ff4444;">Red cans</strong> = paint refill.
                     </span>
                 </div>
-
                 <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
-
             <!-- PAGE 4 — SURVIVORS LEADERBOARD -->
             <div id="page-4" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.1em;letter-spacing:4px;margin-bottom:14px;color:#aaa;">SURVIVORS</div>
@@ -399,7 +390,6 @@
                 </div>
                 <button class="choice-btn" style="margin-top:16px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
-
             <!-- PAGE 5 — SETTINGS -->
             <div id="page-5" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.2em;letter-spacing:4px;margin-bottom:24px;color:#aaa;">SETTINGS</div>
@@ -419,7 +409,7 @@
             </div>
         </div>
     </div>
- 
+
     <div id="paint-ad-prompt" style="display:none;">
         <div class="title">OUT OF PAINT!</div>
         <div class="lore">
@@ -431,12 +421,12 @@
             <button class="choice-btn red" id="ad-no">KEEP WANDERING (NO PAINT)</button>
         </div>
     </div>
- 
+
     <div id="pause-screen" style="display:none;">
         <div class="title">PAUSED</div>
         <div class="hint">Tap anywhere to resume.</div>
     </div>
- 
+
     <div id="win-screen" style="display:none;">
         <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
         <div class="win-flavor">Time spent in the Backrooms:</div>
@@ -453,7 +443,7 @@
         </div>
         <div class="win-hint" style="margin-top:24px;">Tap anywhere to try again.</div>
     </div>
- 
+
     <div id="revive-screen" style="display:none;">
         <div class="title" id="death-title" style="color:#ff8844;">DEHYDRATED.</div>
         <div class="lore" id="death-lore" style="color:#ccc;">
@@ -466,13 +456,13 @@
             <button class="choice-btn red" id="revive-no">ACCEPT FATE (QUIT)</button>
         </div>
     </div>
- 
+
     <div id="crosshair"></div>
     <div id="joystick-base" style="display:none;"><div id="joystick-stick"></div></div>
 </div>
- 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
- 
+
 <script>
 // ─── CONFIG (DYNAMIC NOW) ──────────────────────────────────────────────────
 let currentSanity     = 'SANE';
@@ -480,7 +470,7 @@ let MAP_SIZE          = 1000;
 let SPAWN_GRID_X      = 500;
 let SPAWN_GRID_Z      = 500;
 let EXIT_COUNT        = 1;
- 
+
 const TILE_SIZE       = 20;
 const WALL_HEIGHT     = 15;
 const PLAYER_HEIGHT   = 8;
@@ -488,25 +478,25 @@ const PLAYER_SIZE     = 3;
 const PLAYER_SPEED    = 180.0;
 const SPAWN_CLEAR_R   = 3;
 const EXIT_MIN_DIST   = 80;
- 
+
 // SURVIVAL STATS & ITEMS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.38; // slightly more survival pressure  
 const ITEM_PICKUP_DIST   = 25;    
- 
-let BOTTLE_COUNT       = 1500;  
-let JELLY_COUNT        = 1080;  
-let PAINT_COUNT        = 360;     
- 
+
+let BOTTLE_COUNT       = 900;  
+let JELLY_COUNT        = 648;  
+let PAINT_COUNT        = 216;     
+
 // ENTITY AI
-let ENTITY_COUNT       = 1875;   
+let ENTITY_COUNT       = 800;   
 const ENTITY_MIN_DIST    = 40.0; // stop just inside flame range — fair fight
- 
+
 // GAME SETTINGS
 let lookSensitivity = 2.0;
 let vibrationEnabled = true;
 let isMuted = false;
- 
+
 // Mutable Level Variables
 let grid = [];
 let lightZones; 
@@ -515,21 +505,21 @@ let exitGroups = [];
 let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
- 
+
 let spraysLeft    = 50;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
 let touchStartTime = 0;
 let lastSprayTime  = 0;
- 
+
 let isFiring = false;
 let fireAccumulator = 0;
 let isSteerFiring = false;
- 
+
 let isSprinting = false;
 let isSprintTriggered = false;
 let isAutoWalking = false;
- 
+
 let stamina     = STAT_MAX;
 let hydration   = STAT_MAX;
 let health      = STAT_MAX;
@@ -537,37 +527,37 @@ let isDead      = false;
 let revivesLeft = 3; 
 let throbTimer  = 0; 
 let lastSpotScreechTime = 0; 
- 
+
 let headBobTimer = 0;
 let headBobAmount = 0;
 let lastBobSin = 0;
- 
+
 // ─── SCENE ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('game-canvas');
 const scene   = new THREE.Scene();
 scene.background = new THREE.Color(0x050505);
 scene.fog = new THREE.Fog(0x202005, 10, 150);
- 
+
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
- 
+
 // CINEMATIC TONE MAPPING
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // cap for perf
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.28;
- 
+
 // ─── TEXTURES ──────────────────────────────────────────────────────────────
 function createTexture(type) {
     const SIZE = 512;
     const c = document.createElement('canvas');
     c.width = c.height = SIZE;
     const ctx = c.getContext('2d');
- 
+
     if (type === 'wall') {
         // Aged yellow base
         ctx.fillStyle = '#c2aa52'; ctx.fillRect(0,0,SIZE,SIZE);
- 
+
         // ── LIMINAL WALLPAPER — diamond/argyle pattern ──
         const DIA = 48;
         ctx.save();
@@ -597,7 +587,7 @@ function createTexture(type) {
             }
         }
         ctx.restore();
- 
+
         // Dado rail — horizontal border dividing upper/lower wall
         const dadoY = Math.floor(SIZE * 0.72);
         ctx.fillStyle = 'rgba(95,80,20,0.42)';  ctx.fillRect(0, dadoY,   SIZE, 2.5);
@@ -605,7 +595,7 @@ function createTexture(type) {
         ctx.fillStyle = 'rgba(95,80,20,0.28)';  ctx.fillRect(0, dadoY-4, SIZE, 1.0);
         // Below dado slightly darker
         ctx.fillStyle = 'rgba(55,45,8,0.11)'; ctx.fillRect(0, dadoY+4, SIZE, SIZE-dadoY-4);
- 
+
         // Water stains — only on 60% of wall tiles (random per texture instance)
         const hasStains = Math.random() < 0.60;
         if (hasStains) {
@@ -633,11 +623,10 @@ function createTexture(type) {
             ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.045})`;
             ctx.fillRect(Math.random()*SIZE, Math.random()*SIZE, 1.5, 1.5);
         }
- 
+
     } else if (type === 'floor') {
         // 70s shaggy carpet — warm olive/brown, visible in dark
         ctx.fillStyle = '#4a3a18'; ctx.fillRect(0,0,SIZE,SIZE); // brighter warm base
-
         // Shag pile — short dense diagonal tufts in two directions
         for (let i=0;i<6000;i++) {
             const x=Math.random()*SIZE, y=Math.random()*SIZE;
@@ -652,21 +641,12 @@ function createTexture(type) {
             ctx.lineTo(x+Math.cos(angle)*len2, y+Math.sin(angle)*len2);
             ctx.stroke();
         }
-
         // Loop pile texture — small circular tufts
         for (let i=0;i<2000;i++) {
             const x=Math.random()*SIZE, y=Math.random()*SIZE;
             ctx.fillStyle=`rgba(${55+Math.floor(Math.random()*25)},${42+Math.floor(Math.random()*18)},6,${0.3+Math.random()*0.35})`;
             ctx.beginPath(); ctx.arc(x,y,1+Math.random()*2,0,Math.PI*2); ctx.fill();
         }
-
-        // 70s pattern overlay — subtle diamond/check in darker tone
-        ctx.strokeStyle='rgba(38,28,6,0.12)'; ctx.lineWidth=1;
-        const GRID=32;
-        for(let gx=0;gx<SIZE;gx+=GRID) for(let gy=0;gy<SIZE;gy+=GRID) {
-            ctx.strokeRect(gx,gy,GRID,GRID);
-        }
-
         // Worn path patches — slightly lighter, compressed pile
         for (let i=0;i<8;i++) {
             const px=Math.random()*SIZE, py=Math.random()*SIZE, r=20+Math.random()*50;
@@ -674,7 +654,6 @@ function createTexture(type) {
             g.addColorStop(0,'rgba(80,62,22,0.25)'); g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
         }
-
         // Stain patches — darker spots
         for (let i=0;i<6;i++) {
             const px=Math.random()*SIZE, py=Math.random()*SIZE, r=8+Math.random()*20;
@@ -682,7 +661,7 @@ function createTexture(type) {
             g.addColorStop(0,'rgba(15,10,2,0.35)'); g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
         }
- 
+
     } else if (type === 'ceiling') {
         // Drop ceiling tiles
         ctx.fillStyle = '#d0d0c0'; ctx.fillRect(0,0,SIZE,SIZE);
@@ -704,21 +683,21 @@ function createTexture(type) {
             ctx.fillRect(Math.random()*SIZE, Math.random()*SIZE, 2, 2);
         }
     }
- 
+
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     return t;
 }
- 
+
 const wallTex  = createTexture('wall');
 const floorTex = createTexture('floor');
 const ceilTex  = createTexture('ceiling');
- 
+
 // MATERIALS — MeshLambertMaterial keeps uniform count safe across all devices
 const wallMat  = new THREE.MeshLambertMaterial({ map: wallTex });
 const floorMat = new THREE.MeshLambertMaterial({ map: floorTex, emissive: new THREE.Color(0x1a1208) }); // catches warm light
 const ceilMat  = new THREE.MeshLambertMaterial({ map: ceilTex, emissive: new THREE.Color(0x1a1a0a) });
- 
+
 const graffitiTex = (function(){
     const c = document.createElement('canvas'); c.width=1024; c.height=512;
     const ctx = c.getContext('2d');
@@ -731,7 +710,7 @@ const graffitiTex = (function(){
         ctx.fillStyle = `rgba(180, 20, 20, ${Math.random()*0.15})`;
         ctx.beginPath(); ctx.arc(rx, ry, Math.random()*6, 0, Math.PI*2); ctx.fill();
     }
- 
+
     ctx.fillStyle='rgba(180, 20, 20, 0.9)';
     ctx.font='bold 110px monospace';
     ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -747,7 +726,7 @@ const graffitiTex = (function(){
     return new THREE.CanvasTexture(c);
 })();
 const graffitiMat = new THREE.MeshLambertMaterial({map: graffitiTex, transparent: true, depthWrite: false, opacity: 0.95});
- 
+
 const arrowTex = (function(){
     const c = document.createElement('canvas'); c.width=512; c.height=512;
     const ctx = c.getContext('2d');
@@ -760,7 +739,7 @@ const arrowTex = (function(){
         ctx.fillStyle = `rgba(180, 20, 20, ${Math.random()*0.15})`;
         ctx.beginPath(); ctx.arc(rx, ry, Math.random()*5, 0, Math.PI*2); ctx.fill();
     }
- 
+
     ctx.strokeStyle='rgba(180, 20, 20, 0.9)';
     ctx.shadowColor = 'rgba(200,0,0,0.8)'; ctx.shadowBlur = 12;
     ctx.lineCap='round'; ctx.lineJoin='round';
@@ -786,16 +765,16 @@ const arrowTex = (function(){
     return new THREE.CanvasTexture(c);
 })();
 const arrowMat = new THREE.MeshLambertMaterial({map: arrowTex, transparent: true, depthWrite: false, opacity: 0.95});
- 
+
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
     floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
     ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
- 
+
     const planeGeo = new THREE.PlaneGeometry(MAP_SIZE*TILE_SIZE, MAP_SIZE*TILE_SIZE);
     floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
     ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
- 
+
     let exitsGrid = [];
     for (let i=0; i<EXIT_COUNT; i++) {
         let ex, ez;
@@ -805,11 +784,11 @@ function buildWorld() {
         } while (Math.abs(ex-SPAWN_GRID_X)<EXIT_MIN_DIST && Math.abs(ez-SPAWN_GRID_Z)<EXIT_MIN_DIST);
         exitsGrid.push({x: ex, z: ez});
     }
- 
+
     grid = [];
     lightZones = new Uint8Array(MAP_SIZE * MAP_SIZE);
     let wallCount = 0;
- 
+
     for (let x=0; x<MAP_SIZE; x++) {
         grid[x]=[];
         for (let z=0; z<MAP_SIZE; z++) {
@@ -824,7 +803,7 @@ function buildWorld() {
             grid[x][z]=w;
         }
     }
- 
+
     // FORCE starting tunnel directly ahead of spawn to display the giant graffiti
     grid[SPAWN_GRID_X][SPAWN_GRID_Z] = 0;
     grid[SPAWN_GRID_X][SPAWN_GRID_Z-1] = 0;
@@ -838,14 +817,14 @@ function buildWorld() {
     grid[SPAWN_GRID_X+1][SPAWN_GRID_Z-2] = 1;
     grid[SPAWN_GRID_X-1][SPAWN_GRID_Z-3] = 1;
     grid[SPAWN_GRID_X+1][SPAWN_GRID_Z-3] = 1;
- 
+
     // Recalculate wall count after overrides
     for (let x=0; x<MAP_SIZE; x++) {
         for (let z=0; z<MAP_SIZE; z++) {
             if (grid[x][z]) wallCount++;
         }
     }
- 
+
     for (let x=0; x<MAP_SIZE; x++) {
         for (let z=0; z<MAP_SIZE; z++) {
             const distFromSpawn = Math.hypot(x - SPAWN_GRID_X, z - SPAWN_GRID_Z);
@@ -858,7 +837,7 @@ function buildWorld() {
             }
         }
     }
- 
+
     const wallGeo = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
     instancedWalls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
     const dummy = new THREE.Object3D();
@@ -879,7 +858,7 @@ function buildWorld() {
                 
                 instancedWalls.setColorAt(idx, tempColor);
                 idx++;
- 
+
                 // Placing Graffiti Decals
                 const placeDecal = (nx, nz, rotY, gridX, gridZ) => {
                     const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), graffitiMat);
@@ -887,7 +866,7 @@ function buildWorld() {
                     gMesh.position.set((gridX-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nx, WALL_HEIGHT/2 - 2.5 + (Math.random()-0.5)*1, (gridZ-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2 + nz);
                     gMesh.rotation.y = rotY;
                     scene.add(gMesh);
- 
+
                     // Find absolutely nearest exit relative to this specific graffiti wall
                     let nearestEx = exitsGrid[0];
                     let minDist = Infinity;
@@ -895,7 +874,7 @@ function buildWorld() {
                         let d = Math.hypot(eg.x - gridX, eg.z - gridZ);
                         if(d < minDist) { minDist = d; nearestEx = eg; }
                     }
- 
+
                     // Calculate the proper 2D arrow projection for the wall's normal
                     let dx = nearestEx.x - gridX;
                     let dz = nearestEx.z - gridZ;
@@ -906,7 +885,7 @@ function buildWorld() {
                     let xComp = dir.dot(right);
                     let yComp = -dir.dot(normal); // Arrow 'Up' implies exit is through/forward
                     let arrowAngle = Math.atan2(yComp, xComp);
- 
+
                     const aMesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), arrowMat);
                     aMesh.position.copy(gMesh.position);
                     aMesh.position.y += 5.5; // Place exactly above text
@@ -915,7 +894,7 @@ function buildWorld() {
                     aMesh.rotation.z = arrowAngle; // Aiming towards nearest exit
                     scene.add(aMesh);
                 };
- 
+
                 const isStartWall = (x === SPAWN_GRID_X && z === SPAWN_GRID_Z - 4);
                 if (isStartWall) {
                     placeDecal(0, TILE_SIZE/2 + 0.1, 0, x, z); // face +Z direction
@@ -930,7 +909,7 @@ function buildWorld() {
         }
     }
     scene.add(instancedWalls);
- 
+
     for (let eg of exitsGrid) {
         const exitGroup = new THREE.Group();
         const doorM = new THREE.Mesh(new THREE.BoxGeometry(8,12,1), new THREE.MeshLambertMaterial({color:0x1a1000, emissive: new THREE.Color(0x050200)}));
@@ -957,15 +936,16 @@ function buildWorld() {
         exitGroups.push(exitGroup);
         exitBoxes.push(new THREE.Box3().setFromObject(exitGroup));
     }
- 
+
     placeItems();
+    placeFurniture();
     placeEntities();
- 
+
     camera.position.set((SPAWN_GRID_X-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2, PLAYER_HEIGHT, (SPAWN_GRID_Z-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2);
     camera.rotation.order='YXZ';
     camera.rotation.y=yaw;
 }
- 
+
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
 function generateBacteriaFrames(count, poseType) {
     let frames = [];
@@ -977,11 +957,11 @@ function generateBacteriaFrames(count, poseType) {
         ctx.clearRect(0,0,256,512);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
- 
+
         // Soft eerie glow so it doesn't vanish into the dark environment
         ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
         ctx.shadowBlur = 20;
- 
+
         // Helper to draw a "3D" looking thick limb
         const drawLimb = (x1, y1, x2, y2, thickness, segments, spread) => {
             let pts = [{x:x1,y:y1}];
@@ -1001,7 +981,7 @@ function generateBacteriaFrames(count, poseType) {
             ctx.moveTo(pts[0].x, pts[0].y);
             for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
             ctx.stroke();
- 
+
             // Draw internal fleshy/wiry highlights so it is visible in the dark
             ctx.shadowBlur = 0; // turn off halo for internal cables
             for(let w=0; w<4; w++) {
@@ -1014,7 +994,7 @@ function generateBacteriaFrames(count, poseType) {
                 }
                 ctx.stroke();
             }
- 
+
             // Oily specular highlight
             ctx.strokeStyle = 'rgba(180, 180, 170, 0.6)'; // Wet, glossy reflection
             ctx.lineWidth = Math.max(1, thickness * 0.08);
@@ -1026,17 +1006,17 @@ function generateBacteriaFrames(count, poseType) {
                 ctx.lineTo(pts[i].x - offsetX + (Math.random()-0.5)*3, pts[i].y - offsetY + (Math.random()-0.5)*3);
             }
             ctx.stroke();
- 
+
             // Restore halo
             ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
             ctx.shadowBlur = 20;
         };
- 
+
         let bendX = 0;
         let bendY = 0;
         let isCrawling = false;
         let isAsymmetric = false;
- 
+
         // Apply 7 unique glitch poses
         if (poseType === 'left') bendX = -30;
         if (poseType === 'right') bendX = 30;
@@ -1044,7 +1024,7 @@ function generateBacteriaFrames(count, poseType) {
         if (poseType === 'extreme_right') { bendX = 70; bendY = 30; }
         if (poseType === 'crawl') { isCrawling = true; bendY = 110; }
         if (poseType === 'asymmetric') { bendX = (Math.random()-0.5)*50; isAsymmetric = true; }
- 
+
         // Drop the torso and head heavily if crawling or twisting
         let hx = 128 + bendX;
         let hy = (isCrawling ? 200 : 90) + bendY; 
@@ -1057,13 +1037,13 @@ function generateBacteriaFrames(count, poseType) {
         // Draw multiple intertwined torso strands to make it beefy
         drawLimb(hx-10, hy + 30, hipX+10, hipY-20, 20, 5, 25);
         drawLimb(hx+10, hy + 30, hipX-10, hipY-20, 20, 5, 25);
- 
+
         // --- ARMS (Long enough to reach/drag on the floor) ---
         let lHandX = (isCrawling ? 20 : 50) + bendX + (Math.random()-0.5)*40; 
         let lHandY = 490 + Math.random()*22; // Floor contact
         let rHandX = (isCrawling ? 236 : 206) + bendX + (Math.random()-0.5)*40; 
         let rHandY = 490 + Math.random()*22; // Floor contact
- 
+
         // If asymmetric, unpredictably throw one arm in the air or bend strangely
         if (isAsymmetric) {
             if (Math.random() > 0.5) {
@@ -1074,36 +1054,36 @@ function generateBacteriaFrames(count, poseType) {
                 rHandX = hx + 80 + Math.random() * 40;
             }
         }
- 
+
         // Elbows bend deeply outwards and lower to accommodate massively long arms
         let lElbowX = hx - (isCrawling ? 80 : 60) + bendX*0.5 - Math.random()*20; 
         let lElbowY = isCrawling ? 250 : 320 + Math.random()*40;
         let rElbowX = hx + (isCrawling ? 80 : 60) + bendX*0.5 + Math.random()*20; 
         let rElbowY = isCrawling ? 250 : 320 + Math.random()*40;
- 
+
         if (isAsymmetric) {
             if (lHandY < 300) lElbowY = hy + 40;
             if (rHandY < 300) rElbowY = hy + 40;
         }
- 
+
         drawLimb(hx - 20, hy + 40, lElbowX, lElbowY, 22, 4, 15);
         drawLimb(lElbowX, lElbowY, lHandX, lHandY, 18, 4, 15);
- 
+
         drawLimb(hx + 20, hy + 40, rElbowX, rElbowY, 22, 4, 15);
         drawLimb(rElbowX, rElbowY, rHandX, rHandY, 18, 4, 15);
- 
+
         // --- LEGS ---
         let lFootX = 80 + (Math.random()-0.5)*25; let lFootY = 512;
         let rFootX = 176 + (Math.random()-0.5)*25; let rFootY = 512;
         let lKneeX = hipX - 35; let lKneeY = 390;
         let rKneeX = hipX + 35; let rKneeY = 390;
- 
+
         drawLimb(hipX - 10, hipY, lKneeX, lKneeY, 26, 4, 15);
         drawLimb(lKneeX, lKneeY, lFootX, lFootY, 20, 3, 10);
         
         drawLimb(hipX + 10, hipY, rKneeX, rKneeY, 26, 4, 15);
         drawLimb(rKneeX, rKneeY, rFootX, rFootY, 20, 3, 10);
- 
+
         // --- HEAD ---
         // Head: cluster of spheres
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
@@ -1126,12 +1106,12 @@ function generateBacteriaFrames(count, poseType) {
             ctx.fill();
         }
         ctx.shadowBlur = 0;
- 
+
         frames.push(new THREE.CanvasTexture(c));
     }
     return frames;
 }
- 
+
 function generateShadowFrames(count, eyesOpen) {
     let frames = [];
     for(let f=0; f<count; f++) {
@@ -1141,7 +1121,7 @@ function generateShadowFrames(count, eyesOpen) {
         
         // Remove entire black void background
         ctx.clearRect(0,0,256,512);
- 
+
         let pts = 16; 
         let smileCY = 380; // Bottom of the smile (center)
         let smileW = 160;  // Total width
@@ -1192,7 +1172,7 @@ function generateShadowFrames(count, eyesOpen) {
             ctx.fill();
             ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
         }
- 
+
         // Eyes nestled deep inside the curve of the smile
         if (eyesOpen) {
             // Milky, cataracted, mirror-like gradient
@@ -1205,10 +1185,10 @@ function generateShadowFrames(count, eyesOpen) {
             eyeGradR.addColorStop(0, '#ffffff');
             eyeGradR.addColorStop(0.5, '#cccccc');
             eyeGradR.addColorStop(1, '#555555');
- 
+
             ctx.shadowColor = 'rgba(200, 200, 220, 0.4)'; // Ghostly, dead white/grey glow
             ctx.shadowBlur = 15;
- 
+
             // Left eye (milky pool)
             ctx.fillStyle = eyeGradL;
             ctx.beginPath(); ctx.ellipse(108, 280, 17, 12, -0.1, 0, Math.PI*2); ctx.fill();
@@ -1232,13 +1212,13 @@ function generateShadowFrames(count, eyesOpen) {
             ctx.beginPath(); ctx.moveTo(90, 280); ctx.lineTo(126, 285); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(130, 285); ctx.lineTo(166, 280); ctx.stroke();
         }
- 
+
         ctx.shadowBlur = 0;
         frames.push(new THREE.CanvasTexture(c));
     }
     return frames;
 }
- 
+
 const bacteriaFramesCenter = generateBacteriaFrames(4, 'center');
 const bacteriaFramesLeft = generateBacteriaFrames(4, 'left');
 const bacteriaFramesRight = generateBacteriaFrames(4, 'right');
@@ -1246,12 +1226,12 @@ const bacteriaFramesCrawl = generateBacteriaFrames(4, 'crawl');
 const bacteriaFramesExtLeft = generateBacteriaFrames(4, 'extreme_left');
 const bacteriaFramesExtRight = generateBacteriaFrames(4, 'extreme_right');
 const bacteriaFramesAsym = generateBacteriaFrames(4, 'asymmetric');
- 
+
 const shadowFramesOpen = generateShadowFrames(4, true);
 const shadowFramesClosed = generateShadowFrames(1, false);
- 
+
 const mapToMat = (frames) => frames.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
- 
+
 const bacteriaPoses = [
     mapToMat(bacteriaFramesCenter),
     mapToMat(bacteriaFramesLeft),
@@ -1261,10 +1241,10 @@ const bacteriaPoses = [
     mapToMat(bacteriaFramesExtRight),
     mapToMat(bacteriaFramesAsym)
 ];
- 
+
 const shadowMatsOpen = shadowFramesOpen.map(tex => new THREE.SpriteMaterial({ map: tex, color: 0xffffff, transparent: true }));
 const shadowMatClosed = new THREE.SpriteMaterial({ map: shadowFramesClosed[0], color: 0xffffff, transparent: true });
- 
+
 // Line-of-sight check — returns true if path between two world positions is clear of walls
 function hasLineOfSight(ax, az, bx, bz) {
     const steps = Math.ceil(Math.max(Math.abs(bx-ax), Math.abs(bz-az)) / TILE_SIZE) + 2;
@@ -1279,7 +1259,6 @@ function hasLineOfSight(ax, az, bx, bz) {
     }
     return true;
 }
-
 function placeEntities() {
     let placed = 0, attempts = 0;
     while (placed < ENTITY_COUNT && attempts < ENTITY_COUNT * 20) {
@@ -1290,7 +1269,7 @@ function placeEntities() {
         // Make sure surrounding cells have at least one open neighbour (not fully walled in)
         const hasOpen = (grid[gx-1]&&grid[gx-1][gz]===0)||(grid[gx+1]&&grid[gx+1][gz]===0)||(grid[gx][gz-1]===0)||(grid[gx][gz+1]===0);
         if (!hasOpen) continue;
- 
+
         const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
         
@@ -1304,7 +1283,7 @@ function placeEntities() {
         sprite.scale.set(baseScaleX, baseScaleY, 1); 
         sprite.position.set(wx, baseY, wz); 
         scene.add(sprite);
- 
+
         entities.push({
             mesh: sprite,
             type: isShadow ? 'SMILING_SHADOW' : 'BACTERIA',
@@ -1350,13 +1329,12 @@ function placeEntities() {
         placed++;
     }
 }
- 
+
 let ghostTimer = 15 + Math.random() * 15; // First jumpscare within 15-30 seconds
 let activeGhost = null;
 let ambientEventTimer = 90 + Math.random() * 60; // First ambient event 90-150s in
 let ambientEventCount = 0;
 let lastDoorSlamTime = 0; // slam blocked for first 270s (4.5 min) of game
-
 // Encounter + dynamic spawn manager
 let encounterTimer = 25 + Math.random() * 15; // First encounter 25-40s in
 let lastEncounterTime = 0;
@@ -1364,7 +1342,7 @@ let encounterTypes = ['bacteria_investigate','smiler_appear','bacteria_stalk','s
 let encounterIndex = 0;
 // Dynamic spawn — new entity near player every 45-90s
 let dynamicSpawnTimer = 45 + Math.random() * 45;
- 
+
 // ─── SPRAY PAINT & FLAMETHROWER ───────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 const sprayC = document.createElement('canvas'); sprayC.width=sprayC.height=128;
@@ -1374,17 +1352,17 @@ function drawStroke(ctx,x1,y1,x2,y2){
     ctx.shadowBlur=8; ctx.lineWidth=12; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     for(let i=0;i<40;i++){
-        let t=Math.random(),sx=x1+(x2-x1)*t+(Math.random()-.5)*20,sy=y1+(y2-y1)*t+(Math.random()-.5)*20;
-        ctx.fillStyle=`rgba(200,0,0,${Math.random()*.7})`;
+        let t=Math.random(),sx=x1+(x2-x1)*t+(Math.random()-0.5)*20,sy=y1+(y2-y1)*t+(Math.random()-0.5)*20;
+        ctx.fillStyle=`rgba(200,0,0,${Math.random()*0.7})`;
         ctx.beginPath(); ctx.arc(sx,sy,Math.random()*2.5,0,Math.PI*2); ctx.fill();
     }
 }
 drawStroke(sCtx,25,25,103,103); drawStroke(sCtx,103,25,25,103); drawStroke(sCtx,64,64,64,85);
 const sprayTexture = new THREE.CanvasTexture(sprayC);
- 
+
 let fireParticles = [];
 let mistParticles = [];
- 
+
 const fireTex = (function(){
     const c = document.createElement('canvas'); c.width=c.height=64;
     const ctx = c.getContext('2d');
@@ -1396,7 +1374,7 @@ const fireTex = (function(){
     ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
     return new THREE.CanvasTexture(c);
 })();
- 
+
 const mistTex = (function(){
     const c = document.createElement('canvas'); c.width=c.height=64;
     const ctx = c.getContext('2d');
@@ -1407,34 +1385,39 @@ const mistTex = (function(){
     ctx.fillStyle = grad; ctx.fillRect(0,0,64,64);
     return new THREE.CanvasTexture(c);
 })();
- 
+
+function showPaintAdPrompt() {
+    if (unlimitedPaint) return;
+    if (document.getElementById('paint-ad-prompt').style.display === 'flex') return;
+    document.getElementById('paint-ad-prompt').style.display = 'flex';
+    isPaused = true;
+    stopAction();
+    if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false;
+    joyX=joyY=0; leftTouchId=rightTouchId=null;
+    joyBase.style.display='none';
+}
 function startAction() {
     if (!gameStarted||isPaused||isDead) return;
     
     if (!unlimitedPaint && spraysLeft <= 0) {
         isFiring = false;
-        if (!hasSeenPaintAdThisRound) {
-            hasSeenPaintAdThisRound = true;
-            document.getElementById('paint-ad-prompt').style.display = 'flex';
-            isPaused = true;
-            if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-            moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
-        }
+        showPaintAdPrompt();
         return;
     }
- 
+
     isFiring = true;
     fireAccumulator = 0.1;
     touchStartTime = Date.now();
 }
- 
+
 function stopAction() {
     isFiring = false;
     if (Date.now() - touchStartTime < 250) {
         sprayWall();
     }
 }
- 
+
 function activateSprint() {
     if (!gameStarted || isPaused || isDead) return;
     if (isSprinting) {
@@ -1446,7 +1429,7 @@ function activateSprint() {
         sprintBtn.classList.add('active-sprint');
     }
 }
- 
+
 function toggleAutoWalk() {
     if (!gameStarted || isPaused || isDead) return;
     if (isAutoWalking) {
@@ -1461,14 +1444,14 @@ function toggleAutoWalk() {
         autowalkBtn.classList.add('active-autowalk');
     }
 }
- 
+
 function sprayWall() {
     if (!unlimitedPaint && spraysLeft <= 0) return;
     if (Date.now()-lastSprayTime<300) return; 
- 
+
     raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
     const hits = raycaster.intersectObject(instancedWalls);
- 
+
     if (hits.length > 0 && hits[0].distance < 15) {
         lastSprayTime=Date.now();
         const hit = hits[0];
@@ -1480,7 +1463,7 @@ function sprayWall() {
         scene.add(mesh);
         
         playSprayHiss();
- 
+
         for(let i=0; i<6; i++) {
             const mist = new THREE.Sprite(new THREE.SpriteMaterial({map: mistTex, transparent: true, opacity: 0.8}));
             mist.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.5));
@@ -1499,7 +1482,7 @@ function sprayWall() {
         }
     }
 }
- 
+
 // ─── ITEMS: ALMOND WATER, MOTH JELLY & PAINT CANS ──────────────────────────
 function makeBottle() {
     const group = new THREE.Group();
@@ -1515,7 +1498,7 @@ function makeBottle() {
     
     return group;
 }
- 
+
 function makeMothJelly() {
     const group = new THREE.Group();
     const jarGeo = new THREE.CylinderGeometry(1.5, 1.5, 3.5, 8);
@@ -1529,7 +1512,7 @@ function makeMothJelly() {
     
     return group;
 }
- 
+
 function makePaintCan() {
     const group = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.5, 8);
@@ -1543,12 +1526,185 @@ function makePaintCan() {
     
     return group;
 }
- 
+
+// ── LIMINAL FURNITURE ─────────────────────────────────────────────────────
+// Each returns a THREE.Group with rough collision radius stored as .colliderRadius
+function makeOfficeChair() {
+    const g = new THREE.Group();
+    const fabMat = new THREE.MeshLambertMaterial({color:0x2a2218,emissive:new THREE.Color(0x0a0806)});
+    const metMat = new THREE.MeshLambertMaterial({color:0x333333});
+    // Base spokes on floor — smaller
+    for(let i=0;i<5;i++){
+        const angle=i/5*Math.PI*2;
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.2,0.4),metMat);
+        spoke.rotation.y=angle; spoke.position.y=0.15; g.add(spoke);
+    }
+    // Central pole
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.35,2.8,6),metMat);
+    pole.position.y=1.4; g.add(pole);
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(3.2,0.5,3.2),fabMat);
+    seat.position.y=3.0; g.add(seat);
+    // Armrests
+    [-1.5,1.5].forEach(x=>{
+        const armPost = new THREE.Mesh(new THREE.BoxGeometry(0.3,1.2,0.3),metMat);
+        armPost.position.set(x,3.8,0); g.add(armPost);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.3,2.2),fabMat);
+        arm.position.set(x,4.4,0.2); g.add(arm);
+    });
+    // Back
+    const backPost = new THREE.Mesh(new THREE.BoxGeometry(0.3,1.2,0.3),metMat);
+    backPost.position.set(0,3.9,-1.3); g.add(backPost);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.8,3.8,0.5),fabMat);
+    back.position.set(0,6.0,-1.5); g.add(back);
+    g.colliderRadius=2.5;
+    return g;
+}
+function makeFilingCabinet() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(7,12,6),
+        new THREE.MeshLambertMaterial({color:0x4a4438,emissive:new THREE.Color(0x0c0b08)}));
+    body.position.y=6; g.add(body);
+    // Drawer lines
+    [2,5,8,11].forEach(y=>{
+        const drawer = new THREE.Mesh(new THREE.BoxGeometry(6.8,0.25,0.3),
+            new THREE.MeshLambertMaterial({color:0x222018}));
+        drawer.position.set(0,y,3.1); g.add(drawer);
+        // Handle
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.4,0.4),
+            new THREE.MeshLambertMaterial({color:0x555540}));
+        handle.position.set(0,y+0.8,3.3); g.add(handle);
+    });
+    g.colliderRadius=5;
+    return g;
+}
+function makeRadiatorPipe() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({color:0x3a3028,emissive:new THREE.Color(0x0a0806)});
+    // Main vertical pipe
+    const main = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,13,8),mat);
+    main.position.y=6.5; g.add(main);
+    // Horizontal cross pipes — alternate direction each level
+    [-3,0,3,6].forEach((yOff,idx)=>{
+        const y = yOff+4;
+        const angle = idx % 2 === 0 ? 0 : Math.PI/2; // alternate 0° and 90°
+        const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,8,6),mat);
+        cross.rotation.set(angle === 0 ? 0 : 0, angle, Math.PI/2);
+        cross.position.y=y;
+        g.add(cross);
+        // End caps at tips of each cross pipe
+        const tipDir = angle === 0 ? [[3.8,0],[-3.8,0]] : [[0,3.8],[0,-3.8]];
+        tipDir.forEach(([tx,tz])=>{
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,0.6,6),mat);
+            cap.rotation.z=Math.PI/2; cap.position.set(tx,y,tz); g.add(cap);
+        });
+    });
+    g.colliderRadius=3;
+    return g;
+}
+function makePileOfChairs() {
+    const g = new THREE.Group();
+    const fabMat = new THREE.MeshLambertMaterial({color:0x1e1a10,emissive:new THREE.Color(0x060504)});
+    const metMat = new THREE.MeshLambertMaterial({color:0x2a2a2a});
+    // Helper: build one chair as a sub-group, then tip it on its side
+    function buildChair() {
+        const c = new THREE.Group();
+        // Seat
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(4,0.7,4),fabMat); seat.position.y=0; c.add(seat);
+        // Back
+        const back = new THREE.Mesh(new THREE.BoxGeometry(4,5,0.6),fabMat); back.position.set(0,3,-1.8); c.add(back);
+        // Four legs
+        [[1.5,-2.2],[1.5,2.2],[-1.5,-2.2],[-1.5,2.2]].forEach(([lx,lz])=>{
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.5,4,0.5),metMat);
+            leg.position.set(lx,-2,lz); c.add(leg);
+        });
+        return c;
+    }
+    // Three chairs, each tipped on side at different angles
+    const poses = [
+        {x:0,   y:2,  z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
+        {x:3,   y:4,  z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
+        {x:-2,  y:6,  z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
+    ];
+    poses.forEach(p=>{
+        const c = buildChair();
+        c.position.set(p.x,p.y,p.z);
+        c.rotation.set(p.rx,p.ry,p.rz);
+        g.add(c);
+    });
+    g.colliderRadius=5;
+    return g;
+}
+function makeDeskCorpse() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({color:0x3a3020,emissive:new THREE.Color(0x0a0908)});
+    // Overturned desk — top panel lying on its side, legs pointing sideways
+    const tilt = 0.3 + Math.random()*0.4;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.8,6),mat);
+    top.position.set(0,3,0);
+    top.rotation.z = Math.PI/2 + tilt; // tipped over
+    g.add(top);
+    // Four legs attached to corners, lying sideways with top
+    [[3.5,0,2],[3.5,0,-2],[-3.5,0,2],[-3.5,0,-2]].forEach(([x,y,z])=>{
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.8,6,0.8),mat);
+        leg.position.set(x, 3 + Math.sin(tilt)*3, z);
+        leg.rotation.set(0,0,Math.PI/2+tilt+(Math.random()-0.5)*0.3);
+        g.add(leg);
+    });
+    g.colliderRadius=6;
+    return g;
+}
+// Master furniture maker — picks one randomly
+const furnitureMakers = [makeOfficeChair, makeFilingCabinet, makeRadiatorPipe, makePileOfChairs, makeDeskCorpse];
+let furnitureObjects = []; // {group, wx, wz, radius}
+function placeFurniture() {
+    furnitureObjects = [];
+    // One piece roughly every 25 open tiles
+    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 55); // less furniture = less geometry
+    let placed = 0, attempts = 0;
+    while (placed < targetCount && attempts < targetCount * 30) {
+        attempts++;
+        const gx = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        const gz = Math.floor(Math.random()*(MAP_SIZE-2))+1;
+        if (grid[gx][gz] !== 0) continue;
+        // Must have open neighbours on at least 2 sides — don't block corridors
+        const openCount = [
+            grid[gx-1]&&grid[gx-1][gz]===0,
+            grid[gx+1]&&grid[gx+1][gz]===0,
+            grid[gx][gz-1]===0,
+            grid[gx][gz+1]===0
+        ].filter(Boolean).length;
+        if (openCount < 2) continue;
+        // Not too close to spawn or exits
+        if (Math.abs(gx-SPAWN_GRID_X)<8 && Math.abs(gz-SPAWN_GRID_Z)<8) continue;
+        const wx = (gx-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
+        const wz = (gz-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
+        const maker = furnitureMakers[Math.floor(Math.random()*furnitureMakers.length)];
+        const obj = maker();
+        const scale = 0.7+Math.random()*0.5;
+        obj.scale.setScalar(scale);
+        obj.position.set(wx, 0, wz);
+        obj.rotation.y = Math.random()*Math.PI*2;
+        scene.add(obj);
+        furnitureObjects.push({group:obj, wx, wz, radius: obj.colliderRadius * scale});
+        placed++;
+    }
+}
+// Furniture collision — called in checkCollision
+function checkFurnitureCollision(pos) {
+    for (let f of furnitureObjects) {
+        const dx=pos.x-f.wx, dz=pos.z-f.wz;
+        if (Math.sqrt(dx*dx+dz*dz) < f.radius+PLAYER_SIZE) return true;
+    }
+    return false;
+}
 function placeItems() {
     // Clean up any old items on restart
     for (let item of itemData) scene.remove(item.group);
     itemData = [];
- 
+    for (let f of furnitureObjects) scene.remove(f.group);
+    furnitureObjects = [];
+
     let placed = 0, attempts = 0;
     while (placed < BOTTLE_COUNT && attempts < BOTTLE_COUNT * 20) {
         attempts++;
@@ -1591,22 +1747,22 @@ function placeItems() {
         placed++;
     }
 }
- 
+
 // ─── LIGHTING & STATE ──────────────────────────────────────────────────────
 const ambientLight = new THREE.AmbientLight(0xffecaa, 0.55); // brighter base
 scene.add(ambientLight);
 const playerLight=new THREE.PointLight(0xffecaa, 1.1, 130, 1.4); // wider reach, lights carpet
 scene.add(playerLight);
- 
+
 let yaw=0, pitch=0;
 let gameStarted=false, isPaused=false;
- 
+
 const timerEl=document.getElementById('timer');
 const sprayCounterEl=document.getElementById('spray-counter');
 let elapsed=0, lastTF=0;
 function updateTimer(now){ elapsed+=(now-lastTF); lastTF=now; const s=Math.floor(elapsed/1000); timerEl.innerText=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtTime(){ const s=Math.floor(elapsed/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
- 
+
 let audioCtx, masterGain, ambientBuzzGain, flameGain;
 function initAudio(){
     if(audioCtx) return;
@@ -1620,13 +1776,12 @@ function initAudio(){
     ambientBuzzGain = audioCtx.createGain();
     ambientBuzzGain.gain.value = 0.32; // louder fluorescent presence
     ambientBuzzGain.connect(masterGain);
-
     const o1=audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value=50; o1.connect(ambientBuzzGain); o1.start();
     const o2=audioCtx.createOscillator(); o2.type='triangle'; o2.frequency.value=52; const g2=audioCtx.createGain(); g2.gain.value=0.4; o2.connect(g2); g2.connect(ambientBuzzGain); o2.start();
     // High frequency flicker — very quiet, just presence
     const o3=audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value=834; const g3=audioCtx.createGain(); g3.gain.value=0.008; o3.connect(g3); g3.connect(ambientBuzzGain); o3.start();
     const lfo=audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.1; const lg=audioCtx.createGain(); lg.gain.value=8; lfo.connect(lg); lg.connect(o3.frequency); lfo.start();
- 
+
     // Flame audio — looping noise filtered to a deep roar, gated by flameGain
     const flameBufferSize = audioCtx.sampleRate * 2;
     const flameNoiseBuffer = audioCtx.createBuffer(1, flameBufferSize, audioCtx.sampleRate);
@@ -1645,10 +1800,9 @@ function initAudio(){
     flameGain.connect(masterGain);
     flameNoiseSrc.start();
 }
- 
+
 // ── ENTITY SOUNDS ────────────────────────────────────────────────────────
 // Target volume = 0.6 (same as flamethrower)
-
 // Smiler cynical laugh — distorted, sinister
 // vol param: 0.0-1.0 where 1.0 = full (0.6 master)
 function playSmilerLaugh(vol) {
@@ -1656,14 +1810,12 @@ function playSmilerLaugh(vol) {
     const now = audioCtx.currentTime;
     const targetVol = (vol || 1.0) * 0.6;
     const len = 1.4;
-
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
     masterG.gain.linearRampToValueAtTime(targetVol, now + 0.04);
     masterG.gain.setValueAtTime(targetVol, now + len - 0.3);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
-
     // Waveshaper distortion — makes it sound wrong and corrupted
     const wsCurve = new Float32Array(256);
     for(let i=0;i<256;i++){
@@ -1671,7 +1823,6 @@ function playSmilerLaugh(vol) {
         wsCurve[i]=Math.tanh(x*4.5); // heavy soft clip
     }
     const ws = audioCtx.createWaveShaper(); ws.curve=wsCurve; ws.oversample='2x';
-
     // Laugh rhythm — 3 quick staccato bursts, like "heh heh heh"
     // Each burst: a short sine cluster that sweeps down
     [0, 0.22, 0.44].forEach((offset, idx) => {
@@ -1686,7 +1837,6 @@ function playSmilerLaugh(vol) {
         o.connect(og); og.connect(ws);
         o.start(now+offset); o.stop(now+offset+0.2);
     });
-
     // Noise breath underneath — adds air and corruption
     const nLen = Math.floor(audioCtx.sampleRate * len);
     const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
@@ -1698,26 +1848,21 @@ function playSmilerLaugh(vol) {
     const nG = audioCtx.createGain(); nG.gain.value=0.18;
     nSrc.connect(nBP); nBP.connect(nG); nG.connect(ws);
     nSrc.start(now);
-
     ws.connect(masterG);
 }
-
 // Smiler death laugh — same laugh but pitch-dropping and fading away
 function playSmilerDeathLaugh() {
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
     const len = 1.8;
-
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0.5, now);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
-
     const wsCurve = new Float32Array(256);
     for(let i=0;i<256;i++){const x=(i*2/256)-1; wsCurve[i]=Math.tanh(x*5);}
     const ws = audioCtx.createWaveShaper(); ws.curve=wsCurve; ws.oversample='2x';
     ws.connect(masterG);
-
     // Slowing pitch-dropping laugh — like a record winding down
     [0, 0.28, 0.62, 1.0].forEach((offset, idx) => {
         const o = audioCtx.createOscillator(); o.type='sawtooth';
@@ -1732,21 +1877,18 @@ function playSmilerDeathLaugh() {
         o.start(now+offset); o.stop(now+offset+0.26);
     });
 }
-
 // Bacteria tiger roar — distorted, low, dangerous. Plays once on contact.
 function playBacteriaRoar(vol) {
     if(!masterGain || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
     const targetVol = (vol || 1.0) * 0.6;
     const len = 1.6;
-
     const masterG = audioCtx.createGain();
     masterG.gain.setValueAtTime(0, now);
     masterG.gain.linearRampToValueAtTime(targetVol, now + 0.06);
     masterG.gain.setValueAtTime(targetVol, now + len - 0.5);
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
-
     // Heavy waveshaper — guttural animal distortion
     const wsCurve = new Float32Array(512);
     for(let i=0;i<512;i++){
@@ -1755,7 +1897,6 @@ function playBacteriaRoar(vol) {
     }
     const ws = audioCtx.createWaveShaper(); ws.curve=wsCurve; ws.oversample='4x';
     ws.connect(masterG);
-
     // Sub roar — tiger chest frequency, rises then falls
     const sub = audioCtx.createOscillator(); sub.type='sawtooth';
     sub.frequency.setValueAtTime(48, now);
@@ -1764,7 +1905,6 @@ function playBacteriaRoar(vol) {
     const subG = audioCtx.createGain(); subG.gain.value=0.7;
     sub.connect(subG); subG.connect(ws);
     sub.start(now); sub.stop(now+len);
-
     // Growl harmonic — adds throat texture
     const growl = audioCtx.createOscillator(); growl.type='triangle';
     growl.frequency.setValueAtTime(96, now);
@@ -1773,7 +1913,6 @@ function playBacteriaRoar(vol) {
     const growlG = audioCtx.createGain(); growlG.gain.value=0.45;
     growl.connect(growlG); growlG.connect(ws);
     growl.start(now); growl.stop(now+len);
-
     // Noise breathe — the wet animal-lung layer
     const nLen = Math.floor(audioCtx.sampleRate * len);
     const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
@@ -1785,13 +1924,11 @@ function playBacteriaRoar(vol) {
     const nG = audioCtx.createGain(); nG.gain.value=0.35;
     nSrc.connect(nBP); nBP.connect(nG); nG.connect(ws);
     nSrc.start(now);
-
     // Pitch wobble LFO — makes it feel alive and angry
     const lfo = audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=6.5;
     const lfoG = audioCtx.createGain(); lfoG.gain.value=14;
     lfo.connect(lfoG); lfoG.connect(sub.frequency); lfoG.connect(growl.frequency);
     lfo.start(now); lfo.stop(now+len);
-
     // Metallic grind layer — high-frequency sawtooth through narrow bandpass
     const grind = audioCtx.createOscillator(); grind.type='sawtooth';
     grind.frequency.setValueAtTime(380+Math.random()*80, now);
@@ -1801,7 +1938,6 @@ function playBacteriaRoar(vol) {
     const grindG = audioCtx.createGain(); grindG.gain.value=0.22;
     grind.connect(grindBP); grindBP.connect(grindG); grindG.connect(ws);
     grind.start(now); grind.stop(now+len);
-
     // Irregular amplitude chop — gives metallic stutter
     const chopLFO = audioCtx.createOscillator(); chopLFO.type='square';
     chopLFO.frequency.value=18+Math.random()*12;
@@ -1809,7 +1945,6 @@ function playBacteriaRoar(vol) {
     chopLFO.connect(chopG2); chopG2.connect(grindG.gain);
     chopLFO.start(now); chopLFO.stop(now+len);
 }
-
 // Bacteria death roar — same roar pitching down as it burns
 function playBacteriaDeathRoar() {
     // Dying shriek-roar — starts as a peak then falls apart
@@ -1821,13 +1956,11 @@ function playBacteriaDeathRoar() {
     masterG.gain.linearRampToValueAtTime(0.7, now + 0.05); // fast attack
     masterG.gain.exponentialRampToValueAtTime(0.001, now + len);
     masterG.connect(masterGain);
-
     // Distortion waveshaper
     const wsCurve = new Float32Array(512);
     for(let i=0;i<512;i++){const x=(i*2/512)-1; wsCurve[i]=Math.sign(x)*Math.pow(Math.abs(x),0.28);}
     const ws = audioCtx.createWaveShaper(); ws.curve=wsCurve; ws.oversample='4x';
     ws.connect(masterG);
-
     // Main roar — peaks high then pitches down fast
     const osc = audioCtx.createOscillator(); osc.type='sawtooth';
     osc.frequency.setValueAtTime(140, now);
@@ -1836,7 +1969,6 @@ function playBacteriaDeathRoar() {
     const og = audioCtx.createGain(); og.gain.value=0.7;
     osc.connect(og); og.connect(ws);
     osc.start(now); osc.stop(now+len);
-
     // Harmonic scream layer — higher pitch crumbling
     const osc2 = audioCtx.createOscillator(); osc2.type='triangle';
     osc2.frequency.setValueAtTime(280, now);
@@ -1844,7 +1976,6 @@ function playBacteriaDeathRoar() {
     const og2 = audioCtx.createGain(); og2.gain.value=0.4;
     osc2.connect(og2); og2.connect(ws);
     osc2.start(now); osc2.stop(now+len*0.75);
-
     // Noise burst — burning flesh texture
     const nLen = Math.floor(audioCtx.sampleRate * 0.5);
     const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
@@ -1856,7 +1987,6 @@ function playBacteriaDeathRoar() {
     nSrc.connect(nLP); nLP.connect(nG); nG.connect(masterG);
     nSrc.start(now);
 }
-
 // Keep stubs for old calls that may still exist
 function playScreech() {}
 function playJumpScream() {}
@@ -1864,7 +1994,7 @@ function playHowl() {}
 function playDoorSlam() {}
 function playWailing() {}
 // metallic growl removed
- 
+
 // Low frequency sine wave for muffled damp carpet footsteps
 function playFootstep() {
     if(!masterGain || audioCtx.state !== 'running') return;
@@ -1891,7 +2021,7 @@ function playFootstep() {
     nSrc.connect(nLP); nLP.connect(nG); nG.connect(masterGain);
     nSrc.start(now);
 }
- 
+
 // Satisfying hollow poof / vanish sound when entities burn up
 function playPoof() {
     if(!masterGain || audioCtx.state !== 'running') return;
@@ -1910,7 +2040,7 @@ function playPoof() {
     
     osc.connect(g); g.connect(masterGain);
     osc.start(); osc.stop(audioCtx.currentTime + len);
- 
+
     // Burst of filtered noise
     const bufferSize = audioCtx.sampleRate * len;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -1930,7 +2060,7 @@ function playPoof() {
     filter.connect(g);
     noiseSrc.start();
 }
- 
+
 // Hiss sound for marking walls
 function playSprayHiss() {
     if(!masterGain || audioCtx.state !== 'running') return;
@@ -1959,7 +2089,7 @@ function playSprayHiss() {
     g.connect(masterGain);
     noiseSrc.start();
 }
- 
+
 // ─── UI & REWARD FLOW ──────────────────────────────────────────────────────
 const startScreen  = document.getElementById('start-screen');
 const paintAdPrompt = document.getElementById('paint-ad-prompt');
@@ -1976,13 +2106,13 @@ const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
 const sprintBtn    = document.getElementById('sprint-btn');
 const autowalkBtn  = document.getElementById('autowalk-btn');
- 
+
 sprintBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); }, {passive: false});
 sprintBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); activateSprint(); });
- 
+
 autowalkBtn.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); }, {passive: false});
 autowalkBtn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); toggleAutoWalk(); });
- 
+
 // Paginated Lore UI Logic
 let currentPage = 0;
 function showPage(n) {
@@ -1995,16 +2125,14 @@ startScreen.addEventListener('click', (e)=>{
     e.stopPropagation();
     showPage(1); // lore → main menu
 });
-
 document.getElementById('btn-play').addEventListener('click', e => { e.stopPropagation(); showPage(2); });
 document.getElementById('btn-howtoplay').addEventListener('click', e => { e.stopPropagation(); showPage(3); });
 document.getElementById('btn-survivors').addEventListener('click', e => { e.stopPropagation(); showPage(4); showLeaderboard('SANE'); });
 document.getElementById('btn-settings').addEventListener('click', e => { e.stopPropagation(); showPage(5); });
-
 document.getElementById('btn-easy').addEventListener('click', e => selectDifficulty('easy', e));
 document.getElementById('btn-med').addEventListener('click', e => selectDifficulty('medium', e));
 document.getElementById('btn-hard').addEventListener('click', e => selectDifficulty('hard', e));
- 
+
 // Settings Events
 document.getElementById('setting-mute-btn').addEventListener('click', e => {
     e.stopPropagation();
@@ -2014,7 +2142,7 @@ document.getElementById('setting-mute-btn').addEventListener('click', e => {
     e.target.style.color = isMuted ? '#ff4444' : '#00ff00';
     e.target.style.borderColor = isMuted ? '#ff4444' : '#00ff00';
 });
- 
+
 document.getElementById('setting-vib-btn').addEventListener('click', e => {
     e.stopPropagation();
     vibrationEnabled = !vibrationEnabled;
@@ -2022,34 +2150,34 @@ document.getElementById('setting-vib-btn').addEventListener('click', e => {
     e.target.style.color = vibrationEnabled ? '#00ff00' : '#ff4444';
     e.target.style.borderColor = vibrationEnabled ? '#00ff00' : '#ff4444';
 });
- 
+
 document.getElementById('sens-slider').addEventListener('input', e => {
     lookSensitivity = parseFloat(e.target.value);
 });
- 
+
 function selectDifficulty(level, e) {
     e.stopPropagation();
     if (level === 'easy') {
         currentSanity = 'SANE';
-        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 280;
-        BOTTLE_COUNT = 450; JELLY_COUNT = 324; PAINT_COUNT = 108;
+        MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 80;
+        BOTTLE_COUNT = 270; JELLY_COUNT = 194; PAINT_COUNT = 65;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
-        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 1200;
-        BOTTLE_COUNT = 2250; JELLY_COUNT = 1620; PAINT_COUNT = 540;
+        MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 300;
+        BOTTLE_COUNT = 1350; JELLY_COUNT = 972; PAINT_COUNT = 324;
     } else {
         currentSanity = 'INSANE';
-        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 2400;
-        BOTTLE_COUNT = 4500; JELLY_COUNT = 3240; PAINT_COUNT = 1080;
+        MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 600;
+        BOTTLE_COUNT = 2700; JELLY_COUNT = 1944; PAINT_COUNT = 648;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
     SPAWN_GRID_Z = Math.floor(MAP_SIZE/2);
- 
+
     buildWorld();
     startGame();
 }
- 
+
 function showRewardAd(onSuccess) {
     window.onRewardEarned = onSuccess;
     try {
@@ -2061,35 +2189,23 @@ function showRewardAd(onSuccess) {
             }
         }
     } catch (e) { console.log("Native Ad error:", e); }
- 
-    const adOverlay = document.createElement('div');
-    adOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:monospace;text-align:center;';
-    adOverlay.innerHTML = '<h1 style="color:#d4d42b;text-shadow:0 0 15px #d4d42b;">REWARD AD</h1><p style="color:#aaa;font-size:1.2em;">Simulating SDK connection...</p><p id="test-ad-timer" style="font-size:4em;margin-top:20px;color:#00ff00;">2</p>';
-    document.body.appendChild(adOverlay);
- 
-    let timeLeft = 2;
-    const timerInt = setInterval(() => {
-        timeLeft--;
-        if(timeLeft > 0) {
-            document.getElementById('test-ad-timer').innerText = timeLeft;
-        } else {
-            clearInterval(timerInt);
-            document.body.removeChild(adOverlay);
-            onSuccess();
-        }
-    }, 1000);
+
+    // Web/preview: instant reward (no countdown)
+    onSuccess();
 }
- 
+
 document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
     isPaused = true;
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
     moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
- 
+
     showRewardAd(() => {
-        unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞'; 
+        unlimitedPaint=true; sprayCounterEl.innerText='SPRAYS: ∞';
         paintAdPrompt.style.display='none';
+        const now = performance.now();
+        prevTime = now; lastTF = now;
         isPaused = true;
         document.getElementById('pause-screen').style.display='flex';
     });
@@ -2103,7 +2219,7 @@ document.getElementById('ad-no').addEventListener('click', e=>{
     moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
     document.getElementById('pause-screen').style.display='flex';
 });
- 
+
 function startGame(){
     startScreen.style.display='none';
     sprayBtn.style.display='flex';
@@ -2114,35 +2230,33 @@ function startGame(){
     gameStarted=true; lastTF=performance.now(); prevTime=performance.now();
     health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX; updateStatusBars();
 }
- 
+
 pauseScreen.addEventListener('click', ()=>{
     if(!gameStarted||!isPaused) return; isPaused=false; pauseScreen.style.display='none';
     if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
     lastTF=performance.now(); prevTime=performance.now();
 });
- 
+
 winScreen.addEventListener('click', (e)=>{
     // Don't reload if tapping the name input, submit button, or submit message
     if (e.target.closest('#win-leaderboard-section')) return;
     location.reload();
 });
- 
+
 document.getElementById('revive-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
     showRewardAd(() => {
-        revivesLeft--; 
+        revivesLeft--;
         reviveScreen.style.display='none';
         health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX;
-        
         if (!unlimitedPaint) {
             spraysLeft = 50;
             sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
             hasSeenPaintAdThisRound = false;
         }
-        
-        isDead=false;
+        isDead = false;
+        gameStarted = true;
         updateStatusBars();
-        
         sprayBtn.style.display='flex';
         sprintBtn.style.display='flex';
         autowalkBtn.style.display='flex';
@@ -2150,18 +2264,23 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         sprintBtn.classList.remove('active-sprint');
         isAutoWalking = false;
         autowalkBtn.classList.remove('active-autowalk');
- 
-        isPaused=true;
+        // Reset timers so first frame delta is zero
+        const now = performance.now();
+        prevTime = now;
+        lastTF = now;
+        isPaused = true;
         document.getElementById('pause-screen').style.display='flex';
-        if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
-        moveForward=moveBackward=moveLeft=moveRight=false; joyX=joyY=0; leftTouchId=rightTouchId=null; joyBase.style.display='none';
+        if(audioCtx && audioCtx.state==='running') audioCtx.suspend();
+        moveForward=moveBackward=moveLeft=moveRight=false;
+        joyX=joyY=0; leftTouchId=rightTouchId=null;
+        joyBase.style.display='none';
     });
 });
 document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
- 
+
 // ─── FIREBASE REALTIME DATABASE ────────────────────────────────────────────
 const FB_URL = 'https://backroom-breakout-global-default-rtdb.firebaseio.com';
- 
+
 async function fbGet(path) {
     const res = await fetch(`${FB_URL}/${path}.json`);
     return res.ok ? res.json() : null;
@@ -2177,7 +2296,7 @@ async function fbPush(path, data) {
     });
     return res.ok ? res.json() : null;
 }
- 
+
 // Returns sorted top-10 for a difficulty
 async function getTop10(difficulty) {
     const data = await fbGet(`survivors/${difficulty}`);
@@ -2186,14 +2305,14 @@ async function getTop10(difficulty) {
     entries.sort((a,b) => a.ms - b.ms); // lowest time wins
     return entries.slice(0,10);
 }
- 
+
 // Check if current time qualifies for top 10
 async function checkTop10(difficulty, ms) {
     const top10 = await getTop10(difficulty);
     if (top10.length < 10) return true;
     return ms < top10[top10.length-1].ms;
 }
- 
+
 // Submit a score
 async function submitScore(difficulty, name, ms, timeStr) {
     const sanitized = name.replace(/[^a-zA-Z0-9 _\-\.]/g,'').trim().slice(0,20) || 'Anonymous';
@@ -2209,12 +2328,12 @@ async function submitScore(difficulty, name, ms, timeStr) {
         }
     }
 }
- 
+
 function fmtTimeStr(ms) {
     const s=Math.floor(ms/1000);
     return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 }
- 
+
 // Show leaderboard in the survivors panel
 async function showLeaderboard(difficulty) {
     const lb = document.getElementById('lb-content');
@@ -2235,7 +2354,6 @@ async function showLeaderboard(difficulty) {
             </div>`;
         return;
     }
-
     try {
         const top10 = await getTop10(difficulty);
         if (!top10.length) {
@@ -2260,7 +2378,7 @@ async function showLeaderboard(difficulty) {
         lb.innerHTML = '<span style="color:#f44;font-size:0.85em;">Could not reach the survivors log.</span>';
     }
 }
- 
+
 function showWinScreen(){
     gameStarted=false;
     const timeStr = fmtTime();
@@ -2274,11 +2392,10 @@ function showWinScreen(){
     autowalkBtn.style.display='none';
     stopAction();
     if(audioCtx&&audioCtx.state==='running') audioCtx.suspend();
- 
+
     // Check if qualifies for top 10
     const lbSection = document.getElementById('win-leaderboard-section');
     lbSection.style.display = 'none';
-
     // Skip Firebase in sandboxed/preview environments
     const isPreviewWin = (window.location.protocol === 'blob:' || window.location.hostname === '' || window.self !== window.top);
     if (isPreviewWin) return;
@@ -2315,7 +2432,7 @@ function showWinScreen(){
         };
     }).catch(err => console.error(err));
 }
- 
+
 function showDeathScreen(title, lore){
     isDead=true; isPaused=true;
     stopAction();
@@ -2347,7 +2464,7 @@ function showDeathScreen(title, lore){
     
     reviveScreen.style.display='flex';
 }
- 
+
 function pauseGame(){
     if(!gameStarted||isPaused||isDead) return;
     isPaused=true; 
@@ -2358,7 +2475,7 @@ function pauseGame(){
 }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
 window.addEventListener('blur', pauseGame);
- 
+
 function updateStatusBars(){
     const hPct = Math.max(0, health/STAT_MAX*100);
     healthBar.style.width = hPct+'%';
@@ -2374,7 +2491,7 @@ function updateStatusBars(){
     vignetteEl.style.background=`radial-gradient(ellipse at center, transparent 40%, rgba(180,60,0,${danger*0.65}) 100%)`;
     vignetteEl.style.opacity=danger>0?1:0;
 }
- 
+
 let pickupFlashTimer=0;
 function showPickupFlash(text, color){
     pickupFlash.innerText = text;
@@ -2383,14 +2500,15 @@ function showPickupFlash(text, color){
     pickupFlash.style.opacity='1';
     pickupFlashTimer=1.2;
 }
- 
+
 function checkItemPickups(){
     const px=camera.position.x, pz=camera.position.z;
     for(let i=0; i<itemData.length; i++){
         let b = itemData[i];
         if(b.collected) continue;
-        
-        // Fast Optimization: Manhattan distance check first
+        // Skip if too far — avoids sqrt for distant items
+        const idx2 = ITEM_PICKUP_DIST + 40;
+        if (Math.abs(px - b.wx) > idx2 || Math.abs(pz - b.wz) > idx2) continue;
         if (Math.abs(px - b.wx) < ITEM_PICKUP_DIST && Math.abs(pz - b.wz) < ITEM_PICKUP_DIST) {
             b.collected=true; scene.remove(b.group);
             if(b.type === 'water') {
@@ -2413,7 +2531,7 @@ function checkItemPickups(){
         }
     }
 }
- 
+
 // ─── CONTROLS (INCLUDES CONTINUOUS FIRE LOGIC) ─────────────────────────────
 let moveForward=false,moveBackward=false,moveLeft=false,moveRight=false;
 let lookUp=false, lookDown=false, lookLeft=false, lookRight=false;
@@ -2423,7 +2541,7 @@ let leftStart={x:0,y:0},rightStart={x:0,y:0};
 const joyBase=document.getElementById('joystick-base');
 const joyStick=document.getElementById('joystick-stick');
 const MAX_JOY=40;
- 
+
 function handlePointerStart(id,x,y,isMouse=false, targetNode=null){
     if(!gameStarted||isPaused||isDead) return;
     
@@ -2472,7 +2590,7 @@ function handlePointerEnd(id){
         rightTouchId=null; 
     }
 }
- 
+
 document.addEventListener('touchstart',e=>{ 
     if(!gameStarted||isPaused) return; 
     for(let t of e.changedTouches) {
@@ -2482,7 +2600,7 @@ document.addEventListener('touchstart',e=>{
 document.addEventListener('touchmove',e=>{ if(!gameStarted||isPaused) return; e.preventDefault(); for(let t of e.changedTouches) handlePointerMove(t.identifier,t.clientX,t.clientY); },{passive:false});
 document.addEventListener('touchend',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
 document.addEventListener('touchcancel',e=>{ for(let t of e.changedTouches) handlePointerEnd(t.identifier); });
- 
+
 // ── DESKTOP MOUSE CONTROLS ───────────────────────────────────────────────
 // Click canvas to lock pointer for smooth steering
 // Hold LMB = flamethrower | Ctrl+Click or quick tap = spray mark
@@ -2492,22 +2610,18 @@ let isPointerLocked = false;
 let mouseClickTime = 0;
 let mouseDblTimer = 0;
 let mousePrevX = 0, mousePrevY = 0;
-
 canvas.addEventListener('click', () => {
     if (!gameStarted || isPaused || isDead) return;
     if (!isPointerLocked) canvas.requestPointerLock();
 });
-
 document.addEventListener('pointerlockchange', () => {
     isPointerLocked = (document.pointerLockElement === canvas);
 });
-
 document.addEventListener('mousedown', e => {
     if (!gameStarted || isPaused || isDead) return;
     if (e.button !== 0) return;
     isMouseDown = true;
     mouseClickTime = Date.now();
-
     // Ctrl+click = instant spray mark
     if (e.ctrlKey) {
         e.preventDefault();
@@ -2517,7 +2631,6 @@ document.addEventListener('mousedown', e => {
     // Start fire action (will become flame if held > 250ms, else spray mark on mouseup)
     startAction();
 });
-
 document.addEventListener('mousemove', e => {
     if (!gameStarted || isPaused || isDead) return;
     if (isPointerLocked) {
@@ -2532,7 +2645,6 @@ document.addEventListener('mousemove', e => {
     }
     mousePrevX = e.clientX; mousePrevY = e.clientY;
 });
-
 window.addEventListener('mouseup', e => {
     if (e.button !== 0) return;
     if (isMouseDown) {
@@ -2540,12 +2652,11 @@ window.addEventListener('mouseup', e => {
         isMouseDown = false;
     }
 });
-
 // Escape releases pointer lock
 document.addEventListener('keydown', e2 => {
     if (e2.code === 'Escape' && isPointerLocked) document.exitPointerLock();
 }, true);
- 
+
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
     if(isAutoWalking && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
@@ -2599,12 +2710,12 @@ document.addEventListener('keyup',e=>{
             break;
     }
 });
- 
+
 // ─── PHYSICS & GAME LOOP ───────────────────────────────────────────────────
 const playerCollider = new THREE.Box3();
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
- 
+
 function checkCollision(targetPosition) {
     playerCollider.setFromCenterAndSize(targetPosition, new THREE.Vector3(PLAYER_SIZE, WALL_HEIGHT, PLAYER_SIZE));
     
@@ -2618,9 +2729,10 @@ function checkCollision(targetPosition) {
         const gx = Math.floor((c.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE), gz = Math.floor((c.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
         if (gx<0 || gx>=MAP_SIZE || gz<0 || gz>=MAP_SIZE || grid[gx][gz]===1) return true;
     }
+    if (furnitureObjects && checkFurnitureCollision(targetPosition)) return true;
     return false;
 }
- 
+
 function checkEntityCollision(targetPosition) {
     const hs = 6.0; // Reduced from 7.5 to 6.0 so the entity doesn't easily wedge itself
     const corners = [ {x:targetPosition.x-hs, z:targetPosition.z-hs}, {x:targetPosition.x+hs, z:targetPosition.z-hs}, {x:targetPosition.x-hs, z:targetPosition.z+hs}, {x:targetPosition.x+hs, z:targetPosition.z+hs} ];
@@ -2631,14 +2743,14 @@ function checkEntityCollision(targetPosition) {
     }
     return false;
 }
- 
+
 function spawnGhost() {
     let gx, gz, dist;
     let attempts = 0;
     let pX = Math.floor((camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
     let pZ = Math.floor((camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE);
     const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
- 
+
     // Find a valid empty spawn cell generally in front of the player
     do {
         let offsetX = (Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1); 
@@ -2650,9 +2762,9 @@ function spawnGhost() {
         dist = Math.hypot(gx-pX, gz-pZ);
         attempts++;
     } while ((gx<1 || gx>=MAP_SIZE-1 || gz<1 || gz>=MAP_SIZE-1 || grid[gx][gz]!==0 || dist < 4) && attempts < 100);
- 
+
     if (attempts >= 100) return null; // Failsafe if completely surrounded by walls
- 
+
     const wx = (gx - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
     const wz = (gz - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
     
@@ -2664,25 +2776,24 @@ function spawnGhost() {
     playJumpScream();
     return { mesh: sprite, life: 1.6 }; // Faster pass — 1.6s
 }
- 
+
 function animate() {
     requestAnimationFrame(animate);
- 
+
     if (gameStarted && !isPaused && !isDead) {
         const time = performance.now();
         const delta = Math.min((time - prevTime) / 1000, 0.1); 
         prevTime = time;
-
         // Player grid position — used by spawn and lighting blocks
         const _cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const _cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const _ls = Math.sin(_cx/6) + Math.sin(_cz/6) + Math.sin((_cx+_cz)/9);
         const playerLightEstimate = Math.max(0, Math.min(1, (_ls + 3) / 6));
- 
+
         updateTimer(time);
- 
+
         hydration -= HYDRATION_DRAIN * delta;
- 
+
         // Stamina Sprint Drain & Recharge Logic
         if (isSprinting) {
             stamina -= (100 / 7) * delta; // Fully drain 100 over 7 seconds
@@ -2723,23 +2834,28 @@ function animate() {
         } else {
             throbTimer = 0;
         }
- 
+
         if(hydration <= 0) showDeathScreen("DEHYDRATED.", "Your body has given out.");
         updateStatusBars();
         checkItemPickups();
- 
+
         if(pickupFlashTimer>0){ pickupFlashTimer-=delta; if(pickupFlashTimer<=0) pickupFlash.style.opacity='0'; }
- 
-        // Animate floating items
+
+        const px = camera.position.x;
+        const pz = camera.position.z;
+
+        // Animate floating items — only within 150 units
         const timeSec = time / 1000;
         for (let i = 0; i < itemData.length; i++) {
             let item = itemData[i];
             if (!item.collected) {
-                item.group.rotation.y += delta;
-                item.group.position.y = Math.sin(timeSec * 2.5 + item.bobOffset) * 0.8 + 1.0;
+                if (Math.abs(px - item.wx) < 150 && Math.abs(pz - item.wz) < 150) {
+                    item.group.rotation.y += delta;
+                    item.group.position.y = Math.sin(timeSec * 2.5 + item.bobOffset) * 0.8 + 1.0;
+                }
             }
         }
- 
+
         // --- DARK AND BRIGHT ZONE LIGHTING LOGIC ---
         const cx = (camera.position.x + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
         const cz = (camera.position.z + (MAP_SIZE/2)*TILE_SIZE)/TILE_SIZE;
@@ -2751,18 +2867,18 @@ function animate() {
         darknessFactor = Math.max(0, Math.min(1, darknessFactor));
         const spawnMask = Math.min(1, Math.max(0, (distFromSpawn - 10) / 10));
         darknessFactor *= spawnMask;
- 
+
         let brightnessFactor = ((-0.6) - lightSignal) / 0.6; // bright in low-signal zones
         brightnessFactor = Math.max(0, Math.min(1, brightnessFactor));
- 
+
         darknessFactor = darknessFactor * darknessFactor * (3 - 2 * darknessFactor);
         brightnessFactor = brightnessFactor * brightnessFactor * (3 - 2 * brightnessFactor);
- 
+
         let ambientTarget = 0.35; 
         let fogFarTarget = 160;
         let fogColorTarget = new THREE.Color(0x202005);
         let buzzVolTarget = 0.5;
- 
+
         // Apply Modifiers
         if (darknessFactor > 0) {
             ambientTarget = 0.35 - (darknessFactor * 0.15); 
@@ -2775,7 +2891,7 @@ function animate() {
             fogColorTarget.lerp(new THREE.Color(0xdadab0), brightnessFactor); 
             buzzVolTarget = 0.5 + (brightnessFactor * 0.5); // Louder in bright
         }
- 
+
         ambientLight.intensity += (ambientTarget - ambientLight.intensity) * delta * 1.8;
         scene.fog.far += (fogFarTarget - scene.fog.far) * delta * 1.8;
         scene.fog.color.lerp(fogColorTarget, delta * 1.8);
@@ -2783,11 +2899,11 @@ function animate() {
         if (ambientBuzzGain && audioCtx && audioCtx.state === 'running') {
             ambientBuzzGain.gain.setTargetAtTime(buzzVolTarget * 0.65, audioCtx.currentTime, 0.5);
         }
- 
+
         // Continuous Flamethrower Process
         if (isFiring && Date.now() - touchStartTime > 200) {
             if (flameGain && audioCtx && audioCtx.state === 'running') flameGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05);
- 
+
             playerLight.intensity = 2.5 + Math.random() * 0.5;
             playerLight.distance = 300;
             playerLight.color.setHex(0xffaa22);
@@ -2805,7 +2921,7 @@ function animate() {
                 fireAccumulator += delta;
                 if (fireAccumulator >= 0.1) { 
                     fireAccumulator -= 0.1;
- 
+
                     for(let i=0; i<3; i++) {
                         const p = new THREE.Sprite(new THREE.SpriteMaterial({map: fireTex, transparent: true, blending: THREE.AdditiveBlending}));
                         const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
@@ -2818,7 +2934,7 @@ function animate() {
                         
                         fireParticles.push({mesh: p, life: 0.3, vel: camDir.clone().multiplyScalar(35).add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10)) });
                     }
- 
+
                     const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
                     
                     // Check Entity Hits
@@ -2833,7 +2949,6 @@ function animate() {
                                 // Kill time: ~0.17s of sustained flame (hp=0.5, drain=2.9/s)
                                 if (e.hp === undefined) e.hp = 0.5;
                                 e.hp -= delta * 2.9;
-
                                 if (e.hp <= 0 && !e.burning) {
                                     // Start burn death — entity stays visible, on fire, for ~0.8s
                                     e.burning = true;
@@ -2854,7 +2969,7 @@ function animate() {
                             e.hp = Math.min(0.5, e.hp + delta * 0.8);
                         }
                     }
- 
+
                     if (!unlimitedPaint) {
                         spraysLeft--;
                         sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
@@ -2867,7 +2982,7 @@ function animate() {
             playerLight.distance = 90;
             playerLight.color.setHex(0xfffdbb);
         }
- 
+
         // Process Mist & Fire particles
         for(let i=fireParticles.length-1; i>=0; i--) {
             let p = fireParticles[i]; p.life -= delta;
@@ -2879,7 +2994,7 @@ function animate() {
                 p.mesh.scale.y += delta * 15;
             }
         }
- 
+
         for(let i=mistParticles.length-1; i>=0; i--) {
             let p = mistParticles[i]; p.life -= delta;
             if(p.life <= 0) { scene.remove(p.mesh); mistParticles.splice(i,1); }
@@ -2890,9 +3005,8 @@ function animate() {
                 p.mesh.scale.y += delta * 10;
             }
         }
- 
-        // Ghost jumpscare removed
 
+        // Ghost jumpscare removed
         // ── Ambient sound events — door slams + wailing ──────────────
         ambientEventTimer -= delta;
         if(ambientEventTimer <= 0) {
@@ -2907,12 +3021,10 @@ function animate() {
             }
             ambientEventTimer = 35 + Math.random() * 55;
         }
-
         // ── Dynamic entity spawn — fresh entity near player every 45-90s ──
         dynamicSpawnTimer -= delta;
         if (dynamicSpawnTimer <= 0) {
             dynamicSpawnTimer = 45 + Math.random() * 45;
-
             // Pick random open cell 80-200 units from player, out of direct line of sight
             const pGX = Math.floor((_cx));
             const pGZ = Math.floor((_cz));
@@ -2931,7 +3043,6 @@ function animate() {
                 spawnCell = { x: gx2, z: gz2 };
                 break;
             }
-
             if (spawnCell) {
                 const wx2 = (spawnCell.x - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
                 const wz2 = (spawnCell.z - MAP_SIZE/2)*TILE_SIZE + TILE_SIZE/2;
@@ -2944,12 +3055,10 @@ function animate() {
                 newSprite.scale.set(bsX, spawnShadow ? 22 : 14.0, 1);
                 newSprite.position.set(wx2, bsY, wz2);
                 scene.add(newSprite);
-
                 // Start in active state immediately
                 const initState = spawnShadow
                     ? (Math.random() < 0.5 ? 'observing' : 'stalking')
                     : (Math.random() < 0.4 ? 'investigating' : 'stalking');
-
                 entities.push({
                     mesh: newSprite,
                     type: spawnShadow ? 'SMILING_SHADOW' : 'BACTERIA',
@@ -2976,21 +3085,17 @@ function animate() {
                 // dynamic spawn — sound plays on first damage contact only
             }
         }
-
         // ── Guaranteed encounter manager — at least one every 90s ────
         encounterTimer -= delta;
         if(encounterTimer <= 0) {
             encounterTimer = 75 + Math.random() * 30; // Reset: next in 75-105s
-
             // Pick next encounter type in rotating order with shuffle
             const etype = encounterTypes[encounterIndex % encounterTypes.length];
             encounterIndex++;
-
             // Find the nearest idle/dormant entity of the right type and force-activate it
             const playerPos = camera.position;
             let bestEntity = null;
             let bestScore = Infinity;
-
             const wantShadow = etype.startsWith('smiler');
             for(let ei=0; ei<entities.length; ei++) {
                 const e = entities[ei];
@@ -3002,7 +3107,6 @@ function animate() {
                 const rangePenalty = Math.abs(ed - 160);
                 if(rangePenalty < bestScore) { bestScore = rangePenalty; bestEntity = e; }
             }
-
             if(bestEntity) {
                 const e = bestEntity;
                 if(etype === 'bacteria_hunt') {
@@ -3011,21 +3115,18 @@ function animate() {
                     e.lastKnownPlayerX = playerPos.x;
                     e.lastKnownPlayerZ = playerPos.z;
                     if(time - lastSpotScreechTime > 2000) { playBacteriaRoar(0.6); lastSpotScreechTime = time; }
-
                 } else if(etype === 'bacteria_stalk') {
                     e.state = 'stalking';
                     e.stateTimer = 10 + Math.random() * 8;
                     e.lastKnownPlayerX = playerPos.x;
                     e.lastKnownPlayerZ = playerPos.z;
                     
-
                 } else if(etype === 'bacteria_investigate') {
                     e.state = 'investigating';
                     e.stateTimer = 7 + Math.random() * 5;
                     e.lastKnownPlayerX = playerPos.x + (Math.random()-0.5)*40;
                     e.lastKnownPlayerZ = playerPos.z + (Math.random()-0.5)*40;
                     
-
                 } else if(etype === 'smiler_appear') {
                     // Teleport smiler to a spot the player will see
                     const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
@@ -3040,7 +3141,6 @@ function animate() {
                     e.state = 'observing';
                     e.stateTimer = 8 + Math.random() * 6;
                     if(time - lastSpotScreechTime > 2000) { playSmilerLaugh(0.2); lastSpotScreechTime = time; }
-
                 } else if(etype === 'smiler_stalk') {
                     e.state = 'stalking';
                     e.stateTimer = 8 + Math.random() * 5;
@@ -3048,17 +3148,13 @@ function animate() {
                 }
             }
         }
- 
-        let tookDamage = false;
-        const px = camera.position.x;
-        const pz = camera.position.z;
 
+        let tookDamage = false;
+        
         // Estimate ambient light level at camera position (used by Smilers)
         // _cx/_cz declared at top of loop — see below
-
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
-
             // ── Animation ──────────────────────────────────────────────────
             // ── Burn death animation ──────────────────────────────────
             // Safety: if entity is inside a wall, teleport it out
@@ -3076,10 +3172,8 @@ function animate() {
                     }
                 }
             }
-
             if (e.burning) {
                 e.burnTimer -= delta;
-
                 // Engulf entity in fire particles every frame
                 if (Math.random() < 0.6) {
                     for (let bf = 0; bf < 3; bf++) {
@@ -3103,7 +3197,6 @@ function animate() {
                         });
                     }
                 }
-
                 // Wobble the entity as it burns
                 e.mesh.position.x += (Math.random()-0.5) * 1.2;
                 e.mesh.position.z += (Math.random()-0.5) * 1.2;
@@ -3112,7 +3205,6 @@ function animate() {
                 if (e.burnTimer < 0.25) {
                     e.mesh.material.opacity = e.burnTimer / 0.25;
                 }
-
                 if (e.burnTimer <= 0) {
                     // Final explosion burst then remove
                     playPoof();
@@ -3133,25 +3225,21 @@ function animate() {
                 }
                 continue; // skip all AI while burning
             }
-
             e.animTimer += delta;
             if (e.animTimer > 0.1) {
                 e.animTimer -= 0.1;
                 e.animFrame = (e.animFrame + 1) % 4;
             }
-
             let dx = px - e.mesh.position.x;
             let dz = pz - e.mesh.position.z;
-            if (Math.abs(dx) > 400 || Math.abs(dz) > 400) continue;
+            if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; // tighter cull
             const dist = Math.sqrt(dx*dx + dz*dz);
-
             // Approach warning sound — fires ONCE when entity closes to ~55 units
             if (dist < 55 && !e.hasApproachSounded && e.state !== 'vanished' && e.state !== 'dormant' && e.state !== 'idle') {
                 e.hasApproachSounded = true;
                 if (e.type === 'BACTERIA') playBacteriaRoar(0.7);
                 else playSmilerLaugh(0.5);
             }
-
             // Hard rule: any entity in personal space ALWAYS attacks, no exceptions
             if (dist < 42 && e.state !== 'aggressive' && e.state !== 'hunting' && e.state !== 'vanished') {
                 e.state = e.type === 'SMILING_SHADOW' ? 'aggressive' : 'hunting';
@@ -3161,15 +3249,12 @@ function animate() {
                     lastSpotScreechTime = time;
                 }
             }
-
             // ══════════════════════════════════════════════════════════════
             // SMILING SHADOW — paranoia machine
             // ══════════════════════════════════════════════════════════════
             if (e.type === 'SMILING_SHADOW') {
-
                 // Smilers always visible
                 e.lightLevel = 1.0; // always rendered
-
                 // Reappear after cooldown — find a dark cell near player
                 if (e.state === 'vanished') {
                     e.vanishCooldown -= delta;
@@ -3197,7 +3282,6 @@ function animate() {
                     // Don't process further while vanished
                     continue;
                 }
-
                 // Blink
                 e.blinkTimer -= delta;
                 if (e.blinkTimer <= 0) {
@@ -3205,10 +3289,8 @@ function animate() {
                     e.blinkTimer = e.isBlinking ? 0.12 : (2 + Math.random() * 5);
                 }
                 e.mesh.material = e.isBlinking ? shadowMatClosed : shadowMatsOpen[e.animFrame];
-
                 // State timer tick
                 e.stateTimer -= delta;
-
                 // ── SMILER STATE MACHINE ────────────────────────────────
                 if (e.state === 'dormant') {
                     // Smiler detects player from further — raised from 180 to 300
@@ -3230,7 +3312,6 @@ function animate() {
                             e.stateTimer = 6 + Math.random() * 8;
                         }
                     }
-
                 } else if (e.state === 'observing') {
                     // Stares. Creeps a tiny bit. Creates paranoia.
                     
@@ -3276,7 +3357,6 @@ function animate() {
                             // sound handled on damage contact
                         }
                     }
-
                 } else if (e.state === 'stalking') {
                     // Follows slowly. May lose interest or go dormant.
                     
@@ -3305,7 +3385,6 @@ function animate() {
                             // sound handled on damage contact
                         }
                     }
-
                 } else if (e.state === 'aggressive') {
                     // Rare but punishing — wide damage window
                     if (dist > ENTITY_MIN_DIST) {
@@ -3329,18 +3408,15 @@ function animate() {
                         e.vanishCooldown = 4 + Math.random() * 6;
                     }
                 }
-
                 // Bob
                 e.bob += delta * 1.5;
                 if (e.state !== 'vanished') {
                     e.mesh.position.y = e.baseY + Math.sin(e.bob) * (e.state === 'aggressive' ? 2.0 : 0.4);
                 }
-
             // ══════════════════════════════════════════════════════════════
             // BACTERIA — desperate, biological hunter
             // ══════════════════════════════════════════════════════════════
             } else if (e.type === 'BACTERIA') {
-
                 // Mirror / pose twitch
                 e.mirrorTimer -= delta;
                 if (e.mirrorTimer <= 0) {
@@ -3355,14 +3431,11 @@ function animate() {
                     }
                 }
                 e.mesh.material = bacteriaPoses[e.currentPose][e.animFrame];
-
                 // Twitch / pause
                 e.twitchTimer -= delta;
                 const isTwitching = e.twitchTimer > 0;
-
                 // State timer
                 e.stateTimer -= delta;
-
                 // Erratic burst
                 if (e.erraticTimer > 0) {
                     e.erraticTimer -= delta;
@@ -3371,7 +3444,6 @@ function animate() {
                     if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
                     if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                 }
-
                 // ── BACTERIA STATE MACHINE ──────────────────────────────
                 if (e.state === 'idle') {
                     // Always investigating — bacteria are never truly passive
@@ -3382,7 +3454,6 @@ function animate() {
                         e.lastKnownPlayerZ = pz;
                         // sound handled on damage contact
                     }
-
                 } else if (e.state === 'investigating') {
                     // Actively moves toward player — not passive
                     if (!isTwitching) {
@@ -3400,7 +3471,6 @@ function animate() {
                             if (!checkEntityCollision({x: e.mesh.position.x, z: nz2})) e.mesh.position.z = nz2;
                         }
                     }
-
                     // Damage on contact even while investigating — it's not safe to let them close
                     if (dist < 42) {
                         if (!e.hasDamageRoared) {
@@ -3414,9 +3484,7 @@ function animate() {
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                         }
                     }
-
                     if (Math.random() < 0.006) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
-
                     // Escalate much faster — investigating is the gateway to real danger
                     if (e.stateTimer <= 0) {
                         const roll = Math.random();
@@ -3436,7 +3504,6 @@ function animate() {
                             e.stateTimer = 3 + Math.random() * 4;
                         }
                     }
-
                 } else if (e.state === 'stalking') {
                     // Deliberate approach — but backs off if player charges directly at it
                     // Detect if player is moving toward entity (dot product of player velocity vs dir to entity)
@@ -3444,7 +3511,6 @@ function animate() {
                     const dirToEntity = new THREE.Vector3(-dx, 0, -dz).normalize();
                     const playerVelNorm = velocity.clone().normalize();
                     const playerChargingAt = playerMoving && playerVelNorm.dot(dirToEntity) > 0.55;
-
                     if (!isTwitching) {
                         if (playerChargingAt && dist < 55) {
                             // Player charging — retreat sideways/back, don't just stand there
@@ -3472,7 +3538,6 @@ function animate() {
                     if (dist < 120) { e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz; }
                     if (Math.random() < 0.005) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
                     
-
                     // Apparate jump — more frequent and covers more ground
                     e.apparateTimer -= delta;
                     if (e.apparateTimer <= 0 && dist < 130) {
@@ -3490,14 +3555,12 @@ function animate() {
                         }
                         e.apparateTimer = 0.6 + Math.random() * 0.9;
                     }
-
                     // If close enough, escalate to hunting instead of resetting
                     if (dist < 60 && Math.random() < 0.015) {
                         e.state = 'hunting';
                         e.stateTimer = 5 + Math.random() * 4;
                         // sound handled on damage contact
                     }
-
                     if (e.stateTimer <= 0) {
                         const roll = Math.random();
                         if (roll < 0.50) { // escalate more often
@@ -3516,7 +3579,6 @@ function animate() {
                             e.stateTimer = 5 + Math.random() * 4;
                         }
                     }
-
                 } else if (e.state === 'hunting') {
                     // Desperate charge — fast enough to catch a walking player
                     if (!isTwitching && dist > ENTITY_MIN_DIST) {
@@ -3535,7 +3597,6 @@ function animate() {
                         e.erraticTimer = 0.12 + Math.random() * 0.18;
                     }
                     
-
                     // Damage on contact during hunt
                     if (dist < 35) {
                         if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
@@ -3545,7 +3606,6 @@ function animate() {
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                         }
                     }
-
                     if (e.stateTimer <= 0) {
                         const roll = Math.random();
                         if (roll < 0.40) { // escalate to full aggression more often
@@ -3563,7 +3623,6 @@ function animate() {
                             e.stateTimer = 5 + Math.random() * 4;
                         }
                     }
-
                 } else if (e.state === 'lost') {
                     // Reset roar flag — next engagement will trigger it fresh
                     e.hasDamageRoared = false;
@@ -3590,7 +3649,6 @@ function animate() {
                         e.state = 'idle';
                         e.stateTimer = 8 + Math.random() * 8;
                     }
-
                 } else if (e.state === 'aggressive') {
                     // Full sprint frenzy — faster than sprinting player
                     if (dist > ENTITY_MIN_DIST) {
@@ -3616,7 +3674,6 @@ function animate() {
                         e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
                     }
                 }
-
                 // Universal personal-space rule: ANY entity in range deals damage
                 // Scales by state — investigating is light, hunting/aggressive is serious
                 if (dist < 28) {
@@ -3639,22 +3696,21 @@ function animate() {
                         if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                     }
                 }
-
                 // Bob
                 e.bob += delta * (e.state === 'hunting' || e.state === 'aggressive' ? 18 : 4);
                 const bobHeight = e.currentPose === 3 ? 0.15 : (e.state === 'hunting' ? 0.8 : 0.35);
                 e.mesh.position.y = e.baseY + Math.sin(e.bob) * bobHeight;
             }
         }
- 
+
         dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
         if(tookDamage) updateStatusBars();
- 
+
         playerLight.position.copy(camera.position);
- 
+
         velocity.x -= velocity.x * 10.0 * delta; 
         velocity.z -= velocity.z * 10.0 * delta;
- 
+
         let inputX = joyX + (moveRight?1:0) - (moveLeft?1:0);
         let inputY = joyY + (moveBackward?1:0) - (moveForward?1:0); 
         
@@ -3662,10 +3718,10 @@ function animate() {
             inputY = -1; // Force forward movement
             inputX = 0;
         }
- 
+
         const inputMag = Math.hypot(inputX, inputY);
         if (inputMag > 1) { inputX /= inputMag; inputY /= inputMag; }
- 
+
         if (inputMag > 0) {
             const dir = new THREE.Vector3();
             const fV = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
@@ -3675,12 +3731,12 @@ function animate() {
             const currentSpeed = isSprinting ? PLAYER_SPEED * 2.0 : PLAYER_SPEED;
             velocity.add(dir.multiplyScalar(currentSpeed * Math.min(inputMag, 1) * delta));
         }
- 
+
         let targetX = camera.position.clone(); targetX.x += velocity.x * delta;
         if (!checkCollision(targetX)) camera.position.x = targetX.x; else velocity.x = 0;
         let targetZ = camera.position.clone(); targetZ.z += velocity.z * delta;
         if (!checkCollision(targetZ)) camera.position.z = targetZ.z; else velocity.z = 0;
- 
+
         // Apply Look controls
         if (lookLeft) yaw += 2.0 * delta * (lookSensitivity / 2);
         if (lookRight) yaw -= 2.0 * delta * (lookSensitivity / 2);
@@ -3688,7 +3744,7 @@ function animate() {
         if (lookDown) pitch -= 2.0 * delta * (lookSensitivity / 2);
         pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
         camera.rotation.set(pitch, yaw, camera.rotation.z);
- 
+
         // --- HEAD BOB & FOOTSTEPS LOGIC ---
         const moveSpeed = Math.hypot(velocity.x, velocity.z);
         if (moveSpeed > 10) {
@@ -3702,25 +3758,25 @@ function animate() {
         const bobSin = Math.sin(headBobTimer);
         camera.position.y = PLAYER_HEIGHT + (bobSin * 0.3 * headBobAmount);
         camera.rotation.z = Math.cos(headBobTimer / 2) * 0.02 * headBobAmount;
- 
+
         // Trigger footstep exactly once per wave cycle
         if (lastBobSin < 0 && bobSin >= 0) {
             if (headBobAmount > 0.1) playFootstep();
         }
         lastBobSin = bobSin;
- 
+
     } else {
         prevTime = performance.now();
     }
- 
+
     renderer.render(scene, camera);
 }
- 
+
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
- 
+
 animate();
 </script>
 </body>
