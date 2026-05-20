@@ -503,6 +503,7 @@ let grid = [];
 let lightZones; 
 let exitBoxes = [];
 let exitGroups = [];
+let exitsGrid = [];
 let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
@@ -776,7 +777,7 @@ function buildWorld() {
     floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
     ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
 
-    let exitsGrid = [];
+    exitsGrid = [];
     for (let i=0; i<EXIT_COUNT; i++) {
         let ex, ez;
         do {
@@ -1680,8 +1681,19 @@ function placeFurniture() {
             grid[gx][gz+1]===0
         ].filter(Boolean).length;
         if (openCount < 2) continue;
-        // Not too close to spawn or exits
+        // Not too close to spawn
         if (Math.abs(gx-SPAWN_GRID_X)<8 && Math.abs(gz-SPAWN_GRID_Z)<8) continue;
+        
+        // Not too close to any exit to prevent blocking the door
+        let nearExit = false;
+        for (let eg of exitsGrid) {
+            if (Math.abs(gx - eg.x) < 8 && Math.abs(gz - eg.z) < 8) {
+                nearExit = true;
+                break;
+            }
+        }
+        if (nearExit) continue;
+
         const wx = (gx-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
         const wz = (gz-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2+(Math.random()-0.5)*4;
         const maker = furnitureMakers[Math.floor(Math.random()*furnitureMakers.length)];
@@ -2682,20 +2694,6 @@ document.addEventListener('keydown',e=>{
             break;
         case 'ShiftLeft': case 'ShiftRight':
             activateSprint();
-            break;
-        case 'KeyT':
-            if (exitGroups.length > 0) {
-                let nearest = exitGroups[0];
-                let minDist = camera.position.distanceTo(nearest.position);
-                for (let i = 1; i < exitGroups.length; i++) {
-                    let d = camera.position.distanceTo(exitGroups[i].position);
-                    if (d < minDist) {
-                        minDist = d;
-                        nearest = exitGroups[i];
-                    }
-                }
-                camera.position.set(nearest.position.x, PLAYER_HEIGHT, nearest.position.z + 40);
-            }
             break;
         case 'Escape': pauseGame(); break;
     }
