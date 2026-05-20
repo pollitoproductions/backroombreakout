@@ -486,8 +486,8 @@ const HYDRATION_DRAIN    = 0.38; // slightly more survival pressure
 const ITEM_PICKUP_DIST   = 25;    
 
 let BOTTLE_COUNT       = 900;  
-let JELLY_COUNT        = 648;  
-let PAINT_COUNT        = 216;     
+let JELLY_COUNT        = 486;  
+let PAINT_COUNT        = 162;     
 
 // ENTITY AI
 let ENTITY_COUNT       = 800;   
@@ -549,6 +549,9 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.28;
 
 // ─── TEXTURES ──────────────────────────────────────────────────────────────
+// Shared stain decision — wall/floor/ceiling all match in a given area
+const areaHasStains = Math.random() < 0.60;
+
 function createTexture(type) {
     const SIZE = 512;
     const c = document.createElement('canvas');
@@ -597,9 +600,8 @@ function createTexture(type) {
         // Below dado slightly darker
         ctx.fillStyle = 'rgba(55,45,8,0.11)'; ctx.fillRect(0, dadoY+4, SIZE, SIZE-dadoY-4);
 
-        // Water stains — only on 60% of wall tiles (random per texture instance)
-        const hasStains = Math.random() < 0.60;
-        if (hasStains) {
+        // Stains — coordinated with floor and ceiling via shared areaHasStains flag
+        if (areaHasStains) {
             const stainCount = Math.floor(4 + Math.random()*14); // 4-18 stains not always 28
             for (let i=0;i<stainCount;i++) {
                 const px=Math.random()*SIZE, py=Math.random()*SIZE, r=8+Math.random()*30;
@@ -655,33 +657,78 @@ function createTexture(type) {
             g.addColorStop(0,'rgba(80,62,22,0.25)'); g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
         }
-        // Stain patches — darker spots
-        for (let i=0;i<6;i++) {
-            const px=Math.random()*SIZE, py=Math.random()*SIZE, r=8+Math.random()*20;
-            const g=ctx.createRadialGradient(px,py,0,px,py,r);
-            g.addColorStop(0,'rgba(15,10,2,0.35)'); g.addColorStop(1,'rgba(0,0,0,0)');
-            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+        // Water stains on carpet — match wall stain areas
+        if (areaHasStains) {
+            const stainCount = Math.floor(4 + Math.random()*8);
+            for (let i=0;i<stainCount;i++) {
+                const px=Math.random()*SIZE, py=Math.random()*SIZE, r=10+Math.random()*28;
+                const g=ctx.createRadialGradient(px,py,0,px,py,r);
+                g.addColorStop(0,'rgba(18,12,3,0.45)'); g.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+            }
+            // Dried tideline rings
+            for (let i=0;i<3;i++) {
+                const px=Math.random()*SIZE, py=Math.random()*SIZE, r=15+Math.random()*30;
+                ctx.strokeStyle=`rgba(28,20,5,${0.18+Math.random()*0.15})`;
+                ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+            }
+        } else {
+            // Clean area — barely any marks
+            for (let i=0;i<2;i++) {
+                const px=Math.random()*SIZE, py=Math.random()*SIZE, r=5+Math.random()*10;
+                const g=ctx.createRadialGradient(px,py,0,px,py,r);
+                g.addColorStop(0,'rgba(15,10,2,0.12)'); g.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+            }
         }
 
     } else if (type === 'ceiling') {
-        // Drop ceiling tiles
-        ctx.fillStyle = '#d0d0c0'; ctx.fillRect(0,0,SIZE,SIZE);
-        ctx.strokeStyle='rgba(148,148,128,0.45)'; ctx.lineWidth=1.5;
-        for (let x=0;x<=SIZE;x+=SIZE/4) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,SIZE); ctx.stroke(); }
-        for (let y=0;y<=SIZE;y+=SIZE/4) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(SIZE,y); ctx.stroke(); }
-        // Fluorescent tubes with strong glow
-        ctx.fillStyle='rgba(255,255,225,0.90)'; ctx.shadowColor='#ffffbb'; ctx.shadowBlur=22;
-        ctx.fillRect(SIZE*0.14,SIZE*0.28,SIZE*0.72,SIZE*0.15);
-        ctx.fillRect(SIZE*0.14,SIZE*0.57,SIZE*0.72,SIZE*0.15);
+        // Improved drop ceiling tiles
+        ctx.fillStyle = '#c8c8b8'; ctx.fillRect(0,0,SIZE,SIZE);
+        // Major tile grid — 2 tiles per texture
+        const TILE = SIZE/2;
+        ctx.strokeStyle='rgba(100,100,85,0.55)'; ctx.lineWidth=2.5;
+        for (let x=0;x<=SIZE;x+=TILE){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,SIZE);ctx.stroke();}
+        for (let y=0;y<=SIZE;y+=TILE){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(SIZE,y);ctx.stroke();}
+        // Fine inner detail
+        ctx.strokeStyle='rgba(130,130,115,0.22)'; ctx.lineWidth=0.7;
+        for (let x=0;x<=SIZE;x+=TILE/2){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,SIZE);ctx.stroke();}
+        for (let y=0;y<=SIZE;y+=TILE/2){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(SIZE,y);ctx.stroke();}
+        // Stipple texture
+        for (let i=0;i<2500;i++){
+            const v=Math.floor(170+Math.random()*40);
+            ctx.fillStyle=`rgba(${v},${v},${v-8},${Math.random()*0.055})`;
+            ctx.fillRect(Math.random()*SIZE,Math.random()*SIZE,2,2);
+        }
+        // Fluorescent tube — one per tile
+        ctx.shadowColor='#ffffcc'; ctx.shadowBlur=18;
+        ctx.fillStyle='rgba(255,255,218,0.92)';
+        [0,TILE].forEach(ty=>{ctx.fillRect(SIZE*0.20,ty+TILE*0.35,SIZE*0.60,TILE*0.14);});
         ctx.shadowBlur=0;
-        // Tube specular glint
-        ctx.fillStyle='rgba(255,255,255,0.58)';
-        ctx.fillRect(SIZE*0.15,SIZE*0.285,SIZE*0.70,SIZE*0.028);
-        ctx.fillRect(SIZE*0.15,SIZE*0.575,SIZE*0.70,SIZE*0.028);
-        // Ceiling grime
-        for (let i=0;i<5000;i++) {
-            ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.025})`;
-            ctx.fillRect(Math.random()*SIZE, Math.random()*SIZE, 2, 2);
+        ctx.fillStyle='rgba(255,255,255,0.48)';
+        [0,TILE].forEach(ty=>{ctx.fillRect(SIZE*0.21,ty+TILE*0.353,SIZE*0.58,TILE*0.022);});
+        // Ceiling stains — only in stained areas
+        if (areaHasStains) {
+            const sc = Math.floor(3+Math.random()*8);
+            for (let i=0;i<sc;i++){
+                const px=Math.random()*SIZE,py=Math.random()*SIZE,r=12+Math.random()*40;
+                const g=ctx.createRadialGradient(px,py,0,px,py,r);
+                g.addColorStop(0,`rgba(80,68,38,${0.18+Math.random()*0.22})`);
+                g.addColorStop(0.5,`rgba(60,50,25,${0.08+Math.random()*0.10})`);
+                g.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+            }
+            // Brown tidelines
+            for (let i=0;i<3;i++){
+                const px=Math.random()*SIZE,py=Math.random()*SIZE,r=18+Math.random()*35;
+                ctx.strokeStyle=`rgba(88,70,28,${0.22+Math.random()*0.18})`;
+                ctx.lineWidth=1.8; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+            }
+        }
+        // General grime always present
+        for (let i=0;i<2000;i++){
+            ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.016})`;
+            ctx.fillRect(Math.random()*SIZE,Math.random()*SIZE,2,2);
         }
     }
 
@@ -2165,15 +2212,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 80;
-        BOTTLE_COUNT = 270; JELLY_COUNT = 194; PAINT_COUNT = 65;
+        BOTTLE_COUNT = 270; JELLY_COUNT = 146; PAINT_COUNT = 49;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 300;
-        BOTTLE_COUNT = 1350; JELLY_COUNT = 972; PAINT_COUNT = 324;
+        BOTTLE_COUNT = 1350; JELLY_COUNT = 729; PAINT_COUNT = 243;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 600;
-        BOTTLE_COUNT = 2700; JELLY_COUNT = 1944; PAINT_COUNT = 648;
+        BOTTLE_COUNT = 2700; JELLY_COUNT = 1458; PAINT_COUNT = 486;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
@@ -2848,6 +2895,23 @@ function animate() {
 
         const px = camera.position.x;
         const pz = camera.position.z;
+
+        // ── Visibility culling — hide distant objects every 3 frames ──────
+        if (Math.floor(time / 16) % 3 === 0) {
+            const CULL_DIST = 220;
+            for (let i=0; i<itemData.length; i++) {
+                const it = itemData[i];
+                if (!it.collected) {
+                    const vis = Math.abs(px-it.wx)<CULL_DIST && Math.abs(pz-it.wz)<CULL_DIST;
+                    if (it.group.visible !== vis) it.group.visible = vis;
+                }
+            }
+            for (let i=0; i<furnitureObjects.length; i++) {
+                const f = furnitureObjects[i];
+                const vis = Math.abs(px-f.wx)<CULL_DIST && Math.abs(pz-f.wz)<CULL_DIST;
+                if (f.group.visible !== vis) f.group.visible = vis;
+            }
+        }
 
         // Animate floating items — only within 150 units
         const timeSec = time / 1000;
