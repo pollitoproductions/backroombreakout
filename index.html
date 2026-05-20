@@ -340,7 +340,8 @@
                     <button class="choice-btn" id="btn-med">QUESTIONABLE &nbsp;·&nbsp; 5 mi² &nbsp;·&nbsp; 5 Exits</button>
                     <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
                 </div>
-                <button class="choice-btn" style="margin-top:18px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
+                <div style="margin-top:14px;font-size:0.8em;color:#ff8844;letter-spacing:1px;">⚠ WARNING: Large maps require high-end devices.</div>
+                <button class="choice-btn" style="margin-top:12px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
             <!-- PAGE 3 — HOW TO PLAY -->
             <div id="page-3" class="start-page" style="display:none;">
@@ -479,14 +480,14 @@ const PLAYER_SPEED    = 180.0;
 const SPAWN_CLEAR_R   = 3;
 const EXIT_MIN_DIST   = 80;
 
-// SURVIVAL STATS & ITEMS (Adjusted to 75% for jelly and paint cans)
+// SURVIVAL STATS & ITEMS
 const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.38; // slightly more survival pressure  
 const ITEM_PICKUP_DIST   = 25;    
 
 let BOTTLE_COUNT       = 900;  
-let JELLY_COUNT        = 486; // 75% of 648
-let PAINT_COUNT        = 162; // 75% of 216
+let JELLY_COUNT        = 648;  
+let PAINT_COUNT        = 216;     
 
 // ENTITY AI
 let ENTITY_COUNT       = 800;   
@@ -502,7 +503,6 @@ let grid = [];
 let lightZones; 
 let exitBoxes = [];
 let exitGroups = [];
-let exitsGrid = [];
 let instancedWalls, floor, ceil;
 let itemData = []; 
 let entities = [];
@@ -776,7 +776,7 @@ function buildWorld() {
     floor = new THREE.Mesh(planeGeo, floorMat); floor.rotation.x = -Math.PI/2; scene.add(floor);
     ceil  = new THREE.Mesh(planeGeo, ceilMat);  ceil.rotation.x  =  Math.PI/2; ceil.position.y = WALL_HEIGHT; scene.add(ceil);
 
-    exitsGrid = [];
+    let exitsGrid = [];
     for (let i=0; i<EXIT_COUNT; i++) {
         let ex, ez;
         do {
@@ -1623,9 +1623,9 @@ function makePileOfChairs() {
     }
     // Three chairs, each tipped on side at different angles
     const poses = [
-        {x:0,   y:2,  z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
-        {x:3,   y:4,  z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
-        {x:-2,  y:6,  z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
+        {x:0,   y:1.5, z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
+        {x:2.5, y:3.0, z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
+        {x:-1.5,y:4.5, z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
     ];
     poses.forEach(p=>{
         const c = buildChair();
@@ -1639,19 +1639,23 @@ function makePileOfChairs() {
 function makeDeskCorpse() {
     const g = new THREE.Group();
     const mat = new THREE.MeshLambertMaterial({color:0x3a3020,emissive:new THREE.Color(0x0a0908)});
-    // Overturned desk — top panel lying on its side, legs pointing sideways
-    const tilt = 0.3 + Math.random()*0.4;
-    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.8,6),mat);
-    top.position.set(0,3,0);
-    top.rotation.z = Math.PI/2 + tilt; // tipped over
-    g.add(top);
-    // Four legs attached to corners, lying sideways with top
-    [[3.5,0,2],[3.5,0,-2],[-3.5,0,2],[-3.5,0,-2]].forEach(([x,y,z])=>{
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.8,6,0.8),mat);
-        leg.position.set(x, 3 + Math.sin(tilt)*3, z);
-        leg.rotation.set(0,0,Math.PI/2+tilt+(Math.random()-0.5)*0.3);
-        g.add(leg);
+    // Build desk as a sub-group so legs rotate with the top when tipped
+    const desk = new THREE.Group();
+    // Tabletop — flat panel
+    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.6,6),mat);
+    top.position.set(0,0,0);
+    desk.add(top);
+    // Four legs going downward from corners — attached to top
+    [[3.8,2.2],[3.8,-2.2],[-3.8,2.2],[-3.8,-2.2]].forEach(([lx,lz])=>{
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.7,6,0.7),mat);
+        leg.position.set(lx,-3.3,lz);
+        desk.add(leg);
     });
+    // Now tip the whole desk over on its side
+    const tilt = Math.PI/2 + 0.25 + Math.random()*0.35;
+    desk.rotation.z = tilt;
+    desk.position.set(0, 3.5, 0);
+    g.add(desk);
     g.colliderRadius=6;
     return g;
 }
@@ -1661,7 +1665,7 @@ let furnitureObjects = []; // {group, wx, wz, radius}
 function placeFurniture() {
     furnitureObjects = [];
     // One piece roughly every 25 open tiles
-    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 55); // less furniture = less geometry
+    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 27); // ~2x more furniture
     let placed = 0, attempts = 0;
     while (placed < targetCount && attempts < targetCount * 30) {
         attempts++;
@@ -1981,7 +1985,7 @@ function playBacteriaDeathRoar() {
     const nLen = Math.floor(audioCtx.sampleRate * 0.5);
     const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
     const nD = nBuf.getChannelData(0);
-    for(let i=0; i<nLen; i++) nD[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.08));
+    for(let i=0;i<nLen;i++) nD[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.08));
     const nSrc = audioCtx.createBufferSource(); nSrc.buffer=nBuf;
     const nLP = audioCtx.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=600;
     const nG = audioCtx.createGain(); nG.gain.value=0.5;
@@ -2161,15 +2165,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 80;
-        BOTTLE_COUNT = 270; JELLY_COUNT = 145; PAINT_COUNT = 48;
+        BOTTLE_COUNT = 270; JELLY_COUNT = 194; PAINT_COUNT = 65;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 300;
-        BOTTLE_COUNT = 1350; JELLY_COUNT = 729; PAINT_COUNT = 243;
+        BOTTLE_COUNT = 1350; JELLY_COUNT = 972; PAINT_COUNT = 324;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 600;
-        BOTTLE_COUNT = 2700; JELLY_COUNT = 1458; PAINT_COUNT = 486;
+        BOTTLE_COUNT = 2700; JELLY_COUNT = 1944; PAINT_COUNT = 648;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
@@ -2845,25 +2849,16 @@ function animate() {
         const px = camera.position.x;
         const pz = camera.position.z;
 
-        // Animate floating items — Performance optimized visibility cull
+        // Animate floating items — only within 150 units
         const timeSec = time / 1000;
         for (let i = 0; i < itemData.length; i++) {
             let item = itemData[i];
             if (!item.collected) {
-                if (Math.abs(px - item.wx) < 180 && Math.abs(pz - item.wz) < 180) {
-                    item.group.visible = true; // Tell ThreeJS to render
+                if (Math.abs(px - item.wx) < 150 && Math.abs(pz - item.wz) < 150) {
                     item.group.rotation.y += delta;
                     item.group.position.y = Math.sin(timeSec * 2.5 + item.bobOffset) * 0.8 + 1.0;
-                } else {
-                    item.group.visible = false; // Frustum cull bypass - saves draw calls
                 }
             }
-        }
-
-        // Furniture — Performance optimized visibility cull
-        for (let i = 0; i < furnitureObjects.length; i++) {
-            let f = furnitureObjects[i];
-            f.group.visible = (Math.abs(px - f.wx) < 220 && Math.abs(pz - f.wz) < 220);
         }
 
         // --- DARK AND BRIGHT ZONE LIGHTING LOGIC ---
@@ -3165,18 +3160,6 @@ function animate() {
         // _cx/_cz declared at top of loop — see below
         for(let i=entities.length-1; i>=0; i--) {
             let e = entities[i];
-            
-            let dx = px - e.mesh.position.x;
-            let dz = pz - e.mesh.position.z;
-            
-            // Performance Visibility Cull - Drop entity from renderer if far away
-            if (Math.abs(dx) > 250 || Math.abs(dz) > 250) {
-                e.mesh.visible = false;
-                continue; // tighter cull
-            }
-            // By default, visible unless vanished
-            e.mesh.visible = (e.state !== 'vanished');
-            
             // ── Animation ──────────────────────────────────────────────────
             // ── Burn death animation ──────────────────────────────────
             // Safety: if entity is inside a wall, teleport it out
@@ -3187,7 +3170,7 @@ function animate() {
                 const offsets = [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
                 for (const [ox,oz] of offsets) {
                     const nx2=egx+ox, nz2=egz+oz;
-                    if (nx2>0&&nx2<MAP_SIZE-1&&grid[nx2][nz2]===0) {
+                    if (nx2>0&&nx2<MAP_SIZE-1&&nz2>0&&nz2<MAP_SIZE-1&&grid[nx2][nz2]===0) {
                         e.mesh.position.x=(nx2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
                         e.mesh.position.z=(nz2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
                         break;
@@ -3252,7 +3235,9 @@ function animate() {
                 e.animTimer -= 0.1;
                 e.animFrame = (e.animFrame + 1) % 4;
             }
-
+            let dx = px - e.mesh.position.x;
+            let dz = pz - e.mesh.position.z;
+            if (Math.abs(dx) > 250 || Math.abs(dz) > 250) continue; // tighter cull
             const dist = Math.sqrt(dx*dx + dz*dz);
             // Approach warning sound — fires ONCE when entity closes to ~55 units
             if (dist < 55 && !e.hasApproachSounded && e.state !== 'vanished' && e.state !== 'dormant' && e.state !== 'idle') {
@@ -3603,7 +3588,7 @@ function animate() {
                     // Desperate charge — fast enough to catch a walking player
                     if (!isTwitching && dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 110; // can close on a walking player
+                        const spd = 110; // was 90 — can close on a walking player
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3682,9 +3667,9 @@ function animate() {
                     if (dist < 40) { // wider damage window — 40 not 25
                         if (hasLineOfSight(camera.position.x, camera.position.z, e.mesh.position.x, e.mesh.position.z)) {
                             health -= 12 * delta;
-                            if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(70);
-                            tookDamage = true;
-                            if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(70);
+                        tookDamage = true;
+                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
                         }
                     }
                     if (e.stateTimer <= 0) {
