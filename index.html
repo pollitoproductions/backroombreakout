@@ -340,8 +340,7 @@
                     <button class="choice-btn" id="btn-med">QUESTIONABLE &nbsp;·&nbsp; 5 mi² &nbsp;·&nbsp; 5 Exits</button>
                     <button class="choice-btn red" id="btn-hard">INSANE &nbsp;·&nbsp; 10 mi² &nbsp;·&nbsp; 1 Exit</button>
                 </div>
-                <div style="margin-top:14px;font-size:0.8em;color:#ff8844;letter-spacing:1px;">⚠ WARNING: Large maps require high-end devices.</div>
-                <button class="choice-btn" style="margin-top:12px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
+                <button class="choice-btn" style="margin-top:18px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
             <!-- PAGE 3 — HOW TO PLAY -->
             <div id="page-3" class="start-page" style="display:none;">
@@ -648,6 +647,7 @@ function createTexture(type) {
             ctx.fillStyle=`rgba(${55+Math.floor(Math.random()*25)},${42+Math.floor(Math.random()*18)},6,${0.3+Math.random()*0.35})`;
             ctx.beginPath(); ctx.arc(x,y,1+Math.random()*2,0,Math.PI*2); ctx.fill();
         }
+        // grid pattern removed — texture only
         // Worn path patches — slightly lighter, compressed pile
         for (let i=0;i<8;i++) {
             const px=Math.random()*SIZE, py=Math.random()*SIZE, r=20+Math.random()*50;
@@ -1412,6 +1412,40 @@ function startAction() {
     touchStartTime = Date.now();
 }
 
+// Global Callback handler for Android Native interface
+let pendingRewardCallback = null;
+window.onRewardAdCompleted = function() {
+    if (pendingRewardCallback) {
+        pendingRewardCallback();
+        pendingRewardCallback = null;
+    }
+};
+
+function showRewardAd(onSuccess) {
+    // Save callback to window-scoped pending execution
+    pendingRewardCallback = onSuccess;
+    
+    try {
+        if (typeof Android !== 'undefined' && Android !== null) {
+            // Attempt to trigger the reward ad. Native wrapper MUST call back into "window.onRewardAdCompleted()"
+            if (typeof Android.showRewardAd === "function") {
+                Android.showRewardAd();
+                return;
+            } else if (typeof Android.showRewardedAd === "function") {
+                Android.showRewardedAd();
+                return;
+            }
+        }
+    } catch (e) { 
+        console.log("Native Ad execution error, falling back:", e); 
+    }
+
+    // Web/Preview Sandbox Fallback: Instant execute
+    setTimeout(() => {
+        window.onRewardAdCompleted();
+    }, 100);
+}
+
 function stopAction() {
     isFiring = false;
     if (Date.now() - touchStartTime < 250) {
@@ -1623,9 +1657,9 @@ function makePileOfChairs() {
     }
     // Three chairs, each tipped on side at different angles
     const poses = [
-        {x:0,   y:1.5, z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
-        {x:2.5, y:3.0, z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
-        {x:-1.5,y:4.5, z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
+        {x:0,   y:2,  z:0,   rx:Math.PI/2+0.2, ry:0.3,          rz:0.1},
+        {x:3,   y:4,  z:1,   rx:Math.PI/2-0.3, ry:Math.PI*0.6,  rz:-0.15},
+        {x:-2,  y:6,  z:-1,  rx:-Math.PI/2+0.1,ry:Math.PI*1.3,  rz:0.2},
     ];
     poses.forEach(p=>{
         const c = buildChair();
@@ -1639,23 +1673,19 @@ function makePileOfChairs() {
 function makeDeskCorpse() {
     const g = new THREE.Group();
     const mat = new THREE.MeshLambertMaterial({color:0x3a3020,emissive:new THREE.Color(0x0a0908)});
-    // Build desk as a sub-group so legs rotate with the top when tipped
-    const desk = new THREE.Group();
-    // Tabletop — flat panel
-    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.6,6),mat);
-    top.position.set(0,0,0);
-    desk.add(top);
-    // Four legs going downward from corners — attached to top
-    [[3.8,2.2],[3.8,-2.2],[-3.8,2.2],[-3.8,-2.2]].forEach(([lx,lz])=>{
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.7,6,0.7),mat);
-        leg.position.set(lx,-3.3,lz);
-        desk.add(leg);
+    // Overturned desk — top panel lying on its side, legs pointing sideways
+    const tilt = 0.3 + Math.random()*0.4;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.8,6),mat);
+    top.position.set(0,3,0);
+    top.rotation.z = Math.PI/2 + tilt; // tipped over
+    g.add(top);
+    // Four legs attached to corners, lying sideways with top
+    [[3.5,0,2],[3.5,0,-2],[-3.5,0,2],[-3.5,0,-2]].forEach(([x,y,z])=>{
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.8,6,0.8),mat);
+        leg.position.set(x, 3 + Math.sin(tilt)*3, z);
+        leg.rotation.set(0,0,Math.PI/2+tilt+(Math.random()-0.5)*0.3);
+        g.add(leg);
     });
-    // Now tip the whole desk over on its side
-    const tilt = Math.PI/2 + 0.25 + Math.random()*0.35;
-    desk.rotation.z = tilt;
-    desk.position.set(0, 3.5, 0);
-    g.add(desk);
     g.colliderRadius=6;
     return g;
 }
@@ -1665,7 +1695,7 @@ let furnitureObjects = []; // {group, wx, wz, radius}
 function placeFurniture() {
     furnitureObjects = [];
     // One piece roughly every 25 open tiles
-    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 27); // ~2x more furniture
+    const targetCount = Math.floor((MAP_SIZE * MAP_SIZE * 0.25) / 55); // less furniture = less geometry
     let placed = 0, attempts = 0;
     while (placed < targetCount && attempts < targetCount * 30) {
         attempts++;
@@ -2183,22 +2213,6 @@ function selectDifficulty(level, e) {
     startGame();
 }
 
-function showRewardAd(onSuccess) {
-    window.onRewardEarned = onSuccess;
-    try {
-        if (typeof Android !== 'undefined' && Android !== null) {
-            try { Android.showRewardAd(); return; } 
-            catch (err1) {
-                try { Android.showRewardedAd(); return; } 
-                catch (err2) { console.log("Android error:", err1); }
-            }
-        }
-    } catch (e) { console.log("Native Ad error:", e); }
-
-    // Web/preview: instant reward (no countdown)
-    onSuccess();
-}
-
 document.getElementById('ad-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
     isPaused = true;
@@ -2237,9 +2251,13 @@ function startGame(){
 }
 
 pauseScreen.addEventListener('click', ()=>{
-    if(!gameStarted||!isPaused) return; isPaused=false; pauseScreen.style.display='none';
+    if(!gameStarted||!isPaused) return; 
+    isPaused=false; 
+    pauseScreen.style.display='none';
     if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
-    lastTF=performance.now(); prevTime=performance.now();
+    const now = performance.now();
+    lastTF = now; 
+    prevTime = now;
 });
 
 winScreen.addEventListener('click', (e)=>{
@@ -2250,6 +2268,13 @@ winScreen.addEventListener('click', (e)=>{
 
 document.getElementById('revive-yes').addEventListener('click', e=>{
     e.stopPropagation(); 
+    isPaused = true;
+    stopAction();
+    if(audioCtx && audioCtx.state==='running') audioCtx.suspend();
+    moveForward=moveBackward=moveLeft=moveRight=false;
+    joyX=joyY=0; leftTouchId=rightTouchId=null;
+    joyBase.style.display='none';
+
     showRewardAd(() => {
         revivesLeft--;
         reviveScreen.style.display='none';
@@ -2269,16 +2294,13 @@ document.getElementById('revive-yes').addEventListener('click', e=>{
         sprintBtn.classList.remove('active-sprint');
         isAutoWalking = false;
         autowalkBtn.classList.remove('active-autowalk');
-        // Reset timers so first frame delta is zero
+        
+        // Reset timing strictly on execution finish
         const now = performance.now();
         prevTime = now;
         lastTF = now;
         isPaused = true;
         document.getElementById('pause-screen').style.display='flex';
-        if(audioCtx && audioCtx.state==='running') audioCtx.suspend();
-        moveForward=moveBackward=moveLeft=moveRight=false;
-        joyX=joyY=0; leftTouchId=rightTouchId=null;
-        joyBase.style.display='none';
     });
 });
 document.getElementById('revive-no').addEventListener('click', e=>{ e.stopPropagation(); location.reload(); });
@@ -2989,9 +3011,9 @@ function animate() {
         }
 
         // Process Mist & Fire particles
-        for(let i=fireParticles.length-1; i>=0; i--) {
+        for(let i=0; i<fireParticles.length; i++) {
             let p = fireParticles[i]; p.life -= delta;
-            if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); }
+            if(p.life <= 0) { scene.remove(p.mesh); fireParticles.splice(i,1); i--; }
             else { 
                 p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); 
                 p.mesh.material.opacity = p.life/0.3; 
@@ -3000,9 +3022,9 @@ function animate() {
             }
         }
 
-        for(let i=mistParticles.length-1; i>=0; i--) {
+        for(let i=0; i<mistParticles.length; i++) {
             let p = mistParticles[i]; p.life -= delta;
-            if(p.life <= 0) { scene.remove(p.mesh); mistParticles.splice(i,1); }
+            if(p.life <= 0) { scene.remove(p.mesh); mistParticles.splice(i,1); i--; }
             else { 
                 p.mesh.position.add(p.vel.clone().multiplyScalar(delta)); 
                 p.mesh.material.opacity = p.life/0.5; 
@@ -3170,7 +3192,7 @@ function animate() {
                 const offsets = [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
                 for (const [ox,oz] of offsets) {
                     const nx2=egx+ox, nz2=egz+oz;
-                    if (nx2>0&&nx2<MAP_SIZE-1&&nz2>0&&nz2<MAP_SIZE-1&&grid[nx2][nz2]===0) {
+                    if (nx2>0&&nx2<MAP_SIZE-1&&grid[nx2][nz2]===0) {
                         e.mesh.position.x=(nx2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
                         e.mesh.position.z=(nz2-MAP_SIZE/2)*TILE_SIZE+TILE_SIZE/2;
                         break;
