@@ -37,7 +37,9 @@
             padding: 20px; box-sizing: border-box;
         }
         #paint-ad-prompt, #revive-screen { cursor: default; background-color: rgba(5,5,0,0.97); }
-        #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; cursor: default; }
+        #win-screen { background-color: rgba(0,10,0,0.93); color: #00ff00; cursor: default;
+    overflow-y: auto; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; padding-top: 20px; }
         #revive-screen { color: #d4d42b; }
 
         .liminal-panel {
@@ -429,20 +431,22 @@
     </div>
 
     <div id="win-screen" style="display:none;">
-        <div class="win-title">YOU CLIPPED BACK INTO REALITY</div>
-        <div class="win-flavor">Time spent in the Backrooms:</div>
-        <div class="win-time" id="win-time-display">00:00</div>
-        <div class="win-flavor" id="win-sanity-display" style="margin-top:10px;font-weight:bold;color:#d4d42b;">Sanity: SANE</div>
-        <div id="win-leaderboard-section" style="margin-top:18px;width:100%;max-width:380px;display:none;">
-            <div style="color:#00ff00;font-size:0.95em;margin-bottom:10px;letter-spacing:2px;">🏆 TOP 10 TIME — ENTER YOUR NAME</div>
-            <input id="survivor-name-input" type="text" maxlength="20"
-                placeholder="your name..."
-                style="width:100%;padding:10px 14px;font-family:monospace;font-size:1em;background:rgba(0,0,0,0.6);border:1px solid #00ff00;color:#fff;border-radius:4px;box-sizing:border-box;outline:none;letter-spacing:2px;"
-            />
-            <button id="survivor-submit-btn" class="choice-btn green" style="margin-top:10px;width:100%;max-width:100%;">SUBMIT TO SURVIVORS LOG</button>
-            <div id="survivor-submit-msg" style="color:#aaa;font-size:0.85em;margin-top:8px;min-height:18px;"></div>
+        <div style="max-width:480px;width:100%;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;">
+            <div class="win-title" style="font-size:1.6em;margin-bottom:8px;">YOU CLIPPED BACK INTO REALITY</div>
+            <div class="win-flavor" style="font-size:0.9em;margin-bottom:4px;">Time spent in the Backrooms:</div>
+            <div class="win-time" id="win-time-display" style="font-size:2.2em;margin:6px 0 10px 0;">00:00</div>
+            <div class="win-flavor" id="win-sanity-display" style="font-weight:bold;color:#d4d42b;font-size:0.9em;">Sanity: SANE</div>
+            <div id="win-leaderboard-section" style="margin-top:14px;width:100%;max-width:360px;display:none;">
+                <div style="color:#00ff00;font-size:0.85em;margin-bottom:8px;letter-spacing:2px;">🏆 TOP 10 — ENTER YOUR NAME</div>
+                <input id="survivor-name-input" type="text" maxlength="20"
+                    placeholder="your name..."
+                    style="width:100%;padding:8px 12px;font-family:monospace;font-size:0.95em;background:rgba(0,0,0,0.6);border:1px solid #00ff00;color:#fff;border-radius:4px;box-sizing:border-box;outline:none;letter-spacing:2px;"
+                />
+                <button id="survivor-submit-btn" class="choice-btn green" style="margin-top:8px;width:100%;max-width:100%;padding:10px;">SUBMIT TO SURVIVORS LOG</button>
+                <div id="survivor-submit-msg" style="color:#aaa;font-size:0.82em;margin-top:6px;min-height:16px;"></div>
+            </div>
+            <div class="win-hint" style="margin-top:16px;font-size:0.9em;">Tap anywhere to try again.</div>
         </div>
-        <div class="win-hint" style="margin-top:24px;">Tap anywhere to try again.</div>
     </div>
 
     <div id="revive-screen" style="display:none;">
@@ -510,6 +514,7 @@ let entities = [];
 let spraysLeft    = 50;
 let unlimitedPaint = false;
 let hasSeenPaintAdThisRound = false;
+let hasDeclinedPaintAd = false; // suppress prompt after 'no'
 let touchStartTime = 0;
 let lastSprayTime  = 0;
 
@@ -666,12 +671,7 @@ function createTexture(type) {
                 g.addColorStop(0,'rgba(18,12,3,0.45)'); g.addColorStop(1,'rgba(0,0,0,0)');
                 ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
             }
-            // Dried tideline rings
-            for (let i=0;i<3;i++) {
-                const px=Math.random()*SIZE, py=Math.random()*SIZE, r=15+Math.random()*30;
-                ctx.strokeStyle=`rgba(28,20,5,${0.18+Math.random()*0.15})`;
-                ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
-            }
+            // tideline rings removed
         } else {
             // Clean area — barely any marks
             for (let i=0;i<2;i++) {
@@ -718,12 +718,7 @@ function createTexture(type) {
                 g.addColorStop(1,'rgba(0,0,0,0)');
                 ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
             }
-            // Brown tidelines
-            for (let i=0;i<3;i++){
-                const px=Math.random()*SIZE,py=Math.random()*SIZE,r=18+Math.random()*35;
-                ctx.strokeStyle=`rgba(88,70,28,${0.22+Math.random()*0.18})`;
-                ctx.lineWidth=1.8; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
-            }
+            // tideline rings removed
         }
         // General grime always present
         for (let i=0;i<2000;i++){
@@ -816,7 +811,7 @@ const arrowMat = new THREE.MeshLambertMaterial({map: arrowTex, transparent: true
 
 // ─── DYNAMIC WORLD GENERATION ─────────────────────────────────────────────
 function buildWorld() {
-    floorTex.repeat.set(MAP_SIZE, MAP_SIZE);
+    floorTex.repeat.set(MAP_SIZE * 0.4, MAP_SIZE * 0.4); // larger carpet tiles = fewer visible seams
     ceilTex.repeat.set(MAP_SIZE, MAP_SIZE);
 
     const planeGeo = new THREE.PlaneGeometry(MAP_SIZE*TILE_SIZE, MAP_SIZE*TILE_SIZE);
@@ -947,7 +942,9 @@ function buildWorld() {
                 if (isStartWall) {
                     placeDecal(0, TILE_SIZE/2 + 0.1, 0, x, z); // face +Z direction
                     spawnedFirstGraffiti = true;
-                } else if (spawnedFirstGraffiti && Math.random() < 0.01) { 
+                } else if (spawnedFirstGraffiti && Math.random() < 0.01
+                    && (Math.abs(x-SPAWN_GRID_X) > 8 || Math.abs(z-SPAWN_GRID_Z) > 8)) {
+                    // Min 8 tiles from spawn so spawn tunnel stays clean
                     if (grid[x-1] && grid[x-1][z] === 0) placeDecal(-TILE_SIZE/2 - 0.1, 0, -Math.PI/2, x, z);
                     else if (grid[x+1] && grid[x+1][z] === 0) placeDecal(TILE_SIZE/2 + 0.1, 0, Math.PI/2, x, z);
                     else if (grid[x][z-1] === 0) placeDecal(0, -TILE_SIZE/2 - 0.1, Math.PI, x, z);
@@ -1436,6 +1433,7 @@ const mistTex = (function(){
 
 function showPaintAdPrompt() {
     if (unlimitedPaint) return;
+    if (hasDeclinedPaintAd) return; // player said no — wait until they find paint
     if (document.getElementById('paint-ad-prompt').style.display === 'flex') return;
     document.getElementById('paint-ad-prompt').style.display = 'flex';
     isPaused = true;
@@ -1506,8 +1504,20 @@ function sprayWall() {
         const g = new THREE.PlaneGeometry(6,6);
         const m = new THREE.MeshBasicMaterial({map:sprayTexture,transparent:true,depthWrite:false,color:0xffffff});
         const mesh = new THREE.Mesh(g,m);
-        mesh.position.copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.05));
-        mesh.lookAt(mesh.position.clone().add(hit.face.normal));
+        // Clamp spray position to stay within wall tile — avoid edge overflow
+        const sprayPos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.05));
+        const norm = hit.face.normal;
+        const MARGIN = 4.5; // half of PlaneGeometry(6,6) = 3, plus buffer
+        if (Math.abs(norm.x) < 0.5) { // wall faces Z
+            const tileX = Math.round(sprayPos.x / TILE_SIZE) * TILE_SIZE;
+            sprayPos.x = Math.max(tileX - TILE_SIZE/2 + MARGIN, Math.min(tileX + TILE_SIZE/2 - MARGIN, sprayPos.x));
+        } else { // wall faces X
+            const tileZ = Math.round(sprayPos.z / TILE_SIZE) * TILE_SIZE;
+            sprayPos.z = Math.max(tileZ - TILE_SIZE/2 + MARGIN, Math.min(tileZ + TILE_SIZE/2 - MARGIN, sprayPos.z));
+        }
+        sprayPos.y = Math.max(MARGIN, Math.min(WALL_HEIGHT - MARGIN, sprayPos.y));
+        mesh.position.copy(sprayPos);
+        mesh.lookAt(sprayPos.clone().add(norm));
         scene.add(mesh);
         
         playSprayHiss();
@@ -2263,7 +2273,8 @@ document.getElementById('ad-yes').addEventListener('click', e=>{
     });
 });
 document.getElementById('ad-no').addEventListener('click', e=>{
-    e.stopPropagation(); 
+    e.stopPropagation();
+    hasDeclinedPaintAd = true; // don't prompt again until paint is found
     paintAdPrompt.style.display='none';
     isPaused = true;
     stopAction();
@@ -2577,6 +2588,7 @@ function checkItemPickups(){
                     sprayCounterEl.innerText = `SPRAYS: ${spraysLeft}`;
                     hasSeenPaintAdThisRound = false; // Reset the prompt trigger!
                 }
+                hasDeclinedPaintAd = false; // reset — they found paint, prompt is fair again
                 showPickupFlash(`Paint Refilled!`, '#ff4444');
             }
             updateStatusBars();
@@ -2729,6 +2741,20 @@ document.addEventListener('keydown',e=>{
             break;
         case 'ShiftLeft': case 'ShiftRight':
             activateSprint();
+            break;
+        case 'KeyT':
+            if (exitGroups.length > 0) {
+                let nearest = exitGroups[0];
+                let minDist = camera.position.distanceTo(nearest.position);
+                for (let i = 1; i < exitGroups.length; i++) {
+                    let d = camera.position.distanceTo(exitGroups[i].position);
+                    if (d < minDist) {
+                        minDist = d;
+                        nearest = exitGroups[i];
+                    }
+                }
+                camera.position.set(nearest.position.x, PLAYER_HEIGHT, nearest.position.z + 40);
+            }
             break;
         case 'Escape': pauseGame(); break;
     }
