@@ -166,7 +166,7 @@
         
         /* SPRAY BUTTON */
         #spray-btn {
-            position: absolute; bottom: 50px; right: 75px; width: 75px; height: 75px;
+            position: absolute; bottom: 57px; right: 75px; width: 62px; height: 62px;
             background-color: rgba(100, 100, 100, 0.3); border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50%; display: none; align-items: center; justify-content: center;
             z-index: 25; pointer-events: auto; user-select: none; touch-action: none;
@@ -280,30 +280,71 @@
             <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
             <circle id="sprint-ring" cx="24" cy="24" r="22" fill="none" stroke="#00ff00" stroke-width="3" stroke-dasharray="138.23" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;" />
         </svg>
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position:relative; z-index:2;">
-            <line x1="20" y1="6" x2="20" y2="18"></line>
-            <polyline points="11 17 16 12 11 7"></polyline>
-            <polyline points="4 17 9 12 4 7"></polyline>
+        <svg viewBox="0 0 44 44" width="26" height="26" fill="none" style="position:relative; z-index:2;">
+            <!-- Head -->
+            <circle cx="31" cy="5" r="4" fill="white"/>
+            <!-- Torso — strong lean forward -->
+            <line x1="29" y1="9" x2="21" y2="20" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+            <!-- BACK ARM — swings straight back and horizontal away from body -->
+            <line x1="26" y1="13" x2="35" y2="13" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+            <!-- FRONT ARM — punches straight forward and horizontal -->
+            <line x1="24" y1="15" x2="13" y2="15" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+            <!-- FRONT LEG — knee high, foot plants forward -->
+            <path d="M22 20 L27 27 L22 38" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- BACK LEG — fully extended behind, foot off ground back -->
+            <path d="M22 20 L12 24 L10 36" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Speed lines -->
+            <line x1="1" y1="12" x2="9" y2="12" stroke="white" stroke-width="2.2" stroke-linecap="round" opacity="0.75"/>
+            <line x1="1" y1="17" x2="7" y2="17" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+            <line x1="2" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.4" stroke-linecap="round" opacity="0.4"/>
         </svg>
     </div>
 
     <!-- AUTO-WALK BUTTON -->
     <div id="autowalk-btn">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="4" r="2.5"></circle>
-            <path d="M12 7v6"></path>
-            <path d="M7 10l5-3l5 3"></path>
-            <path d="M8 19l4-6l4 6"></path>
+        <svg viewBox="0 0 32 44" width="20" height="26" fill="none">
+            <!-- Walker: upright, one foot clearly forward one clearly back -->
+            <!-- Head -->
+            <circle cx="16" cy="5" r="4" fill="white"/>
+            <!-- Torso — vertical -->
+            <line x1="16" y1="9" x2="15" y2="20" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+            <!-- Right arm — swings back (opposite front leg) -->
+            <path d="M15.5 12 L20 16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Left arm — swings forward -->
+            <path d="M15.5 12 L10 15" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- LEFT LEG — forward: foot plants ahead, knee slightly bent -->
+            <path d="M15 20 L11 28 L8 38" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- RIGHT LEG — back: straight push-off behind body -->
+            <path d="M15 20 L19 29 L22 38" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </div>
 
     <!-- SPRAY BUTTON -->
     <div id="spray-btn">
-        <svg viewBox="0 0 24 24" width="34" height="34" stroke="white" stroke-width="2" fill="none">
-            <path d="M6 8h12v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8z"></path>
-            <path d="M10 2h4v2h-4z"></path>
-            <path d="M8 4h8v4H8z"></path>
-            <circle cx="12" cy="14" r="2" fill="white"></circle>
+        <svg viewBox="0 0 62 62" width="42" height="42" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Can body — left side, compact -->
+            <rect x="4" y="28" width="18" height="28" rx="2.5" stroke-width="2.5"/>
+            <!-- Shoulder -->
+            <path d="M6 28 L6 23 Q6 20 9 20 L16 20 Q19 20 19 23 L19 28" stroke-width="2"/>
+            <!-- Nozzle -->
+            <rect x="17" y="19" width="5" height="4" rx="1" stroke-width="1.8"/>
+            <!-- Mist — fan of lines spreading right across button -->
+            <!-- Main centre beam -->
+            <line x1="22" y1="21"  x2="58" y2="21"  stroke-width="2.2" opacity="1.0"/>
+            <!-- Fan lines above centre -->
+            <line x1="22" y1="21"  x2="54" y2="10"  stroke-width="1.6" opacity="0.85"/>
+            <line x1="22" y1="21"  x2="58" y2="14"  stroke-width="1.4" opacity="0.75"/>
+            <line x1="22" y1="21"  x2="58" y2="17"  stroke-width="1.2" opacity="0.65"/>
+            <!-- Fan lines below centre -->
+            <line x1="22" y1="21"  x2="58" y2="25"  stroke-width="1.2" opacity="0.65"/>
+            <line x1="22" y1="21"  x2="58" y2="29"  stroke-width="1.4" opacity="0.75"/>
+            <line x1="22" y1="21"  x2="54" y2="33"  stroke-width="1.6" opacity="0.85"/>
+            <!-- Particle dots at tips -->
+            <circle cx="58" cy="21" r="1.2" fill="white" stroke="none" opacity="0.9"/>
+            <circle cx="55" cy="11" r="0.9" fill="white" stroke="none" opacity="0.7"/>
+            <circle cx="55" cy="32" r="0.9" fill="white" stroke="none" opacity="0.7"/>
+            <circle cx="58" cy="14" r="0.8" fill="white" stroke="none" opacity="0.6"/>
+            <circle cx="58" cy="28" r="0.8" fill="white" stroke="none" opacity="0.6"/>
         </svg>
     </div>
 
@@ -495,7 +536,7 @@ let PAINT_COUNT        = 162;
 
 // ENTITY AI
 let ENTITY_COUNT       = 800;   
-const ENTITY_MIN_DIST    = 40.0; // stop just inside flame range — fair fight
+const ENTITY_MIN_DIST    = 15.0; // close enough to burn — 45 unit flame still reaches
 
 // GAME SETTINGS
 let lookSensitivity = 2.0;
@@ -993,164 +1034,209 @@ function buildWorld() {
 
 // ─── CANON ENTITY TEXTURES (ANIMATED) ──────────────────────────────────────
 function generateBacteriaFrames(count, poseType) {
-    let frames = [];
-    for(let f=0; f<count; f++) {
-        const c = document.createElement('canvas');
-        c.width = 256; c.height = 512;
-        const ctx = c.getContext('2d');
-        
-        ctx.clearRect(0,0,256,512);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+    const W = 256, H = 512;
+    const cl = (v,a,b) => Math.max(a, Math.min(b, v));
+    const rr = (a,b) => a + Math.random()*(b-a);
 
-        // Soft eerie glow so it doesn't vanish into the dark environment
-        ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
-        ctx.shadowBlur = 20;
-
-        // Helper to draw a "3D" looking thick limb
-        const drawLimb = (x1, y1, x2, y2, thickness, segments, spread) => {
-            let pts = [{x:x1,y:y1}];
-            for(let i=1; i<segments; i++) {
-                let t = i/segments;
-                pts.push({
-                    x: x1 + (x2-x1)*t + (Math.random()-0.5)*spread,
-                    y: y1 + (y2-y1)*t + (Math.random()-0.5)*spread
-                });
-            }
-            pts.push({x:x2, y:y2});
-            
-            // Draw outer dark edge
-            ctx.strokeStyle = '#020202';
-            ctx.lineWidth = thickness;
+    // Draw wire segment with tar material
+    function wire(ctx, pts, thick) {
+        if (pts.length < 2) return;
+        for (let pass = 0; pass < 3; pass++) {
             ctx.beginPath();
             ctx.moveTo(pts[0].x, pts[0].y);
-            for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-            ctx.stroke();
-
-            // Draw internal fleshy/wiry highlights so it is visible in the dark
-            ctx.shadowBlur = 0; // turn off halo for internal cables
-            for(let w=0; w<4; w++) {
-                ctx.strokeStyle = (w % 2 === 0) ? '#2a2a2a' : '#3a3a2a';
-                ctx.lineWidth = thickness * 0.2 + Math.random()*2;
-                ctx.beginPath();
-                ctx.moveTo(pts[0].x + (Math.random()-0.5)*thickness*0.6, pts[0].y);
-                for(let i=1; i<pts.length; i++) {
-                    ctx.lineTo(pts[i].x + (Math.random()-0.5)*thickness*0.6, pts[i].y + (Math.random()-0.5)*thickness*0.6);
+            for (let i = 1; i < pts.length; i++) {
+                if (i < pts.length - 1) {
+                    const mx = (pts[i].x + pts[i+1].x)/2;
+                    const my = (pts[i].y + pts[i+1].y)/2;
+                    ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+                } else {
+                    ctx.lineTo(pts[i].x, pts[i].y);
                 }
-                ctx.stroke();
             }
+            if (pass === 0) { ctx.strokeStyle='#040201'; ctx.lineWidth=thick; }
+            else if (pass === 1) { ctx.strokeStyle='#1c1208'; ctx.lineWidth=thick*0.38; }
+            else { ctx.strokeStyle='rgba(105,85,60,0.28)'; ctx.lineWidth=Math.max(0.7,thick*0.09); }
+            ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+        }
+    }
 
-            // Oily specular highlight
-            ctx.strokeStyle = 'rgba(180, 180, 170, 0.6)'; // Wet, glossy reflection
-            ctx.lineWidth = Math.max(1, thickness * 0.08);
-            ctx.beginPath();
-            let offsetX = thickness * 0.25;
-            let offsetY = -thickness * 0.1;
-            ctx.moveTo(pts[0].x - offsetX, pts[0].y - offsetY);
-            for(let i=1; i<pts.length; i++) {
-                ctx.lineTo(pts[i].x - offsetX + (Math.random()-0.5)*3, pts[i].y - offsetY + (Math.random()-0.5)*3);
+    // Messy spiral scribble head — NOT a circle, filled with overlapping loops
+    function scribbleHead(ctx, hx, hy, r, f) {
+        const j = () => (Math.random()-0.5)*5;
+        // Outer ragged silhouette — 3 irregular looping strokes
+        for (let s = 0; s < 4; s++) {
+            const pts = [];
+            const segs = 11;
+            const startA = s * 0.7 + f*0.15;
+            for (let i = 0; i <= segs; i++) {
+                const a = startA + (i/segs)*Math.PI*(1.6+s*0.3);
+                // Irregular radius — lumpy not circular
+                const rad = r*(0.55 + Math.random()*0.55);
+                pts.push({
+                    x: cl(hx + Math.cos(a)*rad + j(), 10, W-10),
+                    y: cl(hy + Math.sin(a)*rad*0.85 + j(), 8, hy+r+10)
+                });
             }
-            ctx.stroke();
+            wire(ctx, pts, s < 2 ? 7.5 : 4.5);
+        }
+        // Spiral interior fill — dense overlapping arcs going inward
+        for (let s = 0; s < 5; s++) {
+            const pts = [];
+            const innerR = r*(0.7 - s*0.1);
+            if (innerR < 4) break;
+            const segs = 8;
+            const startA = s*1.1 + f*0.2;
+            for (let i = 0; i <= segs; i++) {
+                const a = startA + (i/segs)*Math.PI*(1.2+Math.random()*0.6);
+                pts.push({
+                    x: cl(hx + Math.cos(a)*innerR*(0.6+Math.random()*0.5) + j(), 10, W-10),
+                    y: cl(hy + Math.sin(a)*innerR*0.8*(0.6+Math.random()*0.4) + j(), 8, hy+r+6)
+                });
+            }
+            wire(ctx, pts, 3.5 + Math.random()*1.5);
+        }
+        // Cross-hatch scribble through centre
+        wire(ctx, [
+            {x:cl(hx-r*0.6+j(),10,W-10), y:cl(hy+j(),8,H-8)},
+            {x:cl(hx+j()*0.4,10,W-10), y:cl(hy-r*0.55+j(),8,H-8)},
+            {x:cl(hx+r*0.6+j(),10,W-10), y:cl(hy+r*0.2+j(),8,H-8)},
+            {x:cl(hx-r*0.3+j(),10,W-10), y:cl(hy+r*0.5+j(),8,H-8)},
+        ], 4);
+    }
 
-            // Restore halo
-            ctx.shadowColor = 'rgba(255, 255, 200, 0.15)';
-            ctx.shadowBlur = 20;
-        };
+    let frames = [];
+    for (let f = 0; f < count; f++) {
+        const c = document.createElement('canvas'); c.width=W; c.height=H;
+        const ctx = c.getContext('2d'); ctx.clearRect(0,0,W,H);
 
-        let bendX = 0;
-        let bendY = 0;
-        let isCrawling = false;
-        let isAsymmetric = false;
-
-        // Apply 7 unique glitch poses
-        if (poseType === 'left') bendX = -30;
-        if (poseType === 'right') bendX = 30;
-        if (poseType === 'extreme_left') { bendX = -70; bendY = 30; }
-        if (poseType === 'extreme_right') { bendX = 70; bendY = 30; }
-        if (poseType === 'crawl') { isCrawling = true; bendY = 110; }
-        if (poseType === 'asymmetric') { bendX = (Math.random()-0.5)*50; isAsymmetric = true; }
-
-        // Drop the torso and head heavily if crawling or twisting
-        let hx = 128 + bendX;
-        let hy = (isCrawling ? 200 : 90) + bendY; 
+        const j  = () => (Math.random()-0.5)*3; // Reduced jitter to make movement clearer
+        const thk = 8.5; 
+        const floorY = H - 15; // Pin limbs perfectly to the ground
+        const cx = 128;
         
-        let hipX = 128 + bendX * 0.5;
-        let hipY = (isCrawling ? 360 : 270) + bendY * 0.5;
-        
-        // Draw Torso
-        drawLimb(hx, hy + 20, hipX, hipY, 35, 6, 20);
-        // Draw multiple intertwined torso strands to make it beefy
-        drawLimb(hx-10, hy + 30, hipX+10, hipY-20, 20, 5, 25);
-        drawLimb(hx+10, hy + 30, hipX-10, hipY-20, 20, 5, 25);
+        // Procedural walking/crawling phase
+        const phase = (f/count) * Math.PI * 2;
+        const sinP = Math.sin(phase);
+        const cosP = Math.cos(phase);
+        const sinP_opp = Math.sin(phase + Math.PI);
+        const cosP_opp = Math.cos(phase + Math.PI);
 
-        // --- ARMS (Long enough to reach/drag on the floor) ---
-        let lHandX = (isCrawling ? 20 : 50) + bendX + (Math.random()-0.5)*40; 
-        let lHandY = 490 + Math.random()*22; // Floor contact
-        let rHandX = (isCrawling ? 236 : 206) + bendX + (Math.random()-0.5)*40; 
-        let rHandY = 490 + Math.random()*22; // Floor contact
+        let headY, torsoY, hipY;
+        let lShX, lShY, rShX, rShY;
+        let lHipX, lHipY, rHipX, rHipY;
+        let lHndX, lHndY, rHndX, rHndY;
+        let lFtX, lFtY, rFtX, rFtY;
+        let lElbDir = -1, rElbDir = 1; // Pushes elbows outwards
+        let lKnDir = -1, rKnDir = 1;   // Pushes knees outwards
 
-        // If asymmetric, unpredictably throw one arm in the air or bend strangely
-        if (isAsymmetric) {
-            if (Math.random() > 0.5) {
-                lHandY = 150 + Math.random() * 100;
-                lHandX = hx - 80 - Math.random() * 40;
-            } else {
-                rHandY = 150 + Math.random() * 100;
-                rHandX = hx + 80 + Math.random() * 40;
-            }
+        // Distinct animated movement variations
+        if (poseType === 'center') { // tall_walk
+            headY = 80; torsoY = 120; hipY = 260;
+            lHndX = cx - 40 + sinP*20; lHndY = 280 - Math.max(0, cosP*15);
+            rHndX = cx + 40 + sinP_opp*20; rHndY = 280 - Math.max(0, cosP_opp*15);
+            lFtX = cx - 25 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*30);
+            rFtX = cx + 25 + sinP*40; rFtY = floorY - Math.max(0, cosP*30);
+        } else if (poseType === 'left') { // crawl
+            headY = 260; torsoY = 290; hipY = 380;
+            lHndX = cx - 50 + sinP*45; lHndY = floorY - Math.max(0, cosP*30);
+            rHndX = cx + 50 + sinP_opp*45; rHndY = floorY - Math.max(0, cosP_opp*30);
+            lFtX = cx - 30 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*25);
+            rFtX = cx + 30 + sinP*40; rFtY = floorY - Math.max(0, cosP*25);
+            lElbDir = -1.5; rElbDir = 1.5;
+        } else if (poseType === 'right') { // scuttle
+            headY = 360; torsoY = 390; hipY = 440;
+            lHndX = cx - 80 + sinP*50; lHndY = floorY - Math.max(0, cosP*25);
+            rHndX = cx + 80 + sinP_opp*50; rHndY = floorY - Math.max(0, cosP_opp*25);
+            lFtX = cx - 50 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*20);
+            rFtX = cx + 50 + sinP*40; rFtY = floorY - Math.max(0, cosP*20);
+            lKnDir = -1.5; rKnDir = 1.5;
+        } else if (poseType === 'crawl') { // lurch
+            headY = 150; torsoY = 180; hipY = 300;
+            lHndX = cx - 60 + sinP*20; lHndY = floorY; // Drags left arm on floor
+            rHndX = cx + 50 + sinP_opp*20; rHndY = 120 + cosP_opp*20;
+            lFtX = cx - 25 + sinP_opp*50; lFtY = floorY - Math.max(0, cosP_opp*40);
+            rFtX = cx + 25 + sinP*20; rFtY = floorY - Math.max(0, cosP*10); // Limps right leg
+        } else if (poseType === 'extreme_left') { // tripod
+            headY = 220; torsoY = 250; hipY = 350;
+            lHndX = cx - 40 + sinP*50; lHndY = floorY - Math.max(0, cosP*40); // Uses arm to walk
+            rHndX = cx + 60; rHndY = 150 + sinP*15; // Raised like an antenna
+            lFtX = cx - 20 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*25);
+            rFtX = cx + 30 + sinP*40; rFtY = floorY - Math.max(0, cosP*25);
+        } else if (poseType === 'extreme_right') { // slither
+            headY = 440 + cosP*10; torsoY = 450 + cosP_opp*10; hipY = 470 + cosP*10;
+            lHndX = cx - 70 + sinP*30; lHndY = floorY;
+            rHndX = cx + 70 + sinP_opp*30; rHndY = floorY;
+            lFtX = cx - 40 + sinP_opp*30; lFtY = floorY;
+            rFtX = cx + 40 + sinP*30; rFtY = floorY;
+            lElbDir = -2; rElbDir = 2; lKnDir = -2; rKnDir = 2;
+        } else { // asymmetric -> gallop
+            headY = 200; torsoY = 230; hipY = 340;
+            lHndX = cx - 35 + sinP*60; lHndY = floorY - Math.max(0, cosP*40);
+            rHndX = cx + 35 + sinP*60; rHndY = floorY - Math.max(0, cosP*40);
+            lFtX = cx - 25 + sinP_opp*50; lFtY = floorY - Math.max(0, cosP_opp*35);
+            rFtX = cx + 25 + sinP_opp*50; rFtY = floorY - Math.max(0, cosP_opp*35);
         }
 
-        // Elbows bend deeply outwards and lower to accommodate massively long arms
-        let lElbowX = hx - (isCrawling ? 80 : 60) + bendX*0.5 - Math.random()*20; 
-        let lElbowY = isCrawling ? 250 : 320 + Math.random()*40;
-        let rElbowX = hx + (isCrawling ? 80 : 60) + bendX*0.5 + Math.random()*20; 
-        let rElbowY = isCrawling ? 250 : 320 + Math.random()*40;
+        // Anchor points explicitly locked to Torso
+        lShX = cx - 18; lShY = torsoY + 10;
+        rShX = cx + 18; rShY = torsoY + 10;
+        lHipX = cx - 12; lHipY = hipY;
+        rHipX = cx + 12; rHipY = hipY;
 
-        if (isAsymmetric) {
-            if (lHandY < 300) lElbowY = hy + 40;
-            if (rHandY < 300) rElbowY = hy + 40;
-        }
+        // ── DRAW ORDER ──────────────────────────────────────────────────
 
-        drawLimb(hx - 20, hy + 40, lElbowX, lElbowY, 22, 4, 15);
-        drawLimb(lElbowX, lElbowY, lHandX, lHandY, 18, 4, 15);
-
-        drawLimb(hx + 20, hy + 40, rElbowX, rElbowY, 22, 4, 15);
-        drawLimb(rElbowX, rElbowY, rHandX, rHandY, 18, 4, 15);
-
-        // --- LEGS ---
-        let lFootX = 80 + (Math.random()-0.5)*25; let lFootY = 512;
-        let rFootX = 176 + (Math.random()-0.5)*25; let rFootY = 512;
-        let lKneeX = hipX - 35; let lKneeY = 390;
-        let rKneeX = hipX + 35; let rKneeY = 390;
-
-        drawLimb(hipX - 10, hipY, lKneeX, lKneeY, 26, 4, 15);
-        drawLimb(lKneeX, lKneeY, lFootX, lFootY, 20, 3, 10);
+        // Neck
+        wire(ctx, [{x:cx, y:headY+20}, {x:cx, y:torsoY}], thk-1);
         
-        drawLimb(hipX + 10, hipY, rKneeX, rKneeY, 26, 4, 15);
-        drawLimb(rKneeX, rKneeY, rFootX, rFootY, 20, 3, 10);
+        // Torso body (multiple tangled wires)
+        wire(ctx, [{x:cx-5, y:torsoY}, {x:cx-8, y:(torsoY+hipY)/2}, {x:cx-5, y:hipY}], thk+2);
+        wire(ctx, [{x:cx+5, y:torsoY}, {x:cx+8, y:(torsoY+hipY)/2}, {x:cx+5, y:hipY}], thk+2);
+        wire(ctx, [{x:cx, y:torsoY+5}, {x:cx, y:hipY-5}], thk+4);
+        
+        // Explicit Shoulder Connectors
+        wire(ctx, [{x:cx, y:torsoY}, {x:lShX, y:lShY}], thk);
+        wire(ctx, [{x:cx, y:torsoY}, {x:rShX, y:rShY}], thk);
 
-        // --- HEAD ---
-        // Head: cluster of spheres
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 10;
-        for(let i=0; i<35; i++) {
-            let ox = hx + (Math.random()-0.5)*50;
-            let oy = hy + (Math.random()-0.5)*50;
-            if (Math.hypot(ox-hx, oy-hy) > 30) continue;
-            let r = 8 + Math.random()*15;
-            
-            // Sphere gradient
-            let grad = ctx.createRadialGradient(ox-r*0.3, oy-r*0.3, r*0.1, ox, oy, r);
-            grad.addColorStop(0, '#555555');
-            grad.addColorStop(0.4, '#222222');
-            grad.addColorStop(1, '#000000');
-            
-            ctx.beginPath();
-            ctx.fillStyle = grad;
-            ctx.arc(ox, oy, r, 0, Math.PI*2);
-            ctx.fill();
+        // Explicit Hip Connectors
+        wire(ctx, [{x:cx, y:hipY}, {x:lHipX, y:lHipY}], thk);
+        wire(ctx, [{x:cx, y:hipY}, {x:rHipX, y:rHipY}], thk);
+
+        // Limbs function using a midpoint push for elbows/knees to keep them connected
+        function drawLimb(x1, y1, x2, y2, pushX, pushY, thick) {
+            let midX = (x1 + x2)/2 + pushX;
+            let midY = (y1 + y2)/2 + pushY;
+            wire(ctx, [{x:x1, y:y1}, {x:midX, y:midY}, {x:x2, y:y2}], thick);
         }
-        ctx.shadowBlur = 0;
+
+        // Arms
+        drawLimb(lShX, lShY, lHndX+j(), lHndY+j(), lElbDir*25, 10, thk-1);
+        drawLimb(rShX, rShY, rHndX+j(), rHndY+j(), rElbDir*25, 10, thk-1);
+        
+        // Legs
+        drawLimb(lHipX, lHipY, lFtX+j(), lFtY+j(), lKnDir*20, -10, thk);
+        drawLimb(rHipX, rHipY, rFtX+j(), rFtY+j(), rKnDir*20, -10, thk);
+        
+        // Hand/Feet details
+        wire(ctx, [{x:lHndX, y:lHndY}, {x:lHndX-10+j(), y:lHndY+10}], thk-4);
+        wire(ctx, [{x:lHndX, y:lHndY}, {x:lHndX+10+j(), y:lHndY+10}], thk-4);
+        wire(ctx, [{x:rHndX, y:rHndY}, {x:rHndX-10+j(), y:rHndY+10}], thk-4);
+        wire(ctx, [{x:rHndX, y:rHndY}, {x:rHndX+10+j(), y:rHndY+10}], thk-4);
+        wire(ctx, [{x:lFtX, y:lFtY}, {x:lFtX-15+j(), y:lFtY+5}], thk-3);
+        wire(ctx, [{x:lFtX, y:lFtY}, {x:lFtX+15+j(), y:lFtY+5}], thk-3);
+        wire(ctx, [{x:rFtX, y:rFtY}, {x:rFtX-15+j(), y:rFtY+5}], thk-3);
+        wire(ctx, [{x:rFtX, y:rFtY}, {x:rFtX+15+j(), y:rFtY+5}], thk-3);
+
+        scribbleHead(ctx, cx + j(), headY + j(), 27, f);
+        
+        // Shadow on floor
+        const shadowG = ctx.createRadialGradient(cx, H-10, 2, cx, H-10, 40);
+        shadowG.addColorStop(0,'rgba(0,0,0,0.35)'); shadowG.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=shadowG; ctx.beginPath(); ctx.ellipse(cx,H-10,38,8,0,0,Math.PI*2); ctx.fill();
+
+        // Glow
+        const g=ctx.createRadialGradient(cx,H*0.45,6,cx,H*0.45,80);
+        g.addColorStop(0,'rgba(18,10,4,0.16)'); g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
         frames.push(new THREE.CanvasTexture(c));
     }
@@ -1159,106 +1245,128 @@ function generateBacteriaFrames(count, poseType) {
 
 function generateShadowFrames(count, eyesOpen) {
     let frames = [];
-    for(let f=0; f<count; f++) {
-        const c = document.createElement('canvas'); 
+    for (let f = 0; f < count; f++) {
+        const c = document.createElement('canvas');
         c.width = 256; c.height = 512;
         const ctx = c.getContext('2d');
-        
-        // Remove entire black void background
-        ctx.clearRect(0,0,256,512);
+        ctx.clearRect(0, 0, 256, 512);
 
-        let pts = 16; 
-        let smileCY = 380; // Bottom of the smile (center)
-        let smileW = 160;  // Total width
-        let smileH = 140;  // Height of the curve
-        
-        // Messy, crude, jagged teeth forming a horseshoe
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(255,255,255,0.4)';
-        ctx.shadowBlur = 8;
-        
-        // Top Row of teeth
-        for(let i=0; i<=pts; i++) {
-            let t = i/pts;
-            let nx = (t - 0.5) * 2; 
-            let x = 128 + nx * (smileW/2);
-            let y = smileCY - (nx * nx) * smileH; 
-            
-            let toothW = 8 + Math.random()*5;
-            let toothH = 15 + Math.random()*15;
-            
+        const smileCY = 370, smileW = 155, smileH = 132;
+        const pts = 16;
+
+        // no gum arc — teeth stand alone
+
+        // ── UPPER TEETH ──
+        for (let i = 0; i <= pts; i++) {
+            const t = i/pts, nx = (t-0.5)*2;
+            const x = 128 + nx*(smileW/2);
+            const y = smileCY - nx*nx*smileH;
+            const tw = 7 + Math.random()*5;
+            const th = 13 + Math.random()*13;
+
+            // Shadow side
             ctx.beginPath();
-            ctx.moveTo(x - toothW/2, y);
-            ctx.lineTo(x + toothW/2, y);
-            // Hooking downwards
-            ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y + toothH*0.7, x + (Math.random()-0.5)*10, y + toothH);
+            ctx.moveTo(x + tw*0.15, y);
+            ctx.lineTo(x + tw*0.5, y);
+            ctx.quadraticCurveTo(x + tw*0.45 + (Math.random()-0.5)*6, y + th*0.6, x + (Math.random()-0.5)*4, y + th);
             ctx.closePath();
-            ctx.fill();
-            ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
-        }
-        
-        // Bottom Row of teeth
-        for(let i=0; i<=pts; i++) {
-            let t = i/pts;
-            let nx = (t - 0.5) * 2;
-            let x = 128 + nx * (smileW/2);
-            let gap = 45 * (1 - nx * nx); // Open in the middle, pinched at edges
-            let y = smileCY - (nx * nx) * smileH + gap;
-            
-            let toothW = 8 + Math.random()*5;
-            let toothH = 15 + Math.random()*15;
-            
+            ctx.fillStyle = 'rgba(150,142,128,0.5)'; ctx.fill();
+
+            // Lit face
             ctx.beginPath();
-            ctx.moveTo(x - toothW/2, y);
-            ctx.lineTo(x + toothW/2, y);
-            // Hooking upwards
-            ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y - toothH*0.7, x + (Math.random()-0.5)*10, y - toothH);
+            ctx.moveTo(x - tw*0.5, y);
+            ctx.lineTo(x + tw*0.2, y);
+            ctx.quadraticCurveTo(x + (Math.random()-0.5)*6, y + th*0.6, x - tw*0.05 + (Math.random()-0.5)*4, y + th);
+            ctx.quadraticCurveTo(x - tw*0.4, y + th*0.55, x - tw*0.5, y);
             ctx.closePath();
-            ctx.fill();
-            ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000'; ctx.stroke();
+            const tg = ctx.createLinearGradient(x, y, x, y+th);
+            tg.addColorStop(0, '#eeebe5'); tg.addColorStop(0.5, '#d4d0c8'); tg.addColorStop(1, '#a8a49c');
+            ctx.fillStyle = tg; ctx.fill();
+            ctx.strokeStyle = 'rgba(70,64,55,0.5)'; ctx.lineWidth = 0.8; ctx.stroke();
+            if (Math.random() > 0.5) {
+                ctx.beginPath(); ctx.moveTo(x+(Math.random()-0.5)*tw*0.3, y+th*0.15);
+                ctx.lineTo(x+(Math.random()-0.5)*tw*0.3, y+th*0.6);
+                ctx.strokeStyle = 'rgba(100,90,78,0.3)'; ctx.lineWidth = 0.6; ctx.stroke();
+            }
         }
 
-        // Eyes nestled deep inside the curve of the smile
+        // ── LOWER TEETH ──
+        for (let i = 0; i <= pts; i++) {
+            const t = i/pts, nx = (t-0.5)*2;
+            const x = 128 + nx*(smileW/2);
+            const gap = 40*(1-nx*nx);
+            const y = smileCY - nx*nx*smileH + gap;
+            const tw = 6 + Math.random()*4;
+            const th = 11 + Math.random()*10;
+
+            ctx.beginPath();
+            ctx.moveTo(x + tw*0.1, y);
+            ctx.lineTo(x + tw*0.5, y);
+            ctx.quadraticCurveTo(x + tw*0.4 + (Math.random()-0.5)*5, y - th*0.55, x + (Math.random()-0.5)*4, y - th);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(130,122,108,0.4)'; ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(x - tw*0.5, y);
+            ctx.lineTo(x + tw*0.15, y);
+            ctx.quadraticCurveTo(x+(Math.random()-0.5)*5, y-th*0.55, x-(Math.random()-0.5)*3, y-th);
+            ctx.quadraticCurveTo(x-tw*0.38, y-th*0.5, x-tw*0.5, y);
+            ctx.closePath();
+            const tg2 = ctx.createLinearGradient(x, y-th, x, y);
+            tg2.addColorStop(0, '#c8c4bc'); tg2.addColorStop(1, '#e4e0d8');
+            ctx.fillStyle = tg2; ctx.fill();
+            ctx.strokeStyle = 'rgba(70,64,55,0.45)'; ctx.lineWidth = 0.8; ctx.stroke();
+        }
+
+        // ── EYES — deep cataract, milky and dead ──
         if (eyesOpen) {
-            // Milky, cataracted, mirror-like gradient
-            let eyeGradL = ctx.createRadialGradient(108, 280, 2, 108, 280, 18);
-            eyeGradL.addColorStop(0, '#ffffff');
-            eyeGradL.addColorStop(0.5, '#cccccc');
-            eyeGradL.addColorStop(1, '#555555');
-            
-            let eyeGradR = ctx.createRadialGradient(148, 280, 2, 148, 280, 18);
-            eyeGradR.addColorStop(0, '#ffffff');
-            eyeGradR.addColorStop(0.5, '#cccccc');
-            eyeGradR.addColorStop(1, '#555555');
+            [[104, 276], [152, 276]].forEach(([ex, ey], idx) => {
+                // Deep socket shadow
+                const sockG = ctx.createRadialGradient(ex, ey, 1, ex, ey, 24);
+                sockG.addColorStop(0, 'rgba(0,0,0,0.75)');
+                sockG.addColorStop(0.55, 'rgba(0,0,0,0.4)');
+                sockG.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = sockG;
+                ctx.beginPath(); ctx.ellipse(ex, ey, 24, 17, idx===0?-0.08:0.08, 0, Math.PI*2); ctx.fill();
 
-            ctx.shadowColor = 'rgba(200, 200, 220, 0.4)'; // Ghostly, dead white/grey glow
-            ctx.shadowBlur = 15;
+                // Eyeball — milky cataract gradient
+                const eyeG = ctx.createRadialGradient(ex-4, ey-3, 0.5, ex, ey, 15);
+                eyeG.addColorStop(0, '#dddad6');
+                eyeG.addColorStop(0.3, '#b8b5b0');
+                eyeG.addColorStop(0.65, '#888480');
+                eyeG.addColorStop(1, '#3a3835');
+                ctx.fillStyle = eyeG;
+                ctx.beginPath(); ctx.ellipse(ex, ey, 15, 11, idx===0?-0.08:0.08, 0, Math.PI*2); ctx.fill();
 
-            // Left eye (milky pool)
-            ctx.fillStyle = eyeGradL;
-            ctx.beginPath(); ctx.ellipse(108, 280, 17, 12, -0.1, 0, Math.PI*2); ctx.fill();
-            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; ctx.stroke();
-            
-            // Right eye (milky pool)
-            ctx.fillStyle = eyeGradR;
-            ctx.beginPath(); ctx.ellipse(148, 280, 17, 12, 0.1, 0, Math.PI*2); ctx.fill();
-            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; ctx.stroke();
-            
-            ctx.shadowBlur = 0;
-            
-            // Add a crisp white specular reflection to give it that "mirror/glass" dead gaze
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.beginPath(); ctx.ellipse(103, 276, 5, 2.5, -0.3, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(143, 276, 5, 2.5, 0.3, 0, Math.PI*2); ctx.fill();
+                // Cloudy iris overlay — cataract effect
+                const cataractG = ctx.createRadialGradient(ex, ey, 0, ex, ey, 9);
+                cataractG.addColorStop(0, 'rgba(200,196,188,0.7)');
+                cataractG.addColorStop(0.5, 'rgba(150,145,138,0.5)');
+                cataractG.addColorStop(1, 'rgba(80,77,72,0.2)');
+                ctx.fillStyle = cataractG;
+                ctx.beginPath(); ctx.ellipse(ex, ey, 9, 7, 0, 0, Math.PI*2); ctx.fill();
+
+                // Specular — small crisp glint
+                ctx.fillStyle = 'rgba(255,255,255,0.82)';
+                ctx.beginPath(); ctx.ellipse(ex-4, ey-3, 3.5, 2, -0.4, 0, Math.PI*2); ctx.fill();
+
+                // Eyelid rim
+                ctx.strokeStyle = 'rgba(25,20,16,0.6)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.ellipse(ex, ey, 15, 11, idx===0?-0.08:0.08, 0, Math.PI*2); ctx.stroke();
+                // Upper lid shadow crease
+                ctx.beginPath(); ctx.moveTo(ex-14, ey-4);
+                ctx.quadraticCurveTo(ex, ey-12, ex+14, ey-4);
+                ctx.strokeStyle = 'rgba(15,12,9,0.45)'; ctx.lineWidth = 2.2; ctx.stroke();
+            });
         } else {
-            // Closed eyes / blink (matching the dead grey tone)
-            ctx.strokeStyle = '#888888';
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(90, 280); ctx.lineTo(126, 285); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(130, 285); ctx.lineTo(166, 280); ctx.stroke();
+            // Blink — just a curved crease
+            [[104, 276], [152, 276]].forEach(([ex, ey]) => {
+                ctx.beginPath(); ctx.moveTo(ex-13, ey);
+                ctx.quadraticCurveTo(ex, ey-7, ex+13, ey);
+                ctx.strokeStyle = 'rgba(160,150,135,0.65)'; ctx.lineWidth = 3; ctx.stroke();
+            });
         }
 
-        ctx.shadowBlur = 0;
         frames.push(new THREE.CanvasTexture(c));
     }
     return frames;
@@ -1321,8 +1429,8 @@ function placeEntities() {
         const isShadow = (Math.random() < 0.30); // 70% bacteria, 30% smilers
         const sprite = new THREE.Sprite(isShadow ? shadowMatsOpen[0] : bacteriaPoses[0][0]);
         
-        let baseScaleX = isShadow ? 22 : 12.0; // smiler much bigger
-        let baseScaleY = isShadow ? 22 : 14.0;
+        let baseScaleX = isShadow ? 22 : 13.5;
+        let baseScaleY = isShadow ? 22 : 14.0; // just below ceiling (15)
         let baseY = isShadow ? 7.5 : 7.0;
         
         sprite.scale.set(baseScaleX, baseScaleY, 1); 
@@ -3118,7 +3226,7 @@ function animate() {
                 const spawnShadow = Math.random() < 0.30;
                 const spriteMat = spawnShadow ? shadowMatsOpen[0] : bacteriaPoses[0][0];
                 const newSprite = new THREE.Sprite(spriteMat);
-                const bsX = spawnShadow ? 22 : 12.0;
+                const bsX = spawnShadow ? 22 : 13.5;
                 const bsY = spawnShadow ? 7.5 : 7.0;
                 newSprite.scale.set(bsX, spawnShadow ? 22 : 14.0, 1);
                 newSprite.position.set(wx2, bsY, wz2);
@@ -3549,7 +3657,7 @@ function animate() {
                             health -= 4.5 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(40);
                         tookDamage = true;
-                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        if (health <= 0) showDeathScreen("CONSUMED.", "Something found you in the dark.");
                         }
                     }
                     if (Math.random() < 0.006) { e.twitchTimer = 0.2 + Math.random() * 0.4; }
@@ -3671,7 +3779,7 @@ function animate() {
                             health -= 6 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(60);
                         tookDamage = true;
-                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        if (health <= 0) showDeathScreen("CONSUMED.", "Something found you in the dark.");
                         }
                     }
                     if (e.stateTimer <= 0) {
@@ -3732,7 +3840,7 @@ function animate() {
                             health -= 12 * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(70);
                         tookDamage = true;
-                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        if (health <= 0) showDeathScreen("CONSUMED.", "Something found you in the dark.");
                         }
                     }
                     if (e.stateTimer <= 0) {
@@ -3761,7 +3869,7 @@ function animate() {
                         health -= dmgRate * delta;
                         if (!tookDamage && vibrationEnabled && navigator.vibrate) navigator.vibrate(30);
                         tookDamage = true;
-                        if (health <= 0) showDeathScreen("CONSUMED.", "You were caught by an Entity.");
+                        if (health <= 0) showDeathScreen("CONSUMED.", "Something found you in the dark.");
                     }
                 }
                 // Bob
