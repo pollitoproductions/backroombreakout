@@ -532,7 +532,7 @@ const ITEM_PICKUP_DIST   = 25;
 
 let BOTTLE_COUNT       = 900;  
 let JELLY_COUNT        = 486;  
-let PAINT_COUNT        = 162;     
+let PAINT_COUNT        = 81;     
 
 // ENTITY AI
 let ENTITY_COUNT       = 800;   
@@ -1063,24 +1063,24 @@ function generateBacteriaFrames(count, poseType) {
     // Messy spiral scribble head — NOT a circle, filled with overlapping loops
     function scribbleHead(ctx, hx, hy, r, f) {
         const j = () => (Math.random()-0.5)*5;
-        // Outer ragged silhouette — 3 irregular looping strokes
-        for (let s = 0; s < 4; s++) {
+        // Outer ragged silhouette — irregular looping strokes, more passes for denser blackout
+        for (let s = 0; s < 6; s++) {
             const pts = [];
-            const segs = 11;
-            const startA = s * 0.7 + f*0.15;
+            const segs = 11 + (s % 2) * 3;
+            const startA = s * 0.55 + f*0.15;
             for (let i = 0; i <= segs; i++) {
-                const a = startA + (i/segs)*Math.PI*(1.6+s*0.3);
+                const a = startA + (i/segs)*Math.PI*(1.6+s*0.25);
                 // Irregular radius — lumpy not circular
-                const rad = r*(0.55 + Math.random()*0.55);
+                const rad = r*(0.45 + Math.random()*0.65);
                 pts.push({
                     x: cl(hx + Math.cos(a)*rad + j(), 10, W-10),
                     y: cl(hy + Math.sin(a)*rad*0.85 + j(), 8, hy+r+10)
                 });
             }
-            wire(ctx, pts, s < 2 ? 7.5 : 4.5);
+            wire(ctx, pts, s < 3 ? 7.5 : 4.5);
         }
-        // Spiral interior fill — dense overlapping arcs going inward
-        for (let s = 0; s < 5; s++) {
+        // Spiral interior fill — dense overlapping arcs going inward, more passes for blackout
+        for (let s = 0; s < 8; s++) {
             const pts = [];
             const innerR = r*(0.7 - s*0.1);
             if (innerR < 4) break;
@@ -1188,10 +1188,20 @@ function generateBacteriaFrames(count, poseType) {
         // Neck
         wire(ctx, [{x:cx, y:headY+20}, {x:cx, y:torsoY}], thk-1);
         
-        // Torso body (multiple tangled wires)
-        wire(ctx, [{x:cx-5, y:torsoY}, {x:cx-8, y:(torsoY+hipY)/2}, {x:cx-5, y:hipY}], thk+2);
-        wire(ctx, [{x:cx+5, y:torsoY}, {x:cx+8, y:(torsoY+hipY)/2}, {x:cx+5, y:hipY}], thk+2);
-        wire(ctx, [{x:cx, y:torsoY+5}, {x:cx, y:hipY-5}], thk+4);
+        // Torso — single zig-zag scribble that flexes side to side with animation phase
+        {
+            const nZags = 5 + (f % 2); // odd frames get an extra zag for variety
+            const zigPts = [];
+            const flexAmp = 13 + Math.random() * 9;
+            for (let zi = 0; zi <= nZags; zi++) {
+                const t = zi / nZags;
+                const yy = torsoY + t * (hipY - torsoY);
+                const side = (zi % 2 === 0) ? 1 : -1;
+                const xOff = side * (5 + Math.random() * 6) + sinP * flexAmp * (zi % 2 === 0 ? 1 : -1);
+                zigPts.push({x: cl(cx + xOff + j(), 10, W-10), y: cl(yy + j(), 8, H-8)});
+            }
+            wire(ctx, zigPts, thk - 2);
+        }
         
         // Explicit Shoulder Connectors
         wire(ctx, [{x:cx, y:torsoY}, {x:lShX, y:lShY}], thk);
@@ -1201,30 +1211,41 @@ function generateBacteriaFrames(count, poseType) {
         wire(ctx, [{x:cx, y:hipY}, {x:lHipX, y:lHipY}], thk);
         wire(ctx, [{x:cx, y:hipY}, {x:rHipX, y:rHipY}], thk);
 
-        // Limbs function using a midpoint push for elbows/knees to keep them connected
+        // Limbs — asymmetric length scale per frame so limbs grow and shrink unevenly
+        const lArmScale = 0.72 + Math.random() * 0.56; // left arm independently longer/shorter
+        const rArmScale = 0.72 + Math.random() * 0.56;
+        const lLegScale = 0.78 + Math.random() * 0.48;
+        const rLegScale = 0.78 + Math.random() * 0.48;
+        function scaledEndpoint(sx, sy, ex, ey, scale) {
+            return { x: sx + (ex - sx) * scale, y: sy + (ey - sy) * scale };
+        }
         function drawLimb(x1, y1, x2, y2, pushX, pushY, thick) {
             let midX = (x1 + x2)/2 + pushX;
             let midY = (y1 + y2)/2 + pushY;
             wire(ctx, [{x:x1, y:y1}, {x:midX, y:midY}, {x:x2, y:y2}], thick);
         }
 
-        // Arms
-        drawLimb(lShX, lShY, lHndX+j(), lHndY+j(), lElbDir*25, 10, thk-1);
-        drawLimb(rShX, rShY, rHndX+j(), rHndY+j(), rElbDir*25, 10, thk-1);
+        // Arms — scale endpoint from shoulder
+        const lHndScaled = scaledEndpoint(lShX, lShY, lHndX+j(), lHndY+j(), lArmScale);
+        const rHndScaled = scaledEndpoint(rShX, rShY, rHndX+j(), rHndY+j(), rArmScale);
+        drawLimb(lShX, lShY, lHndScaled.x, lHndScaled.y, lElbDir*25, 10, thk-1);
+        drawLimb(rShX, rShY, rHndScaled.x, rHndScaled.y, rElbDir*25, 10, thk-1);
+
+        // Legs — scale endpoint from hip
+        const lFtScaled = scaledEndpoint(lHipX, lHipY, lFtX+j(), lFtY+j(), lLegScale);
+        const rFtScaled = scaledEndpoint(rHipX, rHipY, rFtX+j(), rFtY+j(), rLegScale);
+        drawLimb(lHipX, lHipY, lFtScaled.x, lFtScaled.y, lKnDir*20, -10, thk);
+        drawLimb(rHipX, rHipY, rFtScaled.x, rFtScaled.y, rKnDir*20, -10, thk);
         
-        // Legs
-        drawLimb(lHipX, lHipY, lFtX+j(), lFtY+j(), lKnDir*20, -10, thk);
-        drawLimb(rHipX, rHipY, rFtX+j(), rFtY+j(), rKnDir*20, -10, thk);
-        
-        // Hand/Feet details
-        wire(ctx, [{x:lHndX, y:lHndY}, {x:lHndX-10+j(), y:lHndY+10}], thk-4);
-        wire(ctx, [{x:lHndX, y:lHndY}, {x:lHndX+10+j(), y:lHndY+10}], thk-4);
-        wire(ctx, [{x:rHndX, y:rHndY}, {x:rHndX-10+j(), y:rHndY+10}], thk-4);
-        wire(ctx, [{x:rHndX, y:rHndY}, {x:rHndX+10+j(), y:rHndY+10}], thk-4);
-        wire(ctx, [{x:lFtX, y:lFtY}, {x:lFtX-15+j(), y:lFtY+5}], thk-3);
-        wire(ctx, [{x:lFtX, y:lFtY}, {x:lFtX+15+j(), y:lFtY+5}], thk-3);
-        wire(ctx, [{x:rFtX, y:rFtY}, {x:rFtX-15+j(), y:rFtY+5}], thk-3);
-        wire(ctx, [{x:rFtX, y:rFtY}, {x:rFtX+15+j(), y:rFtY+5}], thk-3);
+        // Hand/Feet details — offset slightly from scaled endpoints
+        wire(ctx, [{x:lHndScaled.x, y:lHndScaled.y}, {x:lHndScaled.x-10+j(), y:lHndScaled.y+10}], thk-4);
+        wire(ctx, [{x:lHndScaled.x, y:lHndScaled.y}, {x:lHndScaled.x+10+j(), y:lHndScaled.y+10}], thk-4);
+        wire(ctx, [{x:rHndScaled.x, y:rHndScaled.y}, {x:rHndScaled.x-10+j(), y:rHndScaled.y+10}], thk-4);
+        wire(ctx, [{x:rHndScaled.x, y:rHndScaled.y}, {x:rHndScaled.x+10+j(), y:rHndScaled.y+10}], thk-4);
+        wire(ctx, [{x:lFtScaled.x, y:lFtScaled.y}, {x:lFtScaled.x-15+j(), y:lFtScaled.y+5}], thk-3);
+        wire(ctx, [{x:lFtScaled.x, y:lFtScaled.y}, {x:lFtScaled.x+15+j(), y:lFtScaled.y+5}], thk-3);
+        wire(ctx, [{x:rFtScaled.x, y:rFtScaled.y}, {x:rFtScaled.x-15+j(), y:rFtScaled.y+5}], thk-3);
+        wire(ctx, [{x:rFtScaled.x, y:rFtScaled.y}, {x:rFtScaled.x+15+j(), y:rFtScaled.y+5}], thk-3);
 
         scribbleHead(ctx, cx + j(), headY + j(), 27, f);
         
@@ -2330,15 +2351,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 80;
-        BOTTLE_COUNT = 270; JELLY_COUNT = 146; PAINT_COUNT = 49;
+        BOTTLE_COUNT = 270; JELLY_COUNT = 146; PAINT_COUNT = 25;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 300;
-        BOTTLE_COUNT = 1350; JELLY_COUNT = 729; PAINT_COUNT = 243;
+        BOTTLE_COUNT = 1350; JELLY_COUNT = 729; PAINT_COUNT = 122;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 600;
-        BOTTLE_COUNT = 2700; JELLY_COUNT = 1458; PAINT_COUNT = 486;
+        BOTTLE_COUNT = 2700; JELLY_COUNT = 1458; PAINT_COUNT = 243;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
@@ -3121,7 +3142,7 @@ function animate() {
                         const dist = camera.position.distanceTo(e.mesh.position);
                         if(dist < 45) { // Flame reach
                             const dirToEnt = e.mesh.position.clone().sub(camera.position).normalize();
-                            if(dirToEnt.dot(camDir) > 0.70 && !e.burning) { // wider cone, skip if already dying
+                            if((dirToEnt.dot(camDir) > 0.70 || dist < 14) && !e.burning) { // wider cone; no min range when in face
                                 // Kill time: ~0.17s of sustained flame (hp=0.5, drain=2.9/s)
                                 if (e.hp === undefined) e.hp = 0.5;
                                 e.hp -= delta * 2.9;
@@ -3640,7 +3661,7 @@ function animate() {
                         const tdist = Math.sqrt(tdx*tdx + tdz*tdz);
                         if (tdist > ENTITY_MIN_DIST) {
                             const dir2 = new THREE.Vector3(tdx, 0, tdz).normalize();
-                            const spd = 58; // faster investigate
+                            const spd = 36; // investigate
                             const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                             const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                             if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3704,7 +3725,7 @@ function animate() {
                             }
                         } else if (dist > ENTITY_MIN_DIST) {
                             const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                            const spd = 38;
+                            const spd = 24;
                             const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                             const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                             if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3759,7 +3780,7 @@ function animate() {
                     // Desperate charge — fast enough to catch a walking player
                     if (!isTwitching && dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 110; // was 90 — can close on a walking player
+                        const spd = 72; // was 110 — slowed down
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3768,8 +3789,8 @@ function animate() {
                     e.lastKnownPlayerX = px; e.lastKnownPlayerZ = pz;
                     if (e.erraticTimer <= 0 && Math.random() < 0.018) {
                         const a = Math.random() * Math.PI * 2;
-                        e.erraticVelX = Math.cos(a) * 50;
-                        e.erraticVelZ = Math.sin(a) * 50;
+                        e.erraticVelX = Math.cos(a) * 32;
+                        e.erraticVelZ = Math.sin(a) * 32;
                         e.erraticTimer = 0.12 + Math.random() * 0.18;
                     }
                     
@@ -3829,7 +3850,7 @@ function animate() {
                     // Full sprint frenzy — faster than sprinting player
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 155; // faster than sprinting player (180) but not quite
+                        const spd = 105; // was 155, slowed down
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
