@@ -1109,9 +1109,9 @@ function generateBacteriaFrames(count, poseType) {
         const c = document.createElement('canvas'); c.width=W; c.height=H;
         const ctx = c.getContext('2d'); ctx.clearRect(0,0,W,H);
 
-        const j  = () => (Math.random()-0.5)*3; // Reduced jitter to make movement clearer
-        const thk = 8.5; 
-        const floorY = H - 15; // Pin limbs perfectly to the ground
+        const j  = () => (Math.random()-0.5)*3;
+        const thk = 13.0;  // much thicker — more mass and presence
+        const floorY = H - 15;
         const cx = 128;
         
         // Procedural walking/crawling phase
@@ -1131,50 +1131,50 @@ function generateBacteriaFrames(count, poseType) {
 
         // Distinct animated movement variations
         if (poseType === 'center') { // tall_walk
-            headY = 80; torsoY = 120; hipY = 260;
-            lHndX = cx - 40 + sinP*20; lHndY = 280 - Math.max(0, cosP*15);
-            rHndX = cx + 40 + sinP_opp*20; rHndY = 280 - Math.max(0, cosP_opp*15);
-            lFtX = cx - 25 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*30);
-            rFtX = cx + 25 + sinP*40; rFtY = floorY - Math.max(0, cosP*30);
+            headY = 32; torsoY = 80; hipY = 310;
+            lHndX = cx - 60 + sinP*25; lHndY = 340 - Math.max(0, cosP*20);
+            rHndX = cx + 60 + sinP_opp*25; rHndY = 340 - Math.max(0, cosP_opp*20);
+            lFtX = cx - 38 + sinP_opp*48; lFtY = floorY - Math.max(0, cosP_opp*38);
+            rFtX = cx + 38 + sinP*48; rFtY = floorY - Math.max(0, cosP*38);
         } else if (poseType === 'left') { // crawl
-            headY = 260; torsoY = 290; hipY = 380;
-            lHndX = cx - 50 + sinP*45; lHndY = floorY - Math.max(0, cosP*30);
-            rHndX = cx + 50 + sinP_opp*45; rHndY = floorY - Math.max(0, cosP_opp*30);
-            lFtX = cx - 30 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*25);
-            rFtX = cx + 30 + sinP*40; rFtY = floorY - Math.max(0, cosP*25);
+            headY = 210; torsoY = 248; hipY = 380;
+            lHndX = cx - 70 + sinP*50; lHndY = floorY - Math.max(0, cosP*35);
+            rHndX = cx + 70 + sinP_opp*50; rHndY = floorY - Math.max(0, cosP_opp*35);
+            lFtX = cx - 42 + sinP_opp*44; lFtY = floorY - Math.max(0, cosP_opp*28);
+            rFtX = cx + 42 + sinP*44; rFtY = floorY - Math.max(0, cosP*28);
             lElbDir = -1.5; rElbDir = 1.5;
         } else if (poseType === 'right') { // scuttle
-            headY = 360; torsoY = 390; hipY = 440;
-            lHndX = cx - 80 + sinP*50; lHndY = floorY - Math.max(0, cosP*25);
-            rHndX = cx + 80 + sinP_opp*50; rHndY = floorY - Math.max(0, cosP_opp*25);
-            lFtX = cx - 50 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*20);
-            rFtX = cx + 50 + sinP*40; rFtY = floorY - Math.max(0, cosP*20);
+            headY = 290; torsoY = 330; hipY = 435;
+            lHndX = cx - 100 + sinP*55; lHndY = floorY - Math.max(0, cosP*28);
+            rHndX = cx + 100 + sinP_opp*55; rHndY = floorY - Math.max(0, cosP_opp*28);
+            lFtX = cx - 65 + sinP_opp*44; lFtY = floorY - Math.max(0, cosP_opp*22);
+            rFtX = cx + 65 + sinP*44; rFtY = floorY - Math.max(0, cosP*22);
             lKnDir = -1.5; rKnDir = 1.5;
         } else if (poseType === 'crawl') { // lurch
-            headY = 150; torsoY = 180; hipY = 300;
-            lHndX = cx - 60 + sinP*20; lHndY = floorY; // Drags left arm on floor
-            rHndX = cx + 50 + sinP_opp*20; rHndY = 120 + cosP_opp*20;
-            lFtX = cx - 25 + sinP_opp*50; lFtY = floorY - Math.max(0, cosP_opp*40);
-            rFtX = cx + 25 + sinP*20; rFtY = floorY - Math.max(0, cosP*10); // Limps right leg
+            headY = 75; torsoY = 125; hipY = 340;
+            lHndX = cx - 80 + sinP*25; lHndY = floorY;
+            rHndX = cx + 70 + sinP_opp*25; rHndY = 110 + cosP_opp*25;
+            lFtX = cx - 36 + sinP_opp*55; lFtY = floorY - Math.max(0, cosP_opp*48);
+            rFtX = cx + 36 + sinP*25; rFtY = floorY - Math.max(0, cosP*12);
         } else if (poseType === 'extreme_left') { // tripod
-            headY = 220; torsoY = 250; hipY = 350;
-            lHndX = cx - 40 + sinP*50; lHndY = floorY - Math.max(0, cosP*40); // Uses arm to walk
-            rHndX = cx + 60; rHndY = 150 + sinP*15; // Raised like an antenna
-            lFtX = cx - 20 + sinP_opp*40; lFtY = floorY - Math.max(0, cosP_opp*25);
-            rFtX = cx + 30 + sinP*40; rFtY = floorY - Math.max(0, cosP*25);
+            headY = 145; torsoY = 188; hipY = 365;
+            lHndX = cx - 55 + sinP*55; lHndY = floorY - Math.max(0, cosP*48);
+            rHndX = cx + 80; rHndY = 120 + sinP*18;
+            lFtX = cx - 30 + sinP_opp*46; lFtY = floorY - Math.max(0, cosP_opp*30);
+            rFtX = cx + 44 + sinP*46; rFtY = floorY - Math.max(0, cosP*30);
         } else if (poseType === 'extreme_right') { // slither
-            headY = 440 + cosP*10; torsoY = 450 + cosP_opp*10; hipY = 470 + cosP*10;
-            lHndX = cx - 70 + sinP*30; lHndY = floorY;
-            rHndX = cx + 70 + sinP_opp*30; rHndY = floorY;
-            lFtX = cx - 40 + sinP_opp*30; lFtY = floorY;
-            rFtX = cx + 40 + sinP*30; rFtY = floorY;
+            headY = 430 + cosP*12; torsoY = 445 + cosP_opp*12; hipY = 468 + cosP*10;
+            lHndX = cx - 90 + sinP*36; lHndY = floorY;
+            rHndX = cx + 90 + sinP_opp*36; rHndY = floorY;
+            lFtX = cx - 55 + sinP_opp*36; lFtY = floorY;
+            rFtX = cx + 55 + sinP*36; rFtY = floorY;
             lElbDir = -2; rElbDir = 2; lKnDir = -2; rKnDir = 2;
         } else { // asymmetric -> gallop
-            headY = 200; torsoY = 230; hipY = 340;
-            lHndX = cx - 35 + sinP*60; lHndY = floorY - Math.max(0, cosP*40);
-            rHndX = cx + 35 + sinP*60; rHndY = floorY - Math.max(0, cosP*40);
-            lFtX = cx - 25 + sinP_opp*50; lFtY = floorY - Math.max(0, cosP_opp*35);
-            rFtX = cx + 25 + sinP_opp*50; rFtY = floorY - Math.max(0, cosP_opp*35);
+            headY = 110; torsoY = 160; hipY = 390;
+            lHndX = cx - 50 + sinP*68; lHndY = floorY - Math.max(0, cosP*48);
+            rHndX = cx + 50 + sinP*68; rHndY = floorY - Math.max(0, cosP*48);
+            lFtX = cx - 36 + sinP_opp*58; lFtY = floorY - Math.max(0, cosP_opp*42);
+            rFtX = cx + 36 + sinP_opp*58; rFtY = floorY - Math.max(0, cosP_opp*42);
         }
 
         // Anchor points explicitly locked to Torso
