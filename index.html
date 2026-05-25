@@ -1212,17 +1212,35 @@ function generateBacteriaFrames(count, poseType) {
         wire(ctx, [{x:cx, y:hipY}, {x:rHipX, y:rHipY}], thk);
 
         // Limbs — asymmetric length scale per frame so limbs grow and shrink unevenly
-        const lArmScale = 0.72 + Math.random() * 0.56; // left arm independently longer/shorter
+        const lArmScale = 0.72 + Math.random() * 0.56;
         const rArmScale = 0.72 + Math.random() * 0.56;
         const lLegScale = 0.78 + Math.random() * 0.48;
         const rLegScale = 0.78 + Math.random() * 0.48;
         function scaledEndpoint(sx, sy, ex, ey, scale) {
             return { x: sx + (ex - sx) * scale, y: sy + (ey - sy) * scale };
         }
-        function drawLimb(x1, y1, x2, y2, pushX, pushY, thick) {
-            let midX = (x1 + x2)/2 + pushX;
-            let midY = (y1 + y2)/2 + pushY;
-            wire(ctx, [{x:x1, y:y1}, {x:midX, y:midY}, {x:x2, y:y2}], thick);
+        // Contorted limb — builds a zigzag path between two joints with kink points,
+        // perpendicular offset alternates direction like the torso zig-zag
+        function drawLimb(x1, y1, x2, y2, elbowBias, pushY, thick) {
+            const kinks = 3 + (f % 2); // 3 or 4 intermediate kink points
+            const pts = [{x: x1, y: y1}];
+            const perpX = -(y2 - y1); // perpendicular to limb direction
+            const perpY =  (x2 - x1);
+            const perpLen = Math.sqrt(perpX*perpX + perpY*perpY) || 1;
+            for (let k = 1; k <= kinks; k++) {
+                const t = k / (kinks + 1);
+                const bx = x1 + (x2 - x1) * t;
+                const by = y1 + (y2 - y1) * t;
+                // Alternate kink sides, weighted by elbow bias on the first segment
+                const side = (k % 2 === 0) ? 1 : -1;
+                const kinkAmt = (8 + Math.random() * 14) * (k === 1 ? Math.sign(elbowBias) : side);
+                pts.push({
+                    x: cl(bx + (perpX / perpLen) * kinkAmt + j(), 8, W-8),
+                    y: cl(by + (perpY / perpLen) * kinkAmt * 0.5 + j(), 8, H-8)
+                });
+            }
+            pts.push({x: x2, y: y2});
+            wire(ctx, pts, thick);
         }
 
         // Arms — scale endpoint from shoulder
@@ -1236,8 +1254,8 @@ function generateBacteriaFrames(count, poseType) {
         const rFtScaled = scaledEndpoint(rHipX, rHipY, rFtX+j(), rFtY+j(), rLegScale);
         drawLimb(lHipX, lHipY, lFtScaled.x, lFtScaled.y, lKnDir*20, -10, thk);
         drawLimb(rHipX, rHipY, rFtScaled.x, rFtScaled.y, rKnDir*20, -10, thk);
-        
-        // Hand/Feet details — offset slightly from scaled endpoints
+
+        // Hand/Feet details
         wire(ctx, [{x:lHndScaled.x, y:lHndScaled.y}, {x:lHndScaled.x-10+j(), y:lHndScaled.y+10}], thk-4);
         wire(ctx, [{x:lHndScaled.x, y:lHndScaled.y}, {x:lHndScaled.x+10+j(), y:lHndScaled.y+10}], thk-4);
         wire(ctx, [{x:rHndScaled.x, y:rHndScaled.y}, {x:rHndScaled.x-10+j(), y:rHndScaled.y+10}], thk-4);
@@ -3661,7 +3679,7 @@ function animate() {
                         const tdist = Math.sqrt(tdx*tdx + tdz*tdz);
                         if (tdist > ENTITY_MIN_DIST) {
                             const dir2 = new THREE.Vector3(tdx, 0, tdz).normalize();
-                            const spd = 36; // investigate
+                            const spd = 26; // investigate
                             const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                             const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                             if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3725,7 +3743,7 @@ function animate() {
                             }
                         } else if (dist > ENTITY_MIN_DIST) {
                             const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                            const spd = 24;
+                            const spd = 17;
                             const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                             const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                             if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3780,7 +3798,7 @@ function animate() {
                     // Desperate charge — fast enough to catch a walking player
                     if (!isTwitching && dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 72; // was 110 — slowed down
+                        const spd = 54; // was 72 — slowed down
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
@@ -3850,7 +3868,7 @@ function animate() {
                     // Full sprint frenzy — faster than sprinting player
                     if (dist > ENTITY_MIN_DIST) {
                         const dir2 = new THREE.Vector3(dx, 0, dz).normalize();
-                        const spd = 105; // was 155, slowed down
+                        const spd = 82; // was 105, slowed down
                         const nx2 = e.mesh.position.x + dir2.x * spd * delta;
                         const nz2 = e.mesh.position.z + dir2.z * spd * delta;
                         if (!checkEntityCollision({x: nx2, z: e.mesh.position.z})) e.mesh.position.x = nx2;
