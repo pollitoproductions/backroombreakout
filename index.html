@@ -1979,7 +1979,25 @@ function initAudio(){
     audioCtx=new AC(); 
     masterGain=audioCtx.createGain(); 
     masterGain.gain.value = isMuted ? 0 : 0.5; // Sync with settings
-    masterGain.connect(audioCtx.destination);
+    // Compressor — catches multi-source spikes before they clip on device DAC
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 10;
+    compressor.ratio.value = 8;
+    compressor.attack.value = 0.002;
+    compressor.release.value = 0.15;
+
+    // Limiter — hard safety net, ensures signal never exceeds 0dBFS
+    const limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.value = -1.0;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.001;
+    limiter.release.value = 0.1;
+
+    masterGain.connect(compressor);
+    compressor.connect(limiter);
+    limiter.connect(audioCtx.destination);
     
     // Fluorescent light buzz — the backbone of backrooms atmosphere
     ambientBuzzGain = audioCtx.createGain();
