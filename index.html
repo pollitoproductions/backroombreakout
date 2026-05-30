@@ -530,8 +530,8 @@ const STAT_MAX           = 100;
 const HYDRATION_DRAIN    = 0.38; // slightly more survival pressure  
 const ITEM_PICKUP_DIST   = 25;    
 
-let BOTTLE_COUNT       = 900;  
-let JELLY_COUNT        = 486;  
+let BOTTLE_COUNT       = 765;  
+let JELLY_COUNT        = 413;  
 let PAINT_COUNT        = 81;     
 
 // ENTITY AI
@@ -1738,31 +1738,31 @@ function makeOfficeChair() {
     const g = new THREE.Group();
     const fabMat = new THREE.MeshLambertMaterial({color:0x2a2218,emissive:new THREE.Color(0x0a0806)});
     const metMat = new THREE.MeshLambertMaterial({color:0x333333});
-    // Base spokes on floor — smaller
+    // Base spokes on floor
     for(let i=0;i<5;i++){
         const angle=i/5*Math.PI*2;
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.2,0.4),metMat);
-        spoke.rotation.y=angle; spoke.position.y=0.15; g.add(spoke);
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(6.8,0.4,0.9),metMat);
+        spoke.rotation.y=angle; spoke.position.y=0.25; g.add(spoke);
     }
     // Central pole
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.35,2.8,6),metMat);
-    pole.position.y=1.4; g.add(pole);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.85,6.5,6),metMat);
+    pole.position.y=3.25; g.add(pole);
     // Seat
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(3.2,0.5,3.2),fabMat);
-    seat.position.y=3.0; g.add(seat);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(8.0,1.0,8.0),fabMat);
+    seat.position.y=7.0; g.add(seat);
     // Armrests
-    [-1.5,1.5].forEach(x=>{
-        const armPost = new THREE.Mesh(new THREE.BoxGeometry(0.3,1.2,0.3),metMat);
-        armPost.position.set(x,3.8,0); g.add(armPost);
-        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.3,2.2),fabMat);
-        arm.position.set(x,4.4,0.2); g.add(arm);
+    [-3.8,3.8].forEach(x=>{
+        const armPost = new THREE.Mesh(new THREE.BoxGeometry(0.6,2.4,0.6),metMat);
+        armPost.position.set(x,8.7,0); g.add(armPost);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.55,5.0),fabMat);
+        arm.position.set(x,9.95,0.5); g.add(arm);
     });
     // Back
-    const backPost = new THREE.Mesh(new THREE.BoxGeometry(0.3,1.2,0.3),metMat);
-    backPost.position.set(0,3.9,-1.3); g.add(backPost);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(2.8,3.8,0.5),fabMat);
-    back.position.set(0,6.0,-1.5); g.add(back);
-    g.colliderRadius=2.5;
+    const backPost = new THREE.Mesh(new THREE.BoxGeometry(0.6,2.4,0.6),metMat);
+    backPost.position.set(0,8.8,-3.5); g.add(backPost);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(7.2,9.0,1.0),fabMat);
+    back.position.set(0,14.8,-3.8); g.add(back);
+    g.colliderRadius=5.8;
     return g;
 }
 function makeFilingCabinet() {
@@ -2387,15 +2387,15 @@ function selectDifficulty(level, e) {
     if (level === 'easy') {
         currentSanity = 'SANE';
         MAP_SIZE = 316; EXIT_COUNT = 10; ENTITY_COUNT = 80;
-        BOTTLE_COUNT = 270; JELLY_COUNT = 146; PAINT_COUNT = 25;
+        BOTTLE_COUNT = 230; JELLY_COUNT = 124; PAINT_COUNT = 25;
     } else if (level === 'medium') {
         currentSanity = 'QUESTIONABLE';
         MAP_SIZE = 707; EXIT_COUNT = 5; ENTITY_COUNT = 300;
-        BOTTLE_COUNT = 1350; JELLY_COUNT = 729; PAINT_COUNT = 122;
+        BOTTLE_COUNT = 1148; JELLY_COUNT = 620; PAINT_COUNT = 122;
     } else {
         currentSanity = 'INSANE';
         MAP_SIZE = 1000; EXIT_COUNT = 1; ENTITY_COUNT = 600;
-        BOTTLE_COUNT = 2700; JELLY_COUNT = 1458; PAINT_COUNT = 243;
+        BOTTLE_COUNT = 2295; JELLY_COUNT = 1239; PAINT_COUNT = 243;
     }
     
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
