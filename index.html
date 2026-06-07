@@ -71,6 +71,29 @@
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+        #noclip-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: radial-gradient(ellipse at center, rgba(20,18,5,0.98) 0%, rgba(0,0,0,1) 100%);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: #d4d42b; text-align: center; z-index: 50; pointer-events: none;
+        }
+        #noclip-screen.active { display: flex; }
+        @keyframes flicker {
+            0%,100% { opacity:1; text-shadow: 0 0 12px #d4d42b, 0 0 30px #d4d42b; }
+            18% { opacity:0.85; text-shadow: 0 0 4px #d4d42b; }
+            22% { opacity:1; text-shadow: 0 0 20px #d4d42b; }
+            55% { opacity:0.9; text-shadow: 0 0 8px #d4d42b; }
+            60% { opacity:1; text-shadow: 0 0 16px #d4d42b; }
+        }
+        #noclip-text {
+            font-size: 1.8em; letter-spacing: 6px; font-family: monospace;
+            animation: flicker 1.8s infinite;
+        }
+        #noclip-sub {
+            font-size: 0.85em; color: #888; margin-top: 18px; letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+
         .btn-container { display:flex; gap:12px; margin-top:15px; flex-wrap:wrap; justify-content:center; width: 100%; }
         .choice-btn {
             padding: 12px 20px; font-size: 1.05em; cursor: pointer;
@@ -349,6 +372,11 @@
     </div>
 
     <div id="pickup-flash">Almond Water +25</div>
+
+    <div id="noclip-screen">
+        <div id="noclip-text">NOCLIPPING...</div>
+        <div id="noclip-sub">do not look at the entities</div>
+    </div>
 
     <div id="start-screen">
         <div class="liminal-panel">
@@ -2401,10 +2429,20 @@ function selectDifficulty(level, e) {
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
     SPAWN_GRID_Z = Math.floor(MAP_SIZE/2);
 
-    showInterstitialAd(() => {
+    // Show noclip screen briefly so interstitial ad has time to load
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('noclip-screen').classList.add('active');
+
+    // Build world during the buffer so it's ready when the ad closes
+    setTimeout(() => {
         buildWorld();
-        startGame();
-    });
+        setTimeout(() => {
+            document.getElementById('noclip-screen').classList.remove('active');
+            showInterstitialAd(() => {
+                startGame();
+            });
+        }, 500);
+    }, 100);
 }
 
 function showInterstitialAd(onComplete) {
