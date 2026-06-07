@@ -2401,8 +2401,26 @@ function selectDifficulty(level, e) {
     SPAWN_GRID_X = Math.floor(MAP_SIZE/2);
     SPAWN_GRID_Z = Math.floor(MAP_SIZE/2);
 
-    buildWorld();
-    startGame();
+    showInterstitialAd(() => {
+        buildWorld();
+        startGame();
+    });
+}
+
+function showInterstitialAd(onComplete) {
+    window.onInterstitialClosed = onComplete;
+    try {
+        if (typeof Android !== 'undefined' && Android !== null) {
+            try { Android.showInterstitialAd(); return; }
+            catch (err1) {
+                try { Android.showInterstitial(); return; }
+                catch (err2) { console.log("Android interstitial error:", err1); }
+            }
+        }
+    } catch (e) { console.log("Native interstitial error:", e); }
+
+    // Web/preview: no ad, just proceed
+    onComplete();
 }
 
 function showRewardAd(onSuccess) {
