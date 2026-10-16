@@ -22,11 +22,14 @@
         #start-screen {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: radial-gradient(ellipse at center, rgba(50, 45, 15, 0.95) 0%, rgba(5, 5, 0, 1) 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             color: #d4d42b; text-align: center;
             pointer-events: auto; cursor: default; z-index: 40;
             padding: 15px; box-sizing: border-box;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
+        #start-screen > .liminal-panel { margin: auto 0; } /* centered when it fits, scrolls from the top when it doesn't */
+        .priv-link { color:#8a8a50; font-size:0.8em; font-family:monospace; text-decoration:underline; cursor:pointer; }
 
         #pause-screen, #win-screen, #paint-ad-prompt, #revive-screen {
             position: absolute; top:0; left:0; width:100%; height:100%;
@@ -402,6 +405,7 @@
                     <button class="choice-btn" id="btn-survivors">SURVIVOR LOG</button>
                 </div>
                 <div style="margin-top:24px;font-size:0.82em;color:#555;font-family:monospace;">&copy; Pollito Productions 2026</div>
+                <div style="margin-top:8px;"><a class="priv-link" href="https://raw.githubusercontent.com/pollitoproductions/backroombreakout/refs/heads/main/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></div>
             </div>
             <!-- PAGE 2 — DIFFICULTY -->
             <div id="page-2" class="start-page" style="display:none;">
@@ -418,17 +422,28 @@
             <div id="page-3" class="start-page" style="display:none;">
                 <div class="subtitle" style="font-size:1.1em;letter-spacing:3px;margin-bottom:14px;color:#fff;">HOW TO SURVIVE</div>
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ffffff;margin-bottom:10px;width:100%;box-sizing:border-box;">
-                    <strong style="color:#fff;">🕹️ MOVE</strong><br>
+                    <strong style="color:#fff;">🕹️ MOVE (TOUCH)</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
                         Left thumb joystick to walk. Drag right side to look around.<br>
                         The <strong style="color:#fff;">sprint button</strong> (top right) boosts speed — watch the stamina ring.<br>
                         The <strong style="color:#00ff88;">walk button</strong> (below sprint) locks you moving forward hands-free.
                     </span>
                 </div>
+                <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #b388ff;margin-bottom:10px;width:100%;box-sizing:border-box;">
+                    <strong style="color:#b388ff;">⌨️ KEYBOARD &amp; MOUSE</strong><br>
+                    <span style="color:#ccc;font-size:0.92em;line-height:1.7;">
+                        <strong style="color:#fff;">W A S D</strong> — walk &nbsp;·&nbsp; <strong style="color:#fff;">Shift</strong> — sprint<br>
+                        <strong style="color:#00ff88;">Q</strong> — auto-walk on/off (or click the walk button). Keep walking while you look and fire. Press W A S D to take over.<br>
+                        <strong style="color:#fff;">Mouse</strong> — click the game once to capture it, then move to look around. <strong style="color:#fff;">Esc</strong> frees it and pauses.<br>
+                        If the mouse won't capture, hold <strong style="color:#fff;">right button</strong> (or left) and drag to look.<br>
+                        <strong style="color:#fff;">Arrow keys</strong> — look &nbsp;·&nbsp; <strong style="color:#ff6666;">Hold left click or Space</strong> — flamethrower<br>
+                        <strong style="color:#88ccff;">Tap left click, Space or Ctrl+click</strong> — mark a wall
+                    </span>
+                </div>
                 <div style="text-align:left;background:rgba(0,0,0,0.4);padding:12px 15px;border-radius:8px;border-left:3px solid #ff4444;margin-bottom:10px;width:100%;box-sizing:border-box;">
                     <strong style="color:#ff4444;">🔥 FLAMETHROWER</strong><br>
                     <span style="color:#ccc;font-size:0.92em;line-height:1.6;">
-                        Hold the spray can button to fire. Takes two sustained bursts to kill.<br>
+                        Hold the spray can button (or left click / Space) to fire. Takes two sustained bursts to kill.<br>
                         Paint is limited — use it only when something is right on you.<br>
                         <strong style="color:#ff6666;">Don't let them get close. They will hurt you.</strong>
                     </span>
@@ -477,6 +492,12 @@
                     <span>VIBRATION</span>
                     <button class="choice-btn" id="setting-vib-btn" style="width:auto; padding: 8px 16px; font-size:0.9em; color:#00ff00; border-color:#00ff00;">ON</button>
                 </div>
+                <div class="setting-row">
+                    <span>AD PRIVACY CHOICES</span>
+                    <button class="choice-btn" id="setting-adprivacy-btn" style="width:auto; padding: 8px 16px; font-size:0.9em;">CHANGE</button>
+                </div>
+                <div id="adprivacy-msg" style="display:none;color:#aaa;font-size:0.8em;max-width:360px;margin-top:6px;line-height:1.5;"></div>
+                <div style="margin-top:14px;"><a class="priv-link" href="https://raw.githubusercontent.com/pollitoproductions/backroombreakout/refs/heads/main/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></div>
                 <button class="choice-btn" style="margin-top:26px;border-color:rgba(180,180,180,0.3);color:#777;font-size:0.85em;" onclick="showPage(1)">← BACK</button>
             </div>
         </div>
@@ -2384,6 +2405,22 @@ document.getElementById('btn-play').addEventListener('click', e => { e.stopPropa
 document.getElementById('btn-howtoplay').addEventListener('click', e => { e.stopPropagation(); showPage(3); });
 document.getElementById('btn-survivors').addEventListener('click', e => { e.stopPropagation(); showPage(4); showLeaderboard('SANE'); });
 document.getElementById('btn-settings').addEventListener('click', e => { e.stopPropagation(); showPage(5); });
+document.getElementById('setting-adprivacy-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const msg = document.getElementById('adprivacy-msg');
+    let done = false;
+    try {
+        if (typeof Android !== 'undefined') {
+            for (const fn of ['showPrivacyOptions', 'showPrivacyOptionsForm', 'showConsentForm', 'showConsentOptions', 'resetConsent']) {
+                if (typeof Android[fn] === 'function') { Android[fn](); done = true; break; }
+            }
+        }
+    } catch (err) {}
+    if (!done) {
+        msg.style.display = 'block';
+        msg.textContent = 'To change ad choices, open your phone\'s Settings > Google > Ads, or reinstall the app to see the consent question again.';
+    }
+});
 document.getElementById('btn-easy').addEventListener('click', e => selectDifficulty('easy', e));
 document.getElementById('btn-med').addEventListener('click', e => selectDifficulty('medium', e));
 document.getElementById('btn-hard').addEventListener('click', e => selectDifficulty('hard', e));
@@ -2897,11 +2934,12 @@ let mouseDblTimer = 0;
 let mousePrevX = 0, mousePrevY = 0;
 canvas.addEventListener('click', () => {
     if (!gameStarted || isPaused || isDead) return;
-    if (!isPointerLocked) canvas.requestPointerLock();
+    if (!isPointerLocked && canvas.requestPointerLock) { try { const pl = canvas.requestPointerLock(); if (pl && pl.catch) pl.catch(()=>{}); } catch (e) {} }
 });
 document.addEventListener('pointerlockchange', () => {
     isPointerLocked = (document.pointerLockElement === canvas);
 });
+document.addEventListener('contextmenu', e => { if (gameStarted) e.preventDefault(); }); // right-drag looks; no menu
 document.addEventListener('mousedown', e => {
     if (!gameStarted || isPaused || isDead) return;
     if (e.button !== 0) return;
@@ -2924,9 +2962,15 @@ document.addEventListener('mousemove', e => {
         pitch -= e.movementY * 0.002 * (lookSensitivity / 2);
         pitch  = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
         camera.rotation.set(pitch, yaw, camera.rotation.z);
-    } else if (isMouseDown) {
-        // Fallback: drag-to-look without pointer lock
-        handlePointerMove('mouse', e.clientX, e.clientY);
+    } else if (e.buttons & 3) {
+        // No pointer lock: hold left or right button and drag to look.
+        // Holding LEFT also fires, so you can look around and flame at the same time.
+        const dx = (e.movementX !== undefined) ? e.movementX : (e.clientX - mousePrevX);
+        const dy = (e.movementY !== undefined) ? e.movementY : (e.clientY - mousePrevY);
+        yaw   -= dx * 0.004 * (lookSensitivity / 2);
+        pitch -= dy * 0.004 * (lookSensitivity / 2);
+        pitch  = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+        camera.rotation.set(pitch, yaw, camera.rotation.z);
     }
     mousePrevX = e.clientX; mousePrevY = e.clientY;
 });
@@ -2939,12 +2983,12 @@ window.addEventListener('mouseup', e => {
 });
 // Escape releases pointer lock
 document.addEventListener('keydown', e2 => {
-    if (e2.code === 'Escape' && isPointerLocked) document.exitPointerLock();
+    if (e2.code === 'Escape' && isPointerLocked && document.exitPointerLock) document.exitPointerLock();
 }, true);
 
 document.addEventListener('keydown',e=>{
     if(e.repeat) return;
-    if(isAutoWalking && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+    if(isAutoWalking && ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) { // only movement keys take over
         isAutoWalking = false;
         autowalkBtn.classList.remove('active-autowalk');
     }
@@ -2963,6 +3007,7 @@ document.addEventListener('keydown',e=>{
         case 'ShiftLeft': case 'ShiftRight':
             activateSprint();
             break;
+        case 'KeyQ': toggleAutoWalk(); break;
 
         case 'Escape': pauseGame(); break;
     }
