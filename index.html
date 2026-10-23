@@ -2613,6 +2613,19 @@ if (typeof bridge !== 'undefined') {
 }
 
 function showInterstitialAd(onComplete) {
+    // Real AdMob via the Play WebView wrapper (restored from the original index):
+    // the wrapper injects an Android object and calls window.onInterstitialClosed
+    // when the ad finishes. This runs first so wrapper players always get the real ad.
+    try {
+        if (typeof Android !== 'undefined' && Android !== null) {
+            window.onInterstitialClosed = onComplete;
+            try { Android.showInterstitialAd(); return; }
+            catch (err1) {
+                try { Android.showInterstitial(); return; }
+                catch (err2) { console.log("Android interstitial error:", err1); }
+            }
+        }
+    } catch (e) { console.log("Native interstitial error:", e); }
     pendingInterstitialDone = onComplete;
     if (!pgReady() || bridge.advertisement.isInterstitialSupported === false) { finishInterstitial(); return; }
     // If no ad state event arrives at all (rate-limited / blocked), don't stall the game
@@ -2625,6 +2638,19 @@ function showInterstitialAd(onComplete) {
 
 function showRewardAd(onSuccess, onFail) {
     rewardGranted = false;
+    // Real AdMob via the Play WebView wrapper (restored from the original index):
+    // the wrapper injects an Android object and calls window.onRewardEarned
+    // when the ad completes. This runs first so wrapper players always get the real ad.
+    try {
+        if (typeof Android !== 'undefined' && Android !== null) {
+            window.onRewardEarned = onSuccess;
+            try { Android.showRewardAd(); return; }
+            catch (err1) {
+                try { Android.showRewardedAd(); return; }
+                catch (err2) { console.log("Android error:", err1); }
+            }
+        }
+    } catch (e) { console.log("Native Ad error:", e); }
     if (!pgReady() || bridge.advertisement.isRewardedSupported === false) { showSimulatedAd(onSuccess); return; }
     pendingRewardOk = onSuccess;
     pendingRewardFail = onFail;
@@ -2634,13 +2660,11 @@ function showRewardAd(onSuccess, onFail) {
     } catch (e) { pendingRewardOk = pendingRewardFail = null; if (onFail) onFail(); }
 }
 
-// v12 fix: outside the portal (GitHub Pages / non-portal WebView) there is no
-// real rewarded ad system, so a revive or paint ad would otherwise always
-// report AD UNAVAILABLE. Show a short simulated countdown instead and grant
-// the reward exactly as if the ad had been watched. This runs ONLY when no
-// real ad system is present (no bridge, or rewarded ads unsupported). A real
-// ad that is attempted and fails still uses the existing onFail path above,
-// so portal behavior stays honest.
+// Last resort only — GitHub URL in a browser: no Android wrapper, no bridge.
+// A short simulated countdown grants the reward so the game stays playable
+// there. Wrapper players get real AdMob (Android path above) and portal
+// players get real bridge ads; a real ad that is attempted and fails still
+// uses the existing onFail path, so real-ad behavior stays honest.
 function showSimulatedAd(onSuccess) {
     let el = document.getElementById('sim-ad-overlay');
     let numEl = el ? document.getElementById('sim-ad-count') : null;
