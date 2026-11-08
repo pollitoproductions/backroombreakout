@@ -286,13 +286,6 @@ window.addEventListener('error', function(e){
             background: radial-gradient(ellipse at center, rgba(255,120,0,0) 55%, rgba(255,120,0,0.55) 100%);
             opacity: 0; transition: opacity 0.25s;
         }
-        #dmg-dir {
-            position: absolute; top:0; left:0; width:64px; height:64px;
-            pointer-events: none; z-index: 11;
-            color:#ff2a2a; font-size:42px; line-height:64px; text-align:center;
-            text-shadow: 0 0 14px #ff0000, 0 2px 4px #000;
-            opacity: 0; transition: opacity 0.12s;
-        }
         #tutorial-prompt {
             position: absolute; top:16%; left:50%; transform: translateX(-50%);
             width: 86%; max-width: 540px; text-align:center;
@@ -317,7 +310,6 @@ window.addEventListener('error', function(e){
 <div id="thirst-vignette"></div>
 <div id="damage-flash"></div>
 <div id="warn-flash"></div>
-<div id="dmg-dir">&#9650;</div>
 <div id="tutorial-prompt"></div>
 
 <div id="ui-layer">
@@ -2286,7 +2278,6 @@ const hydrationBar = document.getElementById('hydration-bar');
 const vignetteEl   = document.getElementById('thirst-vignette');
 const dmgFlashEl   = document.getElementById('damage-flash');
 const warnFlashEl  = document.getElementById('warn-flash');
-const dmgDirEl     = document.getElementById('dmg-dir');
 const tutorialEl   = document.getElementById('tutorial-prompt');
 const pickupFlash  = document.getElementById('pickup-flash');
 const sprayBtn     = document.getElementById('spray-btn');
@@ -2516,7 +2507,6 @@ function startGame(){
     health=STAT_MAX; hydration=STAT_MAX; stamina=STAT_MAX; updateStatusBars();
     tutorialPromptShown = false; // v11: re-teach the first encounter each run
     tutorialEl.style.display = 'none';
-    dmgDirEl.style.opacity = '0';
     escTier = 0; encounterTimer = 25 + Math.random() * 15; dynamicSpawnTimer = 45 + Math.random() * 45; encounterIndex = 0; // v12: escalation resets every run
 }
 
@@ -2775,7 +2765,6 @@ function showDeathScreen(title, lore, tip){
     document.getElementById('death-title').innerText = title;
     sprintBtn.style.display='none';
     autowalkBtn.style.display='none';
-    dmgDirEl.style.opacity = '0';       // v11: hide hit-direction arrow on death
     tutorialEl.style.display = 'none';  // v11: hide tutorial prompt on death
     
     let minDist = Infinity;
@@ -4107,19 +4096,6 @@ function animate() {
         }
 
         dmgFlashEl.style.opacity = tookDamage ? '1' : '0';
-        // v11: directional damage indicator — red arrow on the screen edge points at the attacker
-        if (tookDamage && dmgHasSrc) {
-            _dv.set(dmgSrcX - camera.position.x, 0, dmgSrcZ - camera.position.z);
-            _dv.applyQuaternion(_dq.copy(camera.quaternion).invert());
-            const dang = Math.atan2(_dv.x, -_dv.z); // 0 = ahead, PI = directly behind
-            const dR = Math.min(window.innerWidth, window.innerHeight) * 0.30;
-            dmgDirEl.style.left = (window.innerWidth / 2 + Math.sin(dang) * dR) + 'px';
-            dmgDirEl.style.top = (window.innerHeight / 2 - Math.cos(dang) * dR) + 'px';
-            dmgDirEl.style.transform = 'translate(-50%,-50%) rotate(' + dang + 'rad)';
-            dmgDirEl.style.opacity = '1';
-        } else {
-            dmgDirEl.style.opacity = '0';
-        }
         if(tookDamage) updateStatusBars();
 
         playerLight.position.copy(camera.position);
